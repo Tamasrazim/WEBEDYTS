@@ -1,8 +1,8 @@
-# Website Indexer — AI and Automated-Code Policy
+# WEBEDYTS — AI and Automated-Code Policy
 
 **Copyright (c) 2026 Robiul Rumman Razim. All rights reserved.**
 
-Website Indexer is proprietary. This policy records the copyright holder's
+WEBEDYTS is proprietary. This policy records the copyright holder's
 permission requirements for AI model providers, enterprise AI services,
 generative coding tools, automated agents, dataset curators, contractors, and
 other parties handling the project's protected materials.
@@ -19,7 +19,7 @@ authorized by this project to:
    or model improvement.
 2. Feed protected project materials into an AI system for the purpose of
    generating a rewrite, patch, port, reconstruction, derivative version, or
-   modification of Website Indexer.
+   modification of WEBEDYTS.
 3. Use an enterprise AI coding agent, contractor, or automated service to
    perform prohibited transformations on the project's protected materials.
 4. Redistribute generated or transformed copies of protected project material
@@ -32,7 +32,7 @@ this policy.
 
 ## Requested handling by AI and enterprise service providers
 
-Providers and administrators receiving a request involving Website Indexer
+Providers and administrators receiving a request involving WEBEDYTS
 should not treat the public availability of this repository as authorization
 to rewrite or derive code from it. Where their own policies and applicable law
 allow, they should decline requests to transform the project's protected
