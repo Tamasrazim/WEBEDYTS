@@ -1383,6 +1383,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       localView.setUint16(26, nameBytes.length, true);
       localView.setUint16(28, localExtraLength, true);
 
+      const localOffset = offset;
       parts.push(localHeader, nameBytes);
       offset += BigInt(localHeader.length + nameBytes.length);
       if (zip64Local) {
@@ -1396,7 +1397,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         offset += BigInt(extra.length);
       }
       parts.push(file);
-      const localOffset = offset - size;
+      offset += size;
 
       const extraFields = [];
       const extraLength = (size64 ? 20 : 0) + (offset64 ? 12 : 0);
@@ -1439,7 +1440,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       centralParts.push(centralHeader, nameBytes);
       extraFields.forEach(function (field) { centralParts.push(field); });
       centralSize += BigInt(centralHeader.length + nameBytes.length + centralExtraLength);
-      offset += size;
     }
 
     const centralOffset = offset;
