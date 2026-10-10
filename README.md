@@ -196,7 +196,7 @@ The planned workspace has:
 
 An early, self-contained interface prototype is available at [prototype/index.html](prototype/index.html). It demonstrates the dark multi-panel workspace, element selection, basic property editing, viewport presets, simple animation effects, keyword search, and session save/load.
 
-The prototype can also open a **single HTML file** in a contained preview, select its elements, edit eligible text, adjust width and X/Y offsets, change text and background colors, tune font size, padding, and opacity, apply a few sample animations, and export a new HTML file. Try it with the [sample studio page](prototype/examples/studio-page.html).
+The prototype can also open a **single HTML file** in a contained preview, select its elements, drag them to reposition, edit eligible text, adjust width and X/Y offsets, change text and background colors, tune font size, padding, and opacity, apply a few sample animations, and export a new HTML file. Canvas moves are recorded in undo/redo history. Common shortcuts are `Ctrl/Cmd+S` to save or export, `Ctrl/Cmd+O` to open HTML, `Ctrl/Cmd+Shift+O` to open a session, `Ctrl/Cmd+Z` to undo, `Ctrl/Cmd+Shift+Z` or `Ctrl+Y` to redo, and `Esc` to exit preview. Try it with the [sample studio page](prototype/examples/studio-page.html).
 
 This is deliberately a small first step, not full project importing. The preview blocks JavaScript and external network assets, so websites that depend on linked CSS, images, fonts, scripts, or backend services may not look or behave as they do when hosted. It does not yet load an entire website folder, keep linked assets together, or create a native desktop build. Those are still part of the planned application.
 
