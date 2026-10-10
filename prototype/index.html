@@ -247,6 +247,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .project-loading-copy { color: #999; font-size: 11px; line-height: 1.6; }
 .project-loading-bar { height: 2px; margin-top: 17px; overflow: hidden; background: #383838; }
 .project-loading-bar::after { content: ""; display: block; width: 38%; height: 100%; background: #aaa; animation: projectLoading 1.2s ease-in-out infinite alternate; }
+.export-progress-overlay { position: fixed; inset: 0; z-index: 110; display: grid; place-items: center; padding: 20px; background: #111d; }
+.export-progress-card { width: min(420px,100%); padding: 22px; border: 1px solid #555; background: #202020; color: #e6e6e6; box-shadow: 0 12px 42px #0009; }
+.export-progress-title { margin-bottom: 7px; font-size: 13px; font-weight: 700; }
+.export-progress-detail { min-height: 32px; color: #999; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.export-progress-track { height: 3px; margin-top: 15px; background: #383838; overflow: hidden; }
+.export-progress-fill { width: 0; height: 100%; background: #bbb; transition: width .12s linear; }
+.export-progress-numbers { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; color: #999; font-size: 10px; font-variant-numeric: tabular-nums; }
 @keyframes projectLoading { from { transform: translateX(-100%); } to { transform: translateX(270%); } }
 .toast {
   position: fixed; left: 50%; bottom: 42px; transform: translateX(-50%);
@@ -501,6 +508,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <span>DESKTOP EDITOR CONCEPT</span>
     <span>UTF-8</span>
   </footer>
+</div>
+<div class="export-progress-overlay hidden" id="export-progress-overlay" role="status" aria-live="polite" aria-hidden="true">
+  <div class="export-progress-card">
+    <div class="export-progress-title" id="export-progress-title">Preparing website ZIP</div>
+    <div class="export-progress-detail" id="export-progress-detail">Large files are processed in chunks. Original media is kept unchanged.</div>
+    <div class="export-progress-track"><div class="export-progress-fill" id="export-progress-fill"></div></div>
+    <div class="export-progress-numbers"><span id="export-progress-bytes">Preparing files…</span><span id="export-progress-percent">0%</span></div>
+  </div>
 </div>
 <div class="project-loading-overlay hidden" id="project-loading-overlay" role="status" aria-live="polite" aria-hidden="true">
   <div class="project-loading-card">
@@ -1859,7 +1874,24 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     showMessage(asset.file.name + ' added to the page.');
   }
 
-  function crc32ForFile(file) {
+  function showExportProgress(detail, percent, loaded, total) {
+    const overlay = document.getElementById('export-progress-overlay');
+    overlay.classList.remove('hidden');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.getElementById('export-progress-title').textContent = 'Preparing website ZIP';
+    document.getElementById('export-progress-detail').textContent = detail || 'Checking files…';
+    document.getElementById('export-progress-fill').style.width = Math.max(0, Math.min(100, percent || 0)) + '%';
+    document.getElementById('export-progress-percent').textContent = Math.round(Math.max(0, Math.min(100, percent || 0))) + '%';
+    document.getElementById('export-progress-bytes').textContent = total > 0 ? formatFileSize(loaded || 0) + ' / ' + formatFileSize(total) : 'Preparing files…';
+  }
+
+  function hideExportProgress() {
+    const overlay = document.getElementById('export-progress-overlay');
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function crc32ForFile(file, onProgress) {
     if (!crc32Table) {
       crc32Table = new Uint32Array(256);
       for (let n = 0; n < 256; n += 1) {
@@ -1874,6 +1906,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       for (let offset = 0; offset < file.size; offset += chunkSize) {
         const bytes = new Uint8Array(await file.slice(offset, Math.min(file.size, offset + chunkSize)).arrayBuffer());
         for (let index = 0; index < bytes.length; index += 1) crc = crc32Table[(crc ^ bytes[index]) & 0xff] ^ (crc >>> 8);
+        if (onProgress) onProgress(Math.min(offset + bytes.length, file.size));
+        await new Promise(function (resolve) { window.setTimeout(resolve, 0); });
       }
       return (crc ^ 0xffffffff) >>> 0;
     }());
@@ -1886,13 +1920,15 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     };
   }
 
-  async function createZip(files) {
+  async function createZip(files, onProgress) {
     const parts = [];
     const centralParts = [];
     const max32 = 0xffffffffn;
     const max16 = 0xffff;
     let offset = 0n;
     let centralSize = 0n;
+    const totalBytes = files.reduce(function (sum, entry) { return sum + entry.file.size; }, 0);
+    let checkedBytes = 0;
 
     for (const entry of files) {
       const name = String(entry.name).replace(/\\/g, '/');
@@ -1900,7 +1936,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       if (nameBytes.length > max16) throw new Error('A packaged filename is too long.');
       const file = entry.file;
       const size = BigInt(file.size);
-      const checksum = await crc32ForFile(file);
+      const checksum = await crc32ForFile(file, function (fileBytes) {
+        if (!onProgress) return;
+        const overall = checkedBytes + fileBytes;
+        const percent = totalBytes ? Math.min(92, (overall / totalBytes) * 92) : 80;
+        onProgress({ phase: 'checking', fileName: entry.name, loaded: overall, total: totalBytes, percent: percent });
+      });
+      checkedBytes += file.size;
       const stamp = dosTimestamp(new Date());
       const size64 = size > max32;
       const offset64 = offset > max32;
@@ -2017,7 +2059,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     endView.setUint32(16, zip64End ? 0xffffffff : Number(centralOffset), true);
     endView.setUint16(20, 0, true);
     parts.push(endRecord);
-    return new Blob(parts, { type: 'application/zip' });
+    if (onProgress) onProgress({ phase: 'assembling', fileName: '', loaded: totalBytes, total: totalBytes, percent: 98 });
+    const archive = new Blob(parts, { type: 'application/zip' });
+    if (onProgress) onProgress({ phase: 'ready', fileName: '', loaded: totalBytes, total: totalBytes, percent: 100 });
+    return archive;
   }
 
   function downloadBlob(blob, fileName) {
@@ -2084,7 +2129,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         files.push({ name: asset.packagePath, file: asset.file });
       });
 
-      const zip = await createZip(files);
+      showExportProgress('Calculating checksums for the website files…', 0, 0, files.reduce(function (sum, entry) { return sum + entry.file.size; }, 0));
+      const zip = await createZip(files, function (progress) {
+        const detail = progress.phase === 'checking' ? 'Checking ' + progress.fileName :
+          (progress.phase === 'assembling' ? 'Assembling the ZIP archive…' : 'ZIP archive is ready.');
+        showExportProgress(detail, progress.percent, progress.loaded, progress.total);
+      });
       downloadBlob(zip, safeAssetName(projectRootName || 'website') + '.webedyts.zip');
 
       outputs.forEach(function (markup, path) {
@@ -2101,6 +2151,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       updateSaveIndicator();
       showMessage('Export failed: ' + (error && error.message ? error.message : 'could not build the website ZIP.'));
     } finally {
+      hideExportProgress();
       exportButton.disabled = false;
       updateMediaActions();
       if (saveState.textContent === 'Preparing website ZIP…') updateSaveIndicator();
@@ -2155,7 +2206,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const files = [{ name: pageName + '.html', file: htmlFile }].concat(assets.map(function (asset) {
         return { name: asset.packagePath, file: asset.file };
       }));
-      const zip = await createZip(files);
+      showExportProgress('Calculating checksums for the website files…', 0, 0, files.reduce(function (sum, entry) { return sum + entry.file.size; }, 0));
+      const zip = await createZip(files, function (progress) {
+        const detail = progress.phase === 'checking' ? 'Checking ' + progress.fileName :
+          (progress.phase === 'assembling' ? 'Assembling the ZIP archive…' : 'ZIP archive is ready.');
+        showExportProgress(detail, progress.percent, progress.loaded, progress.total);
+      });
       downloadBlob(zip, pageName + '.webedyts.zip');
       savedSnapshot = makeSnapshot();
       updateSaveIndicator();
@@ -2164,6 +2220,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       updateSaveIndicator();
       showMessage('Export failed: ' + (error && error.message ? error.message : 'could not build the website ZIP.'));
     } finally {
+      hideExportProgress();
       exportButton.disabled = false;
       updateMediaActions();
       if (saveState.textContent === 'Preparing website ZIP…') saveState.textContent = 'All changes saved';
