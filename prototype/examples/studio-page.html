@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Field Studio</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1d1d1b;
+      background: #f5f4f0;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header, footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 20px 6%;
+      border-bottom: 1px solid #dedcd5;
+    }
+    header strong { letter-spacing: 1px; font-size: 13px; }
+    nav { display: flex; gap: 18px; font-size: 12px; color: #62615c; }
+    main { padding: 70px 8% 60px; background: #e9e6df; }
+    .eyebrow { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #77746d; }
+    h1 { max-width: 760px; margin: 16px 0; font-size: clamp(36px, 7vw, 76px); line-height: 1; letter-spacing: -3px; }
+    p { max-width: 480px; color: #66635d; font-size: 15px; line-height: 1.8; }
+    .button { display: inline-block; margin-top: 16px; padding: 13px 17px; background: #252522; color: white; text-decoration: none; font-size: 12px; }
+    section { padding: 42px 8% 50px; }
+    .projects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    article { border: 1px solid #e0ded8; background: #faf9f6; }
+    .art { height: 130px; display: grid; place-items: center; background: #d8d5cd; font-size: 28px; color: #77736b; }
+    article h2 { margin: 15px 15px 6px; font-size: 15px; }
+    article p { margin: 0 15px 17px; font-size: 12px; }
+    footer { border-top: 1px solid #dedcd5; border-bottom: 0; color: #77746d; font-size: 11px; }
+    @media (max-width: 620px) {
+      header, footer { align-items: flex-start; flex-direction: column; }
+      nav { flex-wrap: wrap; }
+      main { padding: 48px 7%; }
+      h1 { letter-spacing: -1.5px; }
+      .projects { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <strong data-site-title>FIELD / STUDIO</strong>
+    <nav>
+      <a href="#work">Work</a>
+      <a href="#studio">Studio</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+  <main id="studio">
+    <div class="eyebrow">Independent creative studio</div>
+    <h1>Make room for better ideas.</h1>
+    <p>We shape thoughtful digital experiences, clear identities, and useful things for people moving their work forward.</p>
+    <a class="button" href="#work">View selected work ↗</a>
+  </main>
+  <section id="work">
+    <div class="eyebrow">A few things we made</div>
+    <h2>Selected projects</h2>
+    <div class="projects">
+      <article><div class="art">◩</div><h2>Objects in motion</h2><p>Art direction · Digital</p></article>
+      <article><div class="art">◈</div><h2>Quiet structures</h2><p>Identity · Experience</p></article>
+      <article><div class="art">◇</div><h2>Material study</h2><p>Campaign · Web</p></article>
+    </div>
+  </section>
+  <footer id="contact">
+    <span>FIELD / STUDIO</span>
+    <span>Independent ideas, carefully made.</span>
+  </footer>
+</body>
+</html>
