@@ -1336,7 +1336,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       updateProjectPageSelector();
     } catch (error) {
       setProjectImportBusy(false);
-      clearProjectWorkspace();
+      leaveImportedPage();
+      selectNode('hero-title');
+      history = [];
+      historyPosition = -1;
+      saveHistory();
+      savedSnapshot = makeSnapshot();
+      updateSaveIndicator();
       showMessage('Could not open that website folder: ' + (error && error.message ? error.message : 'unknown error'));
     }
   }
