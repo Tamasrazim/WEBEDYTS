@@ -1061,8 +1061,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const nodes = Array.from(parsed.querySelectorAll('*'));
 
     for (const node of nodes) {
-      if (node.tagName === 'BASE') {
-        node.remove();
+      if (node.tagName === 'BASE') continue;
+      if (node.tagName === 'META' && String(node.getAttribute('http-equiv') || '').toLowerCase() === 'refresh') {
+        const placeholder = parsed.createElement('template');
+        placeholder.setAttribute('data-webedyts-project-original-node', 'meta-refresh');
+        placeholder.textContent = node.outerHTML;
+        node.replaceWith(placeholder);
         continue;
       }
 
@@ -1143,6 +1147,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     clone.querySelectorAll('[data-webedyts-project-original-style]').forEach(function (node) {
       node.textContent = node.getAttribute('data-webedyts-project-original-style') || '';
       node.removeAttribute('data-webedyts-project-original-style');
+    });
+    clone.querySelectorAll('template[data-webedyts-project-original-node="meta-refresh"]').forEach(function (node) {
+      const holder = document.createElement('template');
+      holder.innerHTML = node.textContent || '';
+      const restored = holder.content.firstElementChild;
+      if (restored && restored.tagName === 'META' && String(restored.getAttribute('http-equiv') || '').toLowerCase() === 'refresh') {
+        node.replaceWith(restored);
+      }
     });
     clone.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
       node.remove();
@@ -1324,7 +1336,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       '.wi-anim-pop { animation: wiPop .55s cubic-bezier(.2,.8,.2,1) both; } .wi-anim-pulse { animation: wiPulse 1.2s ease-in-out 2; }' +
       '.wi-anim-wiggle { animation: wiWiggle .45s ease-in-out 3; } .wi-anim-blur { animation: wiBlur .8s ease both; }';
     parsed.head.appendChild(animationStyle);
-    parsed.querySelectorAll('base, meta[http-equiv="refresh"]').forEach(function (node) { node.remove(); });
+    parsed.querySelectorAll('base, meta[http-equiv="refresh"]').forEach(function (node) {
+      if (projectMode && node.tagName === 'BASE') return;
+      node.remove();
+    });
 
     const body = parsed.body;
     body.dataset.webedytsEditorNode = 'page';
@@ -1334,7 +1349,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     let count = 0;
     body.querySelectorAll('*').forEach(function (node) {
-      if (['SCRIPT','STYLE','META','LINK','TITLE','BASE'].includes(node.tagName)) return;
+      if (['SCRIPT','STYLE','META','LINK','TITLE','BASE','TEMPLATE'].includes(node.tagName) ||
+          node.hasAttribute('data-webedyts-project-original-node')) return;
       count += 1;
       if (count > 500) return;
       node.dataset.webedytsEditorNode = 'wi-' + count;
