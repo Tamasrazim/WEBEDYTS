@@ -1,16 +1,16 @@
-# Website Indexer
+# WEBEDYTS
 
 **A cross-platform desktop design application for visually editing and rebuilding websites without hand-editing HTML, CSS, or JavaScript.**
 
-Website Indexer is planned as a real, installable desktop application for Windows, Linux, and macOS—not merely a web page hosted in a browser. It will open website folders and supported project archives through native file pickers, inspect their pages and assets, and let users redesign them through a visual canvas. Users should be able to select an element, change its text, position, size, spacing, style, or animation, preview the result across screen sizes, and export the updated website project.
+WEBEDYTS is planned as a real, installable desktop application for Windows, Linux, and macOS—not merely a web page hosted in a browser. It will open website folders and supported project archives through native file pickers, inspect their pages and assets, and let users redesign them through a visual canvas. Users should be able to select an element, change its text, position, size, spacing, style, or animation, preview the result across screen sizes, and export the updated website project.
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Project status:** Website Indexer is at the specification stage; the desktop application has not been implemented yet. This README describes the intended product and platform targets, not features already available. Features will be marked as implemented only after they exist and have been tested.
+> **Project status:** WEBEDYTS is at the specification stage; the desktop application has not been implemented yet. This README describes the intended product and platform targets, not features already available. Features will be marked as implemented only after they exist and have been tested.
 
 ## The idea
 
-Redesigning an existing website often means manually editing markup, stylesheets, scripts, and asset paths—or rebuilding the page in a separate design tool and then recreating it in code. Website Indexer aims to provide a visual alternative.
+Redesigning an existing website often means manually editing markup, stylesheets, scripts, and asset paths—or rebuilding the page in a separate design tool and then recreating it in code. WEBEDYTS aims to provide a visual alternative.
 
 Open a site project or create a blank one. The editor should display the actual page in a canvas, let the user select UI elements directly, and expose visual controls for changing the page. A change made in the editor should update the project files without requiring the user to write code.
 
@@ -32,7 +32,7 @@ The ambition is not merely to edit an HTML file. It is to offer a complete visua
 
 ### 1. Open, import, and create projects
 
-Website Indexer is intended to support two main starting points.
+WEBEDYTS is intended to support two main starting points.
 
 **Edit an existing website**
 - Open a local website folder or supported project archive.
@@ -196,7 +196,7 @@ The planned workspace has:
 
 An early, self-contained interface prototype is available at [prototype/index.html](prototype/index.html). It demonstrates the dark multi-panel workspace, element selection, basic property editing, viewport presets, simple animation effects, keyword search, and session save/load.
 
-This prototype edits a sample page and saves a Website Indexer concept-session JSON file. It does **not** yet import arbitrary website projects, modify real website files, or create a native desktop build. Those require the desktop application and project-editing engine.
+This prototype edits a sample page and saves a WEBEDYTS concept-session JSON file. It does **not** yet import arbitrary website projects, modify real website files, or create a native desktop build. Those require the desktop application and project-editing engine.
 
 ## Important technical boundaries
 
@@ -266,7 +266,7 @@ These are design goals; the final interface and implementation will be refined d
 
 ## Desktop platforms and architecture targets
 
-Website Indexer is intended to ship as an installable desktop app for all three major desktop operating systems. These are **release targets, not available downloads yet**.
+WEBEDYTS is intended to ship as an installable desktop app for all three major desktop operating systems. These are **release targets, not available downloads yet**.
 
 | Operating system | Intended release targets | Planned distribution |
 |---|---|---|
@@ -302,7 +302,7 @@ This is an integrity foundation, not unbreakable copy protection. A checksum sto
 
 ## AI and automated-code restrictions
 
-See [AI-USE-POLICY.md](AI-USE-POLICY.md). The project explicitly withholds permission, absent prior written authorization, to use its protected source materials for AI/ML training and to use those materials as input for AI systems to produce rewrites, patches, ports, reconstructions, or derivative modifications of Website Indexer.
+See [AI-USE-POLICY.md](AI-USE-POLICY.md). The project explicitly withholds permission, absent prior written authorization, to use its protected source materials for AI/ML training and to use those materials as input for AI systems to produce rewrites, patches, ports, reconstructions, or derivative modifications of WEBEDYTS.
 
 The policy states the copyright holder's intended terms; **a policy file or SHA-256 checksum cannot technically force third-party enterprise AI services to comply**. The policy does not claim ownership of general ideas or functionality, and legal effect depends on applicable law and circumstances.
 
@@ -310,13 +310,13 @@ The policy states the copyright holder's intended terms; **a policy file or SHA-
 
 **Copyright (c) 2026 Robiul Rumman Razim. All rights reserved.**
 
-Website Indexer is proprietary. Making this repository public allows people to view its contents on GitHub; it does **not** grant permission to copy, modify, redistribute, sublicense, sell, or use the project's original code and assets in other projects. Written permission from the copyright holder is required for those uses, except where applicable law provides otherwise.
+WEBEDYTS is proprietary. Making this repository public allows people to view its contents on GitHub; it does **not** grant permission to copy, modify, redistribute, sublicense, sell, or use the project's original code and assets in other projects. Written permission from the copyright holder is required for those uses, except where applicable law provides otherwise.
 
 Any third-party components or assets included in the project remain subject to their respective licenses. This notice does not override those licenses or rights that cannot legally be restricted.
 
 ## Current status and contributions
 
-Website Indexer is at the project-definition stage. Features in this README describe the intended direction and will be updated as the implementation becomes available.
+WEBEDYTS is at the project-definition stage. Features in this README describe the intended direction and will be updated as the implementation becomes available.
 
 Development should follow the project's [coding and commit rules](DEVELOPMENT.md): readable code, sensible-sized functions, no unnecessary automation or abstraction, honest testing, and short, natural commit messages.
 
@@ -324,4 +324,4 @@ Before contributing, check the repository's current files and documented scope. 
 
 ---
 
-**Website Indexer — open the project, redesign visually, export the website.**
+**WEBEDYTS — open the project, redesign visually, export the website.**
