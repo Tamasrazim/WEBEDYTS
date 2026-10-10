@@ -551,7 +551,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const editable = importedMode ? node.dataset.wiTextEditable === 'true' :
       node.dataset.editableText === 'true';
     propertyText.disabled = !editable;
-    propertyText.value = editable ? node.textContent.trim().replace(/\\s+/g, ' ') : '';
+    propertyText.value = editable ? node.textContent.trim().replace(/\s+/g, ' ') : '';
     propertyWidth.value = node.style.width ? parseInt(node.style.width, 10) : '';
     propertyColor.value = rgbToHex(getComputedStyle(node).color);
     propertyBackground.value = rgbToHex(getComputedStyle(node).backgroundColor);
@@ -751,7 +751,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       if (count > 500) return;
       node.dataset.wiNode = 'wi-' + count;
       const tag = node.tagName.toLowerCase();
-      const visibleText = (node.textContent || '').trim().replace(/\\s+/g, ' ');
+      const visibleText = (node.textContent || '').trim().replace(/\s+/g, ' ');
       const shortText = visibleText.length > 30 ? visibleText.slice(0, 27) + '…' : visibleText;
       const hint = node.id ? '#' + node.id : (shortText || (node.classList.length ? '.' + String(node.classList[0]) : ''));
       node.dataset.wiLabel = (tag + (hint ? ' — ' + hint : '')).slice(0, 52);
@@ -801,7 +801,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     }, { once: true });
 
     const doctype = parsed.doctype ? '<!DOCTYPE ' + parsed.doctype.name + '>' : '<!DOCTYPE html>';
-    importedFrame.srcdoc = doctype + '\\n' + parsed.documentElement.outerHTML;
+    importedFrame.srcdoc = doctype + '\n' + parsed.documentElement.outerHTML;
   }
 
   function buildImportedTree() {
@@ -865,12 +865,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       });
     });
     const doctype = importedDoc.doctype ? '<!DOCTYPE ' + importedDoc.doctype.name + '>' : '<!DOCTYPE html>';
-    const output = doctype + '\\n' + clone.outerHTML;
+    const output = doctype + '\n' + clone.outerHTML;
     const blob = new Blob([output], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const baseName = importedFileName.replace(/\\.(html?|HTML?)$/, '');
+    const baseName = importedFileName.replace(/\.(html?|HTML?)$/, '');
     link.download = baseName + '.webedyts.html';
     link.click();
     URL.revokeObjectURL(url);
