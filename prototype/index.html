@@ -126,6 +126,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   max-width: 115px; border: 1px solid #3a3a3a; border-radius: 2px;
   padding: 4px 5px; background: #242424; color: #bbb;
 }
+.viewport-tools .project-page-select { max-width: 180px; }
+.project-page-label { color: #777; font-size: 10px; }
+.project-page-label.hidden { display: none; }
 .viewport-stage {
   flex: 1; min-height: 0; overflow: auto; display: flex; align-items: center;
   justify-content: center; padding: 22px 10px 30px; position: relative;
@@ -305,6 +308,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   <div class="toolbar">
     <button class="tool-button" id="new-session"><span class="symbol">＋</span>New</button>
     <button class="tool-button" id="open-website"><span class="symbol">↥</span>Open HTML</button>
+    <button class="tool-button" id="open-project-folder" title="Open a complete local website folder">Open Folder</button>
     <button class="tool-button" id="open-session"><span class="symbol">▱</span>Open Session</button>
     <button class="tool-button" id="save-session"><span class="symbol">▣</span>Save</button>
     <span class="tool-divider"></span>
@@ -317,6 +321,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="tool-button" id="preview-button"><span class="symbol">▷</span>Preview</button>
     <button class="tool-button primary" id="export-session"><span class="symbol">⇩</span>Export Draft</button>
     <input type="file" id="website-file" accept=".html,.htm,text/html" class="hidden">
+    <input type="file" id="project-folder-files" webkitdirectory directory multiple class="hidden" aria-label="Choose a website project folder">
     <input type="file" id="session-file" accept=".json,application/json" class="hidden">
   </div>
   <main class="workspace">
@@ -364,6 +369,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <option value="tablet">Tablet · 768</option>
             <option value="mobile">Mobile · 390</option>
           </select>
+          <label class="project-page-label hidden" id="project-page-label" for="project-page-select">PAGE</label>
+          <select id="project-page-select" class="project-page-select hidden" aria-label="Website page"></select>
           <button class="tiny-button" id="zoom-out" title="Zoom out">−</button><span id="zoom-label" style="color:#aaa;min-width:34px;text-align:center">100%</span><button class="tiny-button" id="zoom-in" title="Zoom in">＋</button>
         </div>
       </div>
@@ -513,6 +520,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let saveCheckPending = false;
   let restoringSession = false;
   let dragState = null;
+  let projectMode = false;
+  let projectRootName = '';
+  let projectEntryPath = '';
+  let projectFiles = [];
+  let projectFilesByPath = new Map();
+  let projectPathLookup = new Map();
+  let projectAssetUrls = new Map();
+  let projectCssProcessed = new Set();
+  let projectPagePaths = [];
+  let projectPageEdits = new Map();
+  let projectPageBaselines = new Map();
   let mediaSequence = 0;
   let mediaNodeSequence = 0;
   let activeMediaId = null;
@@ -550,6 +568,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function hasUnsavedChanges() {
     if (!savedSnapshot) return true;
+    if (projectMode && projectPageEdits.size > 0) return true;
     try {
       const current = JSON.parse(makeSnapshot());
       const saved = JSON.parse(savedSnapshot);
@@ -865,6 +884,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     if (!file) return;
     if (saveState.textContent === 'Unsaved changes' &&
         !window.confirm('Discard the current changes and open another HTML file?')) return;
+    clearProjectWorkspace();
     const reader = new FileReader();
     reader.onload = function () {
       loadImportedMarkup(String(reader.result), file.name, 'page', true);
@@ -887,7 +907,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     const policy = parsed.createElement('meta');
     policy.setAttribute('http-equiv', 'Content-Security-Policy');
-    policy.setAttribute('content', "default-src 'none'; script-src 'none'; connect-src 'none'; img-src data: blob:; style-src 'unsafe-inline' data:; font-src data:; media-src data: blob:; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'");
+    policy.setAttribute('content', "default-src 'none'; script-src 'none'; connect-src 'none'; img-src data: blob:; style-src 'unsafe-inline' data: blob:; font-src data: blob:; media-src data: blob:; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'");
     policy.setAttribute('data-webedyts-preview-policy', 'true');
     parsed.head.prepend(policy);
 
@@ -957,6 +977,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         if (target) startCanvasDrag(event, target, target.dataset.webedytsEditorNode, importedDoc);
       });
       importedDoc.addEventListener('click', function (event) {
+        const projectLink = event.target.closest('[data-webedyts-project-link]');
+        if (projectLink && projectMode) {
+          event.preventDefault();
+          loadProjectPage(projectLink.dataset.webedytsProjectLink);
+          return;
+        }
         const target = event.target.closest('[data-webedyts-editor-node]');
         if (!target) return;
         event.preventDefault();
@@ -971,6 +997,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         historyPosition = -1;
         saveHistory();
         savedSnapshot = makeSnapshot();
+        if (projectMode && projectEntryPath) projectPageBaselines.set(projectEntryPath, projectComparableSnapshot());
         saveState.textContent = 'All changes saved';
         saveState.style.color = '';
         showMessage('HTML opened. Scripts and external assets are blocked in preview.');
@@ -1047,9 +1074,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     insertButton.disabled = !chosen || !importedMode || !importedDoc;
     insertButton.title = !chosen ? 'Select an imported media file first' :
       (!importedMode ? 'Open an HTML page before inserting media' : 'Insert the selected media after the selected page element');
-    if (importedMode) {
+    const exportButton = document.getElementById('export-session');
+    if (projectMode) {
+      exportButton.innerHTML = '<span class="symbol">⇩</span>Export Website ZIP';
+    } else if (importedMode) {
       const hasInsertedAssets = importedDoc && importedDoc.querySelector('[data-webedyts-asset-path]');
-      document.getElementById('export-session').innerHTML = hasInsertedAssets ?
+      exportButton.innerHTML = hasInsertedAssets ?
         '<span class="symbol">⇩</span>Export Website ZIP' :
         '<span class="symbol">⇩</span>Export HTML';
     }
@@ -1775,6 +1805,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   });
 
   document.getElementById('open-website').addEventListener('click', function () { websiteFile.click(); });
+  document.getElementById('open-project-folder').addEventListener('click', function () {
+    document.getElementById('project-folder-files').click();
+  });
+  document.getElementById('project-folder-files').addEventListener('change', function () {
+    const files = document.getElementById('project-folder-files').files;
+    if (files && files.length) importWebsiteFolder(files);
+    document.getElementById('project-folder-files').value = '';
+  });
   websiteFile.addEventListener('change', function () {
     if (websiteFile.files[0]) importWebsiteFile(websiteFile.files[0]);
     websiteFile.value = '';
@@ -1971,6 +2009,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     File: [
       { label: 'New session', shortcut: '', action: 'new-session' },
       { label: 'Open HTML…', shortcut: 'Ctrl/Cmd+O', action: 'open-website' },
+      { label: 'Open website folder…', shortcut: '', action: 'open-project-folder' },
       { label: 'Open session…', shortcut: 'Ctrl/Cmd+Shift+O', action: 'open-session' },
       { separator: true },
       { label: 'Save current work', shortcut: 'Ctrl/Cmd+S', action: 'save-session' },
