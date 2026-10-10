@@ -242,9 +242,13 @@ The experience should emphasize:
 
 These are design goals; the final interface and implementation will be refined during development.
 
-## License
+## Copyright and usage
 
-This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for the full terms.
+**Copyright (c) 2026 Robiul Rumman Razim. All rights reserved.**
+
+Website Indexer is proprietary. Making this repository public allows people to view its contents on GitHub; it does **not** grant permission to copy, modify, redistribute, sublicense, sell, or use the project's original code and assets in other projects. Written permission from the copyright holder is required for those uses, except where applicable law provides otherwise.
+
+Any third-party components or assets included in the project remain subject to their respective licenses. This notice does not override those licenses or rights that cannot legally be restricted.
 
 ## Current status and contributions
 
