@@ -529,6 +529,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let projectAssetUrls = new Map();
   const projectObjectUrls = new Set();
   let projectCssProcessed = new Set();
+  let projectCssTexts = new Map();
   let projectPagePaths = [];
   let projectPageEdits = new Map();
   let projectPageBaselines = new Map();
@@ -943,6 +944,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     projectPathLookup = new Map();
     projectAssetUrls = new Map();
     projectCssProcessed = new Set();
+    projectCssTexts = new Map();
     projectPagePaths = [];
     projectPageEdits = new Map();
     projectPageBaselines = new Map();
@@ -990,7 +992,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const resolved = projectReference(cssPath, reference);
       const target = resolved && findProjectFile(resolved.path);
       if (target && isProjectCssPath(target.path)) {
-        const nested = await loadProjectCss(target.path, ancestry);
+        const nested = await loadProjectCssText(target.path, ancestry);
         output += mediaQuery ? '@media ' + mediaQuery + '{\n' + nested + '\n}' : nested;
       } else {
         output += match[0];
@@ -1018,20 +1020,33 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     return rewritten + output.slice(cursor);
   }
 
+  async function loadProjectCssText(path, ancestry) {
+    const normalized = normalizeProjectPath(path);
+    if (projectCssTexts.has(normalized)) return projectCssTexts.get(normalized);
+
+    const chain = ancestry || new Set();
+    if (chain.has(normalized)) return '';
+    const entry = findProjectFile(normalized);
+    if (!entry) return '';
+
+    chain.add(normalized);
+    try {
+      const original = await entry.file.text();
+      const css = await rewriteProjectCss(original, normalized, chain);
+      projectCssTexts.set(normalized, css);
+      return css;
+    } finally {
+      chain.delete(normalized);
+    }
+  }
+
   async function loadProjectCss(path, ancestry) {
     const normalized = normalizeProjectPath(path);
     if (projectCssProcessed.has(normalized)) return projectAssetUrls.get(normalized);
-    const chain = ancestry || new Set();
-    const rawUrl = projectAssetUrls.get(normalized);
-    if (chain.has(normalized)) return rawUrl;
-
     const entry = findProjectFile(normalized);
-    if (!entry) return rawUrl;
-    chain.add(normalized);
-    const original = await entry.file.text();
-    const css = await rewriteProjectCss(original, normalized, chain);
-    chain.delete(normalized);
+    if (!entry) return projectAssetUrls.get(normalized);
 
+    const css = await loadProjectCssText(normalized, ancestry);
     const processedUrl = projectObjectUrl(new Blob([css], { type: 'text/css;charset=utf-8' }));
     projectAssetUrls.set(normalized, processedUrl);
     projectCssProcessed.add(normalized);
