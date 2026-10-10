@@ -241,6 +241,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .preview-mode .workspace { grid-template-columns: minmax(0,1fr); }
 .preview-mode .website-canvas { width: min(1150px, calc(100% - 24px)); }
 .hidden { display: none !important; }
+.project-loading-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: #111d; }
+.project-loading-card { min-width: min(320px,100%); padding: 22px; border: 1px solid #555; background: #202020; color: #e6e6e6; box-shadow: 0 12px 42px #0009; }
+.project-loading-title { margin-bottom: 7px; font-size: 13px; font-weight: 700; }
+.project-loading-copy { color: #999; font-size: 11px; line-height: 1.6; }
+.project-loading-bar { height: 2px; margin-top: 17px; overflow: hidden; background: #383838; }
+.project-loading-bar::after { content: ""; display: block; width: 38%; height: 100%; background: #aaa; animation: projectLoading 1.2s ease-in-out infinite alternate; }
+@keyframes projectLoading { from { transform: translateX(-100%); } to { transform: translateX(270%); } }
 .toast {
   position: fixed; left: 50%; bottom: 42px; transform: translateX(-50%);
   padding: 9px 14px; background: #353535; border: 1px solid #555; color: #eee;
@@ -494,6 +501,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <span>DESKTOP EDITOR CONCEPT</span>
     <span>UTF-8</span>
   </footer>
+</div>
+<div class="project-loading-overlay hidden" id="project-loading-overlay" role="status" aria-live="polite" aria-hidden="true">
+  <div class="project-loading-card">
+    <div class="project-loading-title">Opening website project</div>
+    <div class="project-loading-copy">Reading local files and preparing linked stylesheets and media for the isolated preview. Original files are not changed.</div>
+    <div class="project-loading-bar"></div>
+  </div>
 </div>
 <script>
 (function () {
@@ -969,7 +983,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function setProjectImportBusy(busy) {
     projectImportBusy = busy;
-    ['open-project-folder', 'open-website', 'open-session', 'save-session', 'project-folder-files'].forEach(function (id) {
+    const overlay = document.getElementById('project-loading-overlay');
+    overlay.classList.toggle('hidden', !busy);
+    overlay.setAttribute('aria-hidden', busy ? 'false' : 'true');
+    ['open-project-folder', 'open-website', 'open-session', 'save-session', 'new-session', 'undo', 'redo', 'preview-button', 'toggle-drawer', 'project-folder-files'].forEach(function (id) {
       document.getElementById(id).disabled = busy;
     });
     document.getElementById('export-session').disabled = busy;
@@ -2542,6 +2559,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   });
 
   function handleEditorShortcut(event) {
+    if (projectImportBusy && event.key !== 'Escape') return;
     if (event.key === 'Escape') {
       closeMenuPopover();
       if (previewMode) document.getElementById('preview-button').click();
