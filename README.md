@@ -298,6 +298,8 @@ Any third-party components or assets included in the project remain subject to t
 
 Website Indexer is at the project-definition stage. Features in this README describe the intended direction and will be updated as the implementation becomes available.
 
+Development should follow the project's [coding and commit rules](DEVELOPMENT.md): readable code, sensible-sized functions, no unnecessary automation or abstraction, honest testing, and short, natural commit messages.
+
 Before contributing, check the repository's current files and documented scope. Changes should favor maintainability, safe project handling, accessible editing, and tested output. Avoid claiming support for a feature unless it has been implemented and verified.
 
 ---
