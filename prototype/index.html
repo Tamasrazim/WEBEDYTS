@@ -896,6 +896,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         showMessage('This HTML file could not be previewed.');
         return;
       }
+      importedDoc.addEventListener('keydown', handleEditorShortcut);
       importedDoc.addEventListener('pointerdown', function (event) {
         const target = event.target.closest('[data-webedyts-editor-node]');
         if (target) startCanvasDrag(event, target, target.dataset.webedytsEditorNode, importedDoc);
@@ -1324,7 +1325,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     document.getElementById('preview-button').innerHTML = previewMode ? '<span class="symbol">×</span>Exit Preview' : '<span class="symbol">▷</span>Preview';
   });
 
-  document.addEventListener('keydown', function (event) {
+  function handleEditorShortcut(event) {
     if (event.key === 'Escape' && previewMode) {
       document.getElementById('preview-button').click();
       return;
@@ -1333,7 +1334,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     const key = event.key.toLowerCase();
     const target = event.target;
-    const typing = target instanceof HTMLElement &&
+    const typing = target && target.nodeType === 1 &&
       (target.matches('input, textarea, select') || target.isContentEditable);
 
     if (key === 's' && !event.shiftKey) {
@@ -1354,7 +1355,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       event.preventDefault();
       document.getElementById('redo').click();
     }
-  });
+  }
+
+  document.addEventListener('keydown', handleEditorShortcut);
 
   document.querySelectorAll('[data-menu]').forEach(function (button) {
     button.addEventListener('click', function () {
