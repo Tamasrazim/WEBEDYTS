@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Website Indexer — Editor Preview</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #171717;
+  --panel: #202020;
+  --panel-raised: #272727;
+  --panel-deep: #111;
+  --line: #383838;
+  --line-soft: #2e2e2e;
+  --text: #e6e6e6;
+  --muted: #999;
+  --faint: #6d6d6d;
+  --accent: #8a8a8a;
+  --select: #454545;
+  --blue: #4f7fa7;
+  --green: #78a58a;
+  font: 12px/1.4 "Segoe UI", Inter, system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--text); background: var(--bg); }
+button, input, select { color: inherit; font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 1px solid #aaa; outline-offset: 1px;
+}
+.app {
+  height: 100vh; min-height: 620px; display: grid;
+  grid-template-rows: 36px 30px 38px minmax(0, 1fr) 206px 25px;
+  overflow: hidden; background: var(--bg);
+}
+.titlebar, .menubar, .toolbar, .statusbar {
+  display: flex; align-items: center; border-bottom: 1px solid #0d0d0d;
+}
+.titlebar { gap: 10px; padding: 0 10px; background: #191919; }
+.brand-mark {
+  display: grid; place-items: center; width: 23px; height: 23px;
+  border: 1px solid #777; color: #eee; font-size: 10px; font-weight: 800;
+  letter-spacing: -1px; transform: skew(-7deg);
+}
+.brand-name { font-size: 12px; font-weight: 650; letter-spacing: .2px; }
+.version { color: var(--faint); font-size: 10px; }
+.title-spacer { flex: 1; }
+.project-name { color: #c2c2c2; font-size: 11px; }
+.window-button {
+  width: 26px; height: 25px; border: 0; background: transparent;
+  color: #aaa; border-radius: 3px;
+}
+.window-button:hover { background: #383838; color: white; }
+.menubar { gap: 2px; padding: 0 9px; background: #222; }
+.menu-button { padding: 4px 9px; border: 0; border-radius: 2px; background: transparent; color: #c8c8c8; }
+.menu-button:hover, .menu-button.active { background: #383838; }
+.toolbar { gap: 5px; padding: 0 9px; background: #252525; }
+.tool-button {
+  height: 27px; padding: 0 10px; border: 1px solid transparent;
+  border-radius: 3px; background: transparent; color: #c7c7c7;
+}
+.tool-button:hover { border-color: #484848; background: #303030; }
+.tool-button.primary { background: #373737; border-color: #4e4e4e; color: #f2f2f2; }
+.tool-button .symbol { margin-right: 6px; color: #ddd; }
+.tool-divider { width: 1px; height: 20px; background: #414141; margin: 0 4px; }
+.toolbar-spacer { flex: 1; }
+.saved-state { color: var(--muted); margin-right: 7px; font-size: 10px; }
+.saved-state::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--green); }
+.workspace { display: grid; min-height: 0; grid-template-columns: 228px minmax(280px, 1fr) 280px; }
+.panel { min-width: 0; min-height: 0; background: var(--panel); }
+.outliner { display: flex; flex-direction: column; border-right: 1px solid #111; }
+.panel-heading {
+  height: 31px; flex: 0 0 31px; display: flex; align-items: center;
+  gap: 8px; padding: 0 10px; border-bottom: 1px solid var(--line);
+  background: #252525; color: #e0e0e0; font-size: 10px; font-weight: 750;
+  letter-spacing: .6px;
+}
+.panel-heading .panel-spacer { flex: 1; }
+.tiny-button { border: 0; background: transparent; color: #888; padding: 2px 4px; }
+.tiny-button:hover { color: white; }
+.outliner-search { padding: 7px; border-bottom: 1px solid var(--line-soft); }
+.search-field {
+  display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 7px;
+  border: 1px solid #3d3d3d; border-radius: 3px; background: #171717; color: #888;
+}
+.search-field input { min-width: 0; flex: 1; width: 0; border: 0; outline: 0; background: transparent; color: #ddd; }
+.search-field input::placeholder { color: #777; }
+.tree { overflow: auto; padding: 5px 5px 14px; }
+.tree-label {
+  display: flex; align-items: center; gap: 7px; width: 100%;
+  min-height: 26px; border: 0; text-align: left; padding: 4px 7px;
+  border-radius: 2px; background: transparent; color: #c5c5c5;
+}
+.tree-label:hover { background: #2e2e2e; }
+.tree-label.selected { background: #454545; color: #fff; }
+.tree-label .chevron { color: #777; font-size: 9px; width: 8px; }
+.tree-label .node-icon { color: #aaa; width: 15px; text-align: center; font-size: 10px; }
+.tree-label .node-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.tree-label .node-type { color: #6f6f6f; font-size: 9px; }
+.tree-indent { padding-left: 15px; }
+.tree-root { margin-bottom: 4px; }
+.outliner-footer { margin-top: auto; padding: 8px 10px; border-top: 1px solid var(--line); color: #777; font-size: 10px; }
+.viewport { min-width: 0; display: flex; flex-direction: column; background: #191919; }
+.viewport-tabs {
+  height: 32px; flex: 0 0 32px; display: flex; align-items: stretch;
+  padding-left: 5px; border-bottom: 1px solid #111; background: #242424;
+}
+.viewport-tab { display: flex; align-items: center; gap: 7px; padding: 0 13px; border: 0; border-right: 1px solid #333; background: #2d2d2d; color: #ddd; }
+.viewport-tab.active { border-top: 2px solid #aaa; background: #1b1b1b; }
+.viewport-tab .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: #a9a9a9; }
+.viewport-tools { display: flex; align-items: center; gap: 5px; margin-left: auto; padding: 0 8px; }
+.viewport-tools select {
+  max-width: 115px; border: 1px solid #3a3a3a; border-radius: 2px;
+  padding: 4px 5px; background: #242424; color: #bbb;
+}
+.viewport-stage {
+  flex: 1; min-height: 0; overflow: auto; display: flex; align-items: center;
+  justify-content: center; padding: 22px 10px 30px; position: relative;
+  background-color: #181818;
+  background-image: radial-gradient(#303030 .65px, transparent .65px);
+  background-size: 12px 12px;
+}
+.viewport-caption { position: absolute; top: 8px; left: 11px; color: #777; font-size: 10px; letter-spacing: .2px; }
+.canvas-status { position: absolute; bottom: 6px; right: 10px; color: #666; font-size: 10px; }
+.website-canvas {
+  flex: 0 0 auto; width: min(1000px, calc(100% - 16px)); min-height: 520px;
+  border: 1px solid #444; background: #f6f5f2; color: #191919; overflow: hidden;
+  box-shadow: 0 12px 42px #0008; transition: width .15s ease;
+  font-family: Inter, "Segoe UI", sans-serif;
+}
+.website-canvas[data-mode="tablet"] { width: min(760px, calc(100% - 16px)); }
+.website-canvas[data-mode="mobile"] { width: min(390px, calc(100% - 16px)); min-height: 570px; }
+.site-nav {
+  min-height: 57px; padding: 0 5.5%; display: flex; gap: 18px; align-items: center;
+  border-bottom: 1px solid #e5e3df; background: #f9f8f5;
+}
+.site-brand { color: #181818; font-size: 13px; font-weight: 800; letter-spacing: .7px; }
+.site-links { margin-left: auto; display: flex; gap: 20px; font-size: 10px; color: #5e5b56; }
+.site-links span { cursor: pointer; }
+.site-hero {
+  position: relative; min-height: 265px; padding: 43px 6% 34px;
+  display: grid; grid-template-columns: 1.1fr .9fr; align-items: center; gap: 28px;
+  background: #e9e6df; overflow: hidden;
+}
+.eyebrow { color: #737067; font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+.site-hero h1 { max-width: 400px; margin: 12px 0 10px; font-size: clamp(26px, 3vw, 44px); line-height: 1.06; letter-spacing: -1.8px; font-weight: 750; }
+.site-hero p { max-width: 350px; margin: 0; color: #615e57; font-size: 11px; line-height: 1.75; }
+.site-cta {
+  margin-top: 21px; padding: 10px 14px; display: inline-flex; align-items: center;
+  background: #222; color: white; font-size: 10px; border: 0; cursor: pointer;
+}
+.hero-art {
+  height: 180px; position: relative; display: grid; place-items: center; overflow: hidden;
+  background: linear-gradient(140deg, #b9b5ac, #8c8981); border: 1px solid #d0ccc4;
+}
+.art-ring { position: absolute; width: 138px; height: 138px; border: 1px solid #e0ded6; border-radius: 50%; }
+.art-ring::after { content: ""; position: absolute; inset: 17px; border: 1px solid #e0ded6; border-radius: 50%; }
+.art-block { width: 104px; height: 104px; transform: rotate(32deg) skew(-9deg); border: 1px solid #efede5; background: linear-gradient(135deg, #ddd9d0aa, #66635d55); box-shadow: 15px 15px 0 #4b494555; }
+.site-section { padding: 26px 6% 32px; background: #f6f5f2; }
+.section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
+.section-head h2 { margin: 0; font-size: 18px; letter-spacing: -.55px; }
+.section-head span { color: #77736a; font-size: 10px; }
+.project-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 11px; }
+.project-card { min-width: 0; border: 1px solid #e1dfd8; background: #f9f8f5; }
+.card-image { height: 78px; display: grid; place-items: center; background: #d9d6cf; color: #77746c; font-size: 22px; }
+.card-image.second { background: #d0cec8; }
+.card-image.third { background: #e1ded7; }
+.card-copy { padding: 10px; }
+.card-copy strong { display: block; margin-bottom: 4px; font-size: 10px; }
+.card-copy small { display: block; color: #79766f; font-size: 9px; line-height: 1.5; }
+.site-footer { padding: 15px 6%; border-top: 1px solid #e3e1da; display: flex; justify-content: space-between; color: #77736a; font-size: 9px; }
+[data-node].is-selected { outline: 2px solid #5e90b9 !important; outline-offset: -2px; position: relative; }
+.site-nav.is-selected, .site-hero.is-selected, .site-section.is-selected, .site-footer.is-selected { outline-offset: -3px; }
+.details { display: flex; flex-direction: column; border-left: 1px solid #111; overflow: hidden; }
+.details-content { overflow: auto; padding-bottom: 12px; }
+.detail-block { border-bottom: 1px solid #373737; }
+.detail-title { display: flex; align-items: center; gap: 7px; padding: 10px 11px 6px; color: #cfcfcf; font-size: 10px; font-weight: 750; letter-spacing: .45px; }
+.detail-title .panel-spacer { flex: 1; }
+.field-row { display: grid; grid-template-columns: 82px minmax(0,1fr); gap: 7px; align-items: center; padding: 5px 10px; }
+.field-row label { color: #aaa; font-size: 10px; }
+.field-row input[type="text"], .field-row input[type="number"], .field-row select {
+  min-width: 0; width: 100%; height: 25px; padding: 3px 6px;
+  background: #171717; border: 1px solid #3c3c3c; border-radius: 2px; color: #ddd;
+}
+.field-row input:disabled { opacity: .45; }
+.field-row input[type="color"] { width: 100%; height: 25px; padding: 2px; border: 1px solid #3c3c3c; background: #171717; }
+.field-help { margin: 2px 10px 10px 99px; color: #777; font-size: 9px; line-height: 1.5; }
+.property-note { margin: 11px 10px; padding: 9px; border: 1px solid #393939; background: #1a1a1a; color: #898989; font-size: 10px; line-height: 1.5; }
+.content-drawer { min-height: 0; display: flex; flex-direction: column; border-top: 1px solid #111; background: #202020; }
+.drawer-toolbar { height: 33px; min-height: 33px; display: flex; align-items: stretch; border-bottom: 1px solid #373737; background: #272727; }
+.drawer-tab { padding: 0 15px; border: 0; border-right: 1px solid #343434; background: transparent; color: #999; }
+.drawer-tab.active { background: #202020; color: #ededed; box-shadow: inset 0 2px #aaa; }
+.drawer-spacer { flex: 1; }
+.drawer-search { display: flex; align-items: center; padding: 0 8px; width: min(300px,40%); }
+.drawer-search input { width: 100%; height: 24px; padding: 3px 7px; border: 1px solid #3b3b3b; background: #171717; border-radius: 2px; color: #ddd; }
+.drawer-content { display: flex; min-height: 0; flex: 1; overflow: auto; padding: 11px; gap: 10px; align-content: start; }
+.asset-card {
+  flex: 0 0 118px; height: 126px; border: 1px solid #3a3a3a; background: #252525;
+  text-align: left; color: #ccc; padding: 0; overflow: hidden;
+}
+.asset-card:hover { border-color: #777; background: #2d2d2d; }
+.asset-card.selected { border-color: #9a9a9a; background: #343434; }
+.asset-thumb { height: 80px; display: grid; place-items: center; background: #1a1a1a; border-bottom: 1px solid #353535; font-size: 24px; color: #888; }
+.asset-thumb.anim-preview { position: relative; overflow: hidden; }
+.asset-thumb.anim-preview::before { content: ""; width: 28px; height: 28px; border: 1px solid #ccc; border-radius: 3px; transform: rotate(28deg); }
+.asset-label { display: block; padding: 5px 6px 0; font-size: 10px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.asset-meta { display: block; padding: 1px 6px; color: #777; font-size: 9px; }
+.empty-state { margin: auto; color: #888; text-align: center; line-height: 1.7; }
+.statusbar { gap: 12px; padding: 0 9px; background: #202020; border-top: 1px solid #111; border-bottom: 0; color: #888; font-size: 10px; }
+.status-spacer { flex: 1; }
+.status-ready { color: #aaa; }
+.status-ready::before { content: ""; display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; margin-right: 5px; }
+.preview-mode .outliner, .preview-mode .details, .preview-mode .content-drawer { display: none; }
+.preview-mode .workspace { grid-template-columns: minmax(0,1fr); }
+.preview-mode .website-canvas { width: min(1150px, calc(100% - 24px)); }
+.hidden { display: none !important; }
+.toast {
+  position: fixed; left: 50%; bottom: 42px; transform: translateX(-50%);
+  padding: 9px 14px; background: #353535; border: 1px solid #555; color: #eee;
+  box-shadow: 0 6px 18px #0008; z-index: 20; border-radius: 3px;
+}
+@keyframes wiFade { from { opacity: .2; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes wiSlide { from { opacity: .2; transform: translateX(-22px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes wiPop { 0% { transform: scale(.9); } 70% { transform: scale(1.03); } 100% { transform: scale(1); } }
+@keyframes wiPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
+@keyframes wiWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }
+@keyframes wiBlur { from { opacity: .35; filter: blur(7px); } to { opacity: 1; filter: blur(0); } }
+.anim-fade { animation: wiFade .7s ease both; }
+.anim-slide { animation: wiSlide .65s ease both; }
+.anim-pop { animation: wiPop .55s cubic-bezier(.2,.8,.2,1) both; }
+.anim-pulse { animation: wiPulse 1.2s ease-in-out 2; }
+.anim-wiggle { animation: wiWiggle .45s ease-in-out 3; }
+.anim-blur { animation: wiBlur .8s ease both; }
+@media (max-width: 1000px) {
+  .workspace { grid-template-columns: 190px minmax(240px,1fr) 240px; }
+  .field-row { grid-template-columns: 70px minmax(0,1fr); }
+  .field-help { margin-left: 87px; }
+  .site-hero { gap: 15px; padding-top: 30px; }
+}
+@media (max-width: 720px) {
+  .app { min-height: 520px; grid-template-rows: 36px 30px 38px minmax(0,1fr) 168px 25px; }
+  .workspace { grid-template-columns: 150px minmax(210px,1fr); }
+  .details { display: none; }
+  .project-name, .version, .menubar .optional-menu { display: none; }
+  .website-canvas { width: calc(100% - 12px); }
+  .site-nav { padding: 0 10px; }
+  .site-links { gap: 8px; }
+  .site-hero { grid-template-columns: 1fr; padding: 24px 18px; }
+  .hero-art { display: none; }
+  .site-hero h1 { font-size: 26px; }
+  .project-grid { grid-template-columns: 1fr; }
+  .project-card:nth-child(n+2) { display: none; }
+  .drawer-tab { padding: 0 9px; font-size: 10px; }
+  .asset-card { flex-basis: 100px; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="titlebar">
+    <div class="brand-mark">WI</div>
+    <span class="brand-name">Website Indexer</span>
+    <span class="version">EDITOR CONCEPT</span>
+    <span class="title-spacer"></span>
+    <span class="project-name">Studio Demo / Home Page</span>
+    <span class="title-spacer"></span>
+    <button class="window-button" title="Minimize concept window">—</button>
+    <button class="window-button" title="Maximize concept window">□</button>
+    <button class="window-button" title="Close concept window">×</button>
+  </header>
+  <nav class="menubar" aria-label="Application menu">
+    <button class="menu-button" data-menu="File">File</button>
+    <button class="menu-button" data-menu="Edit">Edit</button>
+    <button class="menu-button" data-menu="View">View</button>
+    <button class="menu-button optional-menu" data-menu="Window">Window</button>
+    <button class="menu-button optional-menu" data-menu="Help">Help</button>
+    <span class="title-spacer"></span>
+    <span style="color:#777;font-size:10px;padding-right:8px">LOCAL WORKSPACE</span>
+  </nav>
+  <div class="toolbar">
+    <button class="tool-button" id="new-session"><span class="symbol">＋</span>New</button>
+    <button class="tool-button" id="open-session"><span class="symbol">↥</span>Open Session</button>
+    <button class="tool-button" id="save-session"><span class="symbol">▣</span>Save</button>
+    <span class="tool-divider"></span>
+    <button class="tool-button" id="undo"><span class="symbol">↶</span>Undo</button>
+    <button class="tool-button" id="redo"><span class="symbol">↷</span>Redo</button>
+    <span class="tool-divider"></span>
+    <button class="tool-button" id="toggle-drawer"><span class="symbol">▤</span>Content Drawer</button>
+    <span class="toolbar-spacer"></span>
+    <span class="saved-state" id="save-state">All changes saved</span>
+    <button class="tool-button" id="preview-button"><span class="symbol">▷</span>Preview</button>
+    <button class="tool-button primary" id="export-session"><span class="symbol">⇩</span>Export Draft</button>
+    <input type="file" id="session-file" accept=".json,application/json" class="hidden">
+  </div>
+  <main class="workspace">
+    <aside class="panel outliner" id="outliner">
+      <div class="panel-heading"><span>PAGE OUTLINER</span><span class="panel-spacer"></span><button class="tiny-button" title="Collapse outline">−</button><button class="tiny-button" title="Panel options">⋯</button></div>
+      <div class="outliner-search"><div class="search-field"><span>⌕</span><input id="tree-search" type="text" placeholder="Search page elements"></div></div>
+      <div class="tree" id="tree">
+        <button class="tree-label tree-root" data-select="page"><span class="chevron">⌄</span><span class="node-icon">▣</span><span class="node-name">Home Page</span><span class="node-type">PAGE</span></button>
+        <div class="tree-indent">
+          <button class="tree-label" data-select="nav"><span class="chevron">⌄</span><span class="node-icon">▤</span><span class="node-name">Navigation</span><span class="node-type">NAV</span></button>
+          <div class="tree-indent">
+            <button class="tree-label" data-select="brand"><span class="chevron"></span><span class="node-icon">T</span><span class="node-name">Brand Name</span><span class="node-type">TEXT</span></button>
+            <button class="tree-label" data-select="links"><span class="chevron"></span><span class="node-icon">≡</span><span class="node-name">Navigation Links</span><span class="node-type">GROUP</span></button>
+          </div>
+          <button class="tree-label" data-select="hero"><span class="chevron">⌄</span><span class="node-icon">▧</span><span class="node-name">Hero Section</span><span class="node-type">SECTION</span></button>
+          <div class="tree-indent">
+            <button class="tree-label" data-select="eyebrow"><span class="chevron"></span><span class="node-icon">T</span><span class="node-name">Eyebrow</span><span class="node-type">TEXT</span></button>
+            <button class="tree-label" data-select="hero-title"><span class="chevron"></span><span class="node-icon">T</span><span class="node-name">Main Heading</span><span class="node-type">TEXT</span></button>
+            <button class="tree-label" data-select="hero-copy"><span class="chevron"></span><span class="node-icon">T</span><span class="node-name">Description</span><span class="node-type">TEXT</span></button>
+            <button class="tree-label" data-select="hero-button"><span class="chevron"></span><span class="node-icon">▱</span><span class="node-name">Call To Action</span><span class="node-type">BUTTON</span></button>
+            <button class="tree-label" data-select="hero-art"><span class="chevron"></span><span class="node-icon">▨</span><span class="node-name">Hero Artwork</span><span class="node-type">ART</span></button>
+          </div>
+          <button class="tree-label" data-select="projects"><span class="chevron">⌄</span><span class="node-icon">▦</span><span class="node-name">Project Section</span><span class="node-type">SECTION</span></button>
+          <div class="tree-indent">
+            <button class="tree-label" data-select="project-heading"><span class="chevron"></span><span class="node-icon">T</span><span class="node-name">Section Heading</span><span class="node-type">TEXT</span></button>
+            <button class="tree-label" data-select="project-grid"><span class="chevron">⌄</span><span class="node-icon">▦</span><span class="node-name">Project Cards</span><span class="node-type">GRID</span></button>
+            <div class="tree-indent">
+              <button class="tree-label" data-select="card-one"><span class="chevron"></span><span class="node-icon">▧</span><span class="node-name">Card — One</span><span class="node-type">CARD</span></button>
+              <button class="tree-label" data-select="card-two"><span class="chevron"></span><span class="node-icon">▧</span><span class="node-name">Card — Two</span><span class="node-type">CARD</span></button>
+              <button class="tree-label" data-select="card-three"><span class="chevron"></span><span class="node-icon">▧</span><span class="node-name">Card — Three</span><span class="node-type">CARD</span></button>
+            </div>
+          </div>
+          <button class="tree-label" data-select="footer"><span class="chevron"></span><span class="node-icon">▤</span><span class="node-name">Footer</span><span class="node-type">FOOTER</span></button>
+        </div>
+      </div>
+      <div class="outliner-footer">13 elements · 1 page · Local demo</div>
+    </aside>
+    <section class="viewport">
+      <div class="viewport-tabs">
+        <button class="viewport-tab active"><span class="tab-dot"></span>Home Page <span style="color:#777">×</span></button>
+        <div class="viewport-tools">
+          <span style="color:#777;font-size:10px">VIEW</span>
+          <select id="viewport-mode" aria-label="Viewport size">
+            <option value="desktop">Desktop · 1440</option>
+            <option value="tablet">Tablet · 768</option>
+            <option value="mobile">Mobile · 390</option>
+          </select>
+          <button class="tiny-button" id="zoom-out" title="Zoom out">−</button><span id="zoom-label" style="color:#aaa;min-width:34px;text-align:center">100%</span><button class="tiny-button" id="zoom-in" title="Zoom in">＋</button>
+        </div>
+      </div>
+      <div class="viewport-stage" id="viewport-stage">
+        <span class="viewport-caption">DESIGN VIEWPORT / HOME PAGE</span>
+        <div class="website-canvas" id="website-canvas" data-mode="desktop">
+          <div class="site-nav" data-node="nav" data-label="Navigation" data-kind="Navigation">
+            <span class="site-brand" data-node="brand" data-label="Brand Name" data-kind="Text" data-editable-text="true">FORM / FIELD</span>
+            <div class="site-links" data-node="links" data-label="Navigation Links" data-kind="Navigation Links">
+              <span>Work</span><span>Studio</span><span>Journal</span>
+            </div>
+          </div>
+          <section class="site-hero" data-node="hero" data-label="Hero Section" data-kind="Section">
+            <div>
+              <div class="eyebrow" data-node="eyebrow" data-label="Eyebrow" data-kind="Text" data-editable-text="true">Independent digital studio</div>
+              <h1 data-node="hero-title" data-label="Main Heading" data-kind="Heading" data-editable-text="true">Thoughtful design.<br>Built to move.</h1>
+              <p data-node="hero-copy" data-label="Description" data-kind="Paragraph" data-editable-text="true">We build considered digital experiences for people shaping what comes next.</p>
+              <button class="site-cta" data-node="hero-button" data-label="Call To Action" data-kind="Button" data-editable-text="true">Explore our work ↗</button>
+            </div>
+            <div class="hero-art" data-node="hero-art" data-label="Hero Artwork" data-kind="Artwork" aria-label="Abstract geometric artwork">
+              <div class="art-ring"></div><div class="art-block"></div>
+            </div>
+          </section>
+          <section class="site-section" data-node="projects" data-label="Project Section" data-kind="Section">
+            <div class="section-head">
+              <h2 data-node="project-heading" data-label="Section Heading" data-kind="Heading" data-editable-text="true">Selected projects</h2>
+              <span>Independent ideas, carefully made</span>
+            </div>
+            <div class="project-grid" data-node="project-grid" data-label="Project Cards" data-kind="Grid">
+              <article class="project-card" data-node="card-one" data-label="Card — One" data-kind="Card">
+                <div class="card-image">◩</div><div class="card-copy"><strong>Objects in motion</strong><small>Art direction · Digital</small></div>
+              </article>
+              <article class="project-card" data-node="card-two" data-label="Card — Two" data-kind="Card">
+                <div class="card-image second">◈</div><div class="card-copy"><strong>Quiet structures</strong><small>Identity · Experience</small></div>
+              </article>
+              <article class="project-card" data-node="card-three" data-label="Card — Three" data-kind="Card">
+                <div class="card-image third">◇</div><div class="card-copy"><strong>Material study</strong><small>Campaign · Web</small></div>
+              </article>
+            </div>
+          </section>
+          <footer class="site-footer" data-node="footer" data-label="Footer" data-kind="Footer">
+            <span>FORM / FIELD STUDIO</span><span>© 2026 — All rights reserved</span>
+          </footer>
+        </div>
+        <span class="canvas-status" id="canvas-status">1280 × 900 · Selection enabled</span>
+      </div>
+    </section>
+    <aside class="panel details" id="details">
+      <div class="panel-heading"><span>DETAILS</span><span class="panel-spacer"></span><button class="tiny-button" title="Panel options">⋯</button></div>
+      <div class="details-content">
+        <section class="detail-block">
+          <div class="detail-title">SELECTED ELEMENT <span class="panel-spacer"></span><span style="color:#777">⌖</span></div>
+          <div class="field-row"><label for="detail-name">Name</label><input id="detail-name" type="text" value="Main Heading" readonly></div>
+          <div class="field-row"><label for="detail-kind">Type</label><input id="detail-kind" type="text" value="Heading" readonly></div>
+          <div class="field-row"><label for="detail-id">Element ID</label><input id="detail-id" type="text" value="hero-title" readonly></div>
+        </section>
+        <section class="detail-block">
+          <div class="detail-title">CONTENT</div>
+          <div class="field-row"><label for="prop-text">Text</label><input id="prop-text" type="text" value="Thoughtful design. Built to move."></div>
+          <div class="field-help">Text editing is enabled for text-based elements in this demo.</div>
+        </section>
+        <section class="detail-block">
+          <div class="detail-title">TRANSFORM</div>
+          <div class="field-row"><label for="prop-width">Width (px)</label><input id="prop-width" type="number" min="0" max="1600" placeholder="Auto"></div>
+          <div class="field-row"><label for="prop-color">Text color</label><input id="prop-color" type="color" value="#191919"></div>
+          <div class="field-row"><label for="prop-background">Background</label><input id="prop-background" type="color" value="#e9e6df"></div>
+          <div class="field-help">Properties update the selected element in the preview.</div>
+        </section>
+        <section class="detail-block">
+          <div class="detail-title">ANIMATION</div>
+          <div class="field-row"><label for="prop-animation">Preset</label><select id="prop-animation"><option value="">None</option><option value="fade">Fade up</option><option value="slide">Slide in</option><option value="pop">Soft pop</option><option value="pulse">Pulse</option><option value="wiggle">Wiggle</option><option value="blur">Blur reveal</option></select></div>
+          <div style="padding:6px 10px 10px"><button class="tool-button primary" id="apply-animation" style="width:100%">Apply animation</button></div>
+        </section>
+        <div class="property-note">Prototype note: edits currently affect the sample page only. Website file import and production export are not connected yet.</div>
+      </div>
+    </aside>
+  </main>
+  <section class="content-drawer" id="content-drawer">
+    <div class="drawer-toolbar">
+      <button class="drawer-tab active" data-drawer="animations">Animation Presets</button>
+      <button class="drawer-tab" data-drawer="components">Components</button>
+      <button class="drawer-tab" data-drawer="assets">Assets</button>
+      <span class="drawer-spacer"></span>
+      <div class="drawer-search"><input id="preset-search" type="search" placeholder="Search presets by keyword…" aria-label="Search content"></div>
+      <button class="tiny-button" id="collapse-drawer" title="Hide content drawer" style="padding:0 10px">⌄</button>
+    </div>
+    <div class="drawer-content" id="drawer-content">
+      <button class="asset-card" data-preset="fade" data-keywords="fade reveal enter entrance subtle opacity text section">
+        <span class="asset-thumb anim-preview">◌</span><span class="asset-label">Fade Up</span><span class="asset-meta">Entrance · Soft</span>
+      </button>
+      <button class="asset-card" data-preset="slide" data-keywords="slide reveal left enter movement transition">
+        <span class="asset-thumb anim-preview">⇢</span><span class="asset-label">Slide In</span><span class="asset-meta">Entrance · Directional</span>
+      </button>
+      <button class="asset-card" data-preset="pop" data-keywords="scale pop spring elastic card button emphasis">
+        <span class="asset-thumb anim-preview">◇</span><span class="asset-label">Soft Pop</span><span class="asset-meta">Scale · Spring-like</span>
+      </button>
+      <button class="asset-card" data-preset="pulse" data-keywords="pulse brightness hover highlight glow emphasis">
+        <span class="asset-thumb anim-preview">◉</span><span class="asset-label">Pulse</span><span class="asset-meta">Emphasis · Repeat</span>
+      </button>
+      <button class="asset-card" data-preset="wiggle" data-keywords="wiggle shake rotate playful hover">
+        <span class="asset-thumb anim-preview">⌁</span><span class="asset-label">Wiggle</span><span class="asset-meta">Interaction · Playful</span>
+      </button>
+      <button class="asset-card" data-preset="blur" data-keywords="blur focus reveal cinematic soft entrance">
+        <span class="asset-thumb anim-preview">◍</span><span class="asset-label">Blur Reveal</span><span class="asset-meta">Entrance · Focus</span>
+      </button>
+      <div class="empty-state hidden" id="drawer-empty">No matching items.<br>Try another keyword.</div>
+    </div>
+  </section>
+  <footer class="statusbar">
+    <span class="status-ready" id="status-ready">Ready</span>
+    <span id="selection-status">Selected: Main Heading</span>
+    <span class="status-spacer"></span>
+    <span>DESKTOP EDITOR CONCEPT</span>
+    <span>UTF-8</span>
+  </footer>
+</div>
+<script>
+(function () {
+  const app = document.getElementById('app');
+  const canvas = document.getElementById('website-canvas');
+  const tree = document.getElementById('tree');
+  const propertyText = document.getElementById('prop-text');
+  const propertyWidth = document.getElementById('prop-width');
+  const propertyColor = document.getElementById('prop-color');
+  const propertyBackground = document.getElementById('prop-background');
+  const propertyAnimation = document.getElementById('prop-animation');
+  const saveState = document.getElementById('save-state');
+  const sessionFile = document.getElementById('session-file');
+  const drawerContent = document.getElementById('drawer-content');
+  const presetSearch = document.getElementById('preset-search');
+  let selectedId = 'hero-title';
+  let previewMode = false;
+  let zoom = 100;
+  let history = [];
+  let historyPosition = -1;
+  let savedSnapshot = '';
+
+  function getNode(id) {
+    return canvas.querySelector('[data-node="' + id + '"]');
+  }
+
+  function nodeLabel(node) {
+    return node ? (node.dataset.label || node.dataset.node) : 'Nothing selected';
+  }
+
+  function showMessage(message) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    window.setTimeout(function () { toast.remove(); }, 2500);
+  }
+
+  function markChanged() {
+    saveState.textContent = 'Unsaved changes';
+    saveState.style.color = '#ddd';
+  }
+
+  function rgbToHex(color) {
+    const match = color.match(/\d+/g);
+    if (!match || match.length < 3) return '#191919';
+    return '#' + match.slice(0, 3).map(function (part) {
+      return Number(part).toString(16).padStart(2, '0');
+    }).join('');
+  }
+
+  function selectNode(id) {
+    const node = getNode(id);
+    if (!node) return;
+    selectedId = id;
+    canvas.querySelectorAll('[data-node]').forEach(function (item) {
+      item.classList.toggle('is-selected', item.dataset.node === id);
+    });
+    tree.querySelectorAll('[data-select]').forEach(function (item) {
+      item.classList.toggle('selected', item.dataset.select === id);
+    });
+    document.getElementById('detail-name').value = nodeLabel(node);
+    document.getElementById('detail-kind').value = node.dataset.kind || 'Element';
+    document.getElementById('detail-id').value = id;
+    const editable = node.dataset.editableText === 'true';
+    propertyText.disabled = !editable;
+    propertyText.value = editable ? node.textContent.trim().replace(/\s+/g, ' ') : '';
+    propertyWidth.value = node.style.width ? parseInt(node.style.width, 10) : '';
+    propertyColor.value = rgbToHex(getComputedStyle(node).color);
+    const background = getComputedStyle(node).backgroundColor;
+    propertyBackground.value = rgbToHex(background);
+    propertyAnimation.value = node.dataset.animation || '';
+    document.getElementById('selection-status').textContent = 'Selected: ' + nodeLabel(node);
+    document.getElementById('canvas-status').textContent = canvas.offsetWidth + ' × ' + canvas.offsetHeight + ' · Selection enabled';
+  }
+
+  function saveHistory() {
+    const snapshot = makeSnapshot();
+    if (historyPosition >= 0 && history[historyPosition] === snapshot) return;
+    history = history.slice(0, historyPosition + 1);
+    history.push(snapshot);
+    historyPosition = history.length - 1;
+    if (history.length > 60) {
+      history.shift();
+      historyPosition = history.length - 1;
+    }
+  }
+
+  function makeSnapshot() {
+    const elements = [];
+    canvas.querySelectorAll('[data-node]').forEach(function (node) {
+      elements.push({
+        id: node.dataset.node,
+        text: node.dataset.editableText === 'true' ? node.textContent : null,
+        width: node.style.width || '',
+        color: node.style.color || '',
+        background: node.style.backgroundColor || '',
+        animation: node.dataset.animation || ''
+      });
+    });
+    return JSON.stringify({
+      version: 1,
+      selected: selectedId,
+      viewport: canvas.dataset.mode,
+      elements: elements
+    });
+  }
+
+  function applySnapshot(snapshot, recordHistory) {
+    const data = typeof snapshot === 'string' ? JSON.parse(snapshot) : snapshot;
+    if (!data || data.version !== 1 || !Array.isArray(data.elements)) {
+      throw new Error('This file is not a Website Indexer concept session.');
+    }
+    data.elements.forEach(function (saved) {
+      const node = getNode(saved.id);
+      if (!node) return;
+      if (saved.text !== null && saved.text !== undefined && node.dataset.editableText === 'true') node.textContent = saved.text;
+      node.style.width = saved.width || '';
+      node.style.color = saved.color || '';
+      node.style.backgroundColor = saved.background || '';
+      setAnimation(node, saved.animation || '', false);
+    });
+    if (data.viewport) {
+      canvas.dataset.mode = data.viewport;
+      document.getElementById('viewport-mode').value = data.viewport;
+    }
+    selectNode(getNode(data.selected) ? data.selected : 'hero-title');
+    if (recordHistory) saveHistory();
+    markChanged();
+  }
+
+  function setAnimation(node, animation, record) {
+    const classes = ['anim-fade', 'anim-slide', 'anim-pop', 'anim-pulse', 'anim-wiggle', 'anim-blur'];
+    classes.forEach(function (name) { node.classList.remove(name); });
+    node.dataset.animation = animation;
+    if (animation) {
+      void node.offsetWidth;
+      node.classList.add('anim-' + animation);
+    }
+    if (record) {
+      saveHistory();
+      markChanged();
+    }
+  }
+
+  function downloadSession() {
+    const data = makeSnapshot();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'website-indexer-session.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    savedSnapshot = data;
+    saveState.textContent = 'All changes saved';
+    saveState.style.color = '';
+    showMessage('Session saved as JSON.');
+  }
+
+  function resetSession() {
+    const starting = {
+      version: 1,
+      selected: 'hero-title',
+      viewport: 'desktop',
+      elements: [
+        { id: 'brand', text: 'FORM / FIELD', width: '', color: '', background: '', animation: '' },
+        { id: 'eyebrow', text: 'Independent digital studio', width: '', color: '', background: '', animation: '' },
+        { id: 'hero-title', text: 'Thoughtful design.\nBuilt to move.', width: '', color: '', background: '', animation: '' },
+        { id: 'hero-copy', text: 'We build considered digital experiences for people shaping what comes next.', width: '', color: '', background: '', animation: '' },
+        { id: 'hero-button', text: 'Explore our work ↗', width: '', color: '', background: '', animation: '' },
+        { id: 'project-heading', text: 'Selected projects', width: '', color: '', background: '', animation: '' }
+      ]
+    };
+    applySnapshot(starting, true);
+    savedSnapshot = makeSnapshot();
+    saveState.textContent = 'All changes saved';
+    saveState.style.color = '';
+    showMessage('Demo session reset.');
+  }
+
+  tree.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-select]');
+    if (button) selectNode(button.dataset.select);
+  });
+
+  canvas.addEventListener('click', function (event) {
+    const node = event.target.closest('[data-node]');
+    if (!node) return;
+    selectNode(node.dataset.node);
+  });
+
+  document.getElementById('tree-search').addEventListener('input', function (event) {
+    const query = event.target.value.toLowerCase();
+    tree.querySelectorAll('[data-select]').forEach(function (item) {
+      item.classList.toggle('hidden', item.textContent.toLowerCase().indexOf(query) === -1);
+    });
+  });
+
+  propertyText.addEventListener('input', function () {
+    const node = getNode(selectedId);
+    if (!node || node.dataset.editableText !== 'true') return;
+    node.textContent = propertyText.value;
+    markChanged();
+  });
+  propertyText.addEventListener('change', saveHistory);
+
+  propertyWidth.addEventListener('change', function () {
+    const node = getNode(selectedId);
+    if (!node) return;
+    const value = Number(propertyWidth.value);
+    node.style.width = propertyWidth.value && value > 0 ? value + 'px' : '';
+    saveHistory();
+    markChanged();
+  });
+
+  propertyColor.addEventListener('input', function () {
+    const node = getNode(selectedId);
+    if (node) { node.style.color = propertyColor.value; markChanged(); }
+  });
+  propertyColor.addEventListener('change', saveHistory);
+
+  propertyBackground.addEventListener('input', function () {
+    const node = getNode(selectedId);
+    if (node) { node.style.backgroundColor = propertyBackground.value; markChanged(); }
+  });
+  propertyBackground.addEventListener('change', saveHistory);
+
+  document.getElementById('apply-animation').addEventListener('click', function () {
+    const node = getNode(selectedId);
+    if (!node) return;
+    setAnimation(node, propertyAnimation.value, true);
+    showMessage(propertyAnimation.value ? 'Animation applied to ' + nodeLabel(node) + '.' : 'Animation removed.');
+  });
+
+  document.querySelectorAll('[data-preset]').forEach(function (card) {
+    card.addEventListener('click', function () {
+      const animation = card.dataset.preset;
+      propertyAnimation.value = animation;
+      document.querySelectorAll('[data-preset]').forEach(function (item) {
+        item.classList.toggle('selected', item === card);
+      });
+      const node = getNode(selectedId);
+      if (node) {
+        setAnimation(node, animation, true);
+        showMessage(card.querySelector('.asset-label').textContent + ' applied.');
+      }
+    });
+  });
+
+  presetSearch.addEventListener('input', function () {
+    const query = presetSearch.value.toLowerCase().trim();
+    let visible = 0;
+    drawerContent.querySelectorAll('[data-keywords]').forEach(function (card) {
+      const haystack = (card.dataset.keywords + ' ' + card.textContent).toLowerCase();
+      const match = haystack.indexOf(query) !== -1;
+      card.classList.toggle('hidden', !match);
+      if (match) visible += 1;
+    });
+    document.getElementById('drawer-empty').classList.toggle('hidden', visible > 0);
+  });
+
+  document.getElementById('viewport-mode').addEventListener('change', function (event) {
+    canvas.dataset.mode = event.target.value;
+    saveHistory();
+    markChanged();
+    document.getElementById('canvas-status').textContent = canvas.offsetWidth + ' × ' + canvas.offsetHeight + ' · Selection enabled';
+  });
+
+  document.getElementById('zoom-in').addEventListener('click', function () {
+    zoom = Math.min(125, zoom + 5);
+    canvas.style.transform = 'scale(' + (zoom / 100) + ')';
+    canvas.style.transformOrigin = 'center center';
+    document.getElementById('zoom-label').textContent = zoom + '%';
+  });
+  document.getElementById('zoom-out').addEventListener('click', function () {
+    zoom = Math.max(60, zoom - 5);
+    canvas.style.transform = 'scale(' + (zoom / 100) + ')';
+    canvas.style.transformOrigin = 'center center';
+    document.getElementById('zoom-label').textContent = zoom + '%';
+  });
+
+  document.getElementById('save-session').addEventListener('click', downloadSession);
+  document.getElementById('export-session').addEventListener('click', downloadSession);
+  document.getElementById('open-session').addEventListener('click', function () { sessionFile.click(); });
+  sessionFile.addEventListener('change', function () {
+    const file = sessionFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        applySnapshot(reader.result, true);
+        showMessage('Session opened.');
+      } catch (error) {
+        showMessage(error.message || 'Could not open that session.');
+      }
+      sessionFile.value = '';
+    };
+    reader.readAsText(file);
+  });
+  document.getElementById('new-session').addEventListener('click', function () {
+    if (saveState.textContent === 'Unsaved changes' && !window.confirm('Discard the current demo changes?')) return;
+    resetSession();
+  });
+
+  document.getElementById('undo').addEventListener('click', function () {
+    if (historyPosition <= 0) { showMessage('Nothing to undo.'); return; }
+    historyPosition -= 1;
+    applySnapshot(history[historyPosition], false);
+    showMessage('Change undone.');
+  });
+  document.getElementById('redo').addEventListener('click', function () {
+    if (historyPosition >= history.length - 1) { showMessage('Nothing to redo.'); return; }
+    historyPosition += 1;
+    applySnapshot(history[historyPosition], false);
+    showMessage('Change restored.');
+  });
+
+  document.querySelectorAll('[data-drawer]').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('[data-drawer]').forEach(function (item) { item.classList.toggle('active', item === tab); });
+      const mode = tab.dataset.drawer;
+      if (mode === 'animations') {
+        presetSearch.placeholder = 'Search presets by keyword…';
+        drawerContent.innerHTML = '';
+        const cards = [
+          ['fade','Fade Up','Entrance · Soft','fade reveal enter entrance subtle opacity text section'],
+          ['slide','Slide In','Entrance · Directional','slide reveal left enter movement transition'],
+          ['pop','Soft Pop','Scale · Spring-like','scale pop spring elastic card button emphasis'],
+          ['pulse','Pulse','Emphasis · Repeat','pulse brightness hover highlight glow emphasis'],
+          ['wiggle','Wiggle','Interaction · Playful','wiggle shake rotate playful hover'],
+          ['blur','Blur Reveal','Entrance · Focus','blur focus reveal cinematic soft entrance']
+        ];
+        cards.forEach(function (item) { drawerContent.appendChild(makePresetCard(item)); });
+        bindPresetCards();
+      } else if (mode === 'components') {
+        presetSearch.placeholder = 'Search components…';
+        drawerContent.innerHTML = '';
+        const items = [['▤','Navigation Bar','Site structure'],['▰','Hero Section','Page section'],['▦','Project Cards','Grid layout'],['▱','Call To Action','Button'],['▥','Footer','Site structure']];
+        items.forEach(function (item) { drawerContent.appendChild(makeSimpleCard(item)); });
+      } else {
+        presetSearch.placeholder = 'Search assets…';
+        drawerContent.innerHTML = '';
+        const items = [['◩','Hero Artwork','Preview asset'],['◈','Project Image 01','Image'],['◇','Project Image 02','Image'],['Aa','Studio Typeface','Font reference'],['▧','Mono Icons','Icon set']];
+        items.forEach(function (item) { drawerContent.appendChild(makeSimpleCard(item)); });
+      }
+      presetSearch.value = '';
+      showMessage(mode.charAt(0).toUpperCase() + mode.slice(1) + ' drawer selected.');
+    });
+  });
+
+  function makePresetCard(item) {
+    const button = document.createElement('button');
+    button.className = 'asset-card';
+    button.dataset.preset = item[0];
+    button.dataset.keywords = item[3];
+    const thumb = document.createElement('span');
+    thumb.className = 'asset-thumb anim-preview';
+    thumb.textContent = '◌';
+    const label = document.createElement('span');
+    label.className = 'asset-label';
+    label.textContent = item[1];
+    const meta = document.createElement('span');
+    meta.className = 'asset-meta';
+    meta.textContent = item[2];
+    button.append(thumb, label, meta);
+    return button;
+  }
+
+  function makeSimpleCard(item) {
+    const button = document.createElement('button');
+    button.className = 'asset-card';
+    button.dataset.keywords = item.join(' ').toLowerCase();
+    const thumb = document.createElement('span');
+    thumb.className = 'asset-thumb';
+    thumb.textContent = item[0];
+    const label = document.createElement('span');
+    label.className = 'asset-label';
+    label.textContent = item[1];
+    const meta = document.createElement('span');
+    meta.className = 'asset-meta';
+    meta.textContent = item[2];
+    button.append(thumb, label, meta);
+    button.addEventListener('click', function () {
+      showMessage(item[1] + ' is a library placeholder in this concept.');
+    });
+    return button;
+  }
+
+  function bindPresetCards() {
+    drawerContent.querySelectorAll('[data-preset]').forEach(function (card) {
+      card.addEventListener('click', function () {
+        const animation = card.dataset.preset;
+        propertyAnimation.value = animation;
+        const node = getNode(selectedId);
+        if (node) {
+          setAnimation(node, animation, true);
+          showMessage(card.querySelector('.asset-label').textContent + ' applied.');
+        }
+      });
+    });
+  }
+
+  document.getElementById('toggle-drawer').addEventListener('click', function () {
+    document.getElementById('content-drawer').classList.toggle('hidden');
+  });
+  document.getElementById('collapse-drawer').addEventListener('click', function () {
+    document.getElementById('content-drawer').classList.add('hidden');
+  });
+
+  document.getElementById('preview-button').addEventListener('click', function () {
+    previewMode = !previewMode;
+    app.classList.toggle('preview-mode', previewMode);
+    document.getElementById('preview-button').innerHTML = previewMode ? '<span class="symbol">×</span>Exit Preview' : '<span class="symbol">▷</span>Preview';
+  });
+
+  document.querySelectorAll('[data-menu]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const name = button.dataset.menu;
+      if (name === 'View') {
+        document.getElementById('content-drawer').classList.toggle('hidden');
+        showMessage('Toggled the content drawer.');
+      } else {
+        showMessage(name + ' menu is a layout placeholder in this concept.');
+      }
+    });
+  });
+
+  selectNode(selectedId);
+  saveHistory();
+  savedSnapshot = makeSnapshot();
+}());
+</script>
+</body>
+</html>
