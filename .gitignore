@@ -1,0 +1,22 @@
+# CMake build output
+/build/
+/cmake-build-*/
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# Native application packages
+*.msi
+*.dmg
+*.AppImage
+
+# Local editor exports
+*.webedyts.html
+webedyts-session.json
