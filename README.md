@@ -1,12 +1,12 @@
 # Website Indexer
 
-**A visual index editor for websites — redesign pages without hand-editing HTML, CSS, or JavaScript.**
+**A cross-platform desktop design application for visually editing and rebuilding websites without hand-editing HTML, CSS, or JavaScript.**
 
-Website Indexer is planned as a designer-style workspace for opening a website project, understanding its page structure, and reshaping the result visually. It aims to combine the familiarity of a design application with the real files of a website: select an element, change its text, position, size, spacing, style, or animation, preview the result across screen sizes, and export the updated website.
+Website Indexer is planned as a real, installable desktop application for Windows, Linux, and macOS—not merely a web page hosted in a browser. It will open website folders and supported project archives through native file pickers, inspect their pages and assets, and let users redesign them through a visual canvas. Users should be able to select an element, change its text, position, size, spacing, style, or animation, preview the result across screen sizes, and export the updated website project.
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Project status:** This repository has just been created. The description below is the product vision and intended specification, not a claim that these features are already implemented. Features will be marked as available only after they exist and have been tested.
+> **Project status:** Website Indexer is at the specification stage; the desktop application has not been implemented yet. This README describes the intended product and platform targets, not features already available. Features will be marked as implemented only after they exist and have been tested.
 
 ## The idea
 
@@ -25,6 +25,7 @@ The ambition is not merely to edit an HTML file. It is to offer a complete visua
 - **Searchable animation library:** Presets should be discoverable by natural keywords, categories, properties, and use cases.
 - **Responsive by design:** Users should be able to inspect and tune desktop, tablet, and mobile layouts.
 - **Honest compatibility:** Unsupported or risky project structures should be reported clearly instead of silently breaking the page.
+- **Native desktop application:** The app should install and launch directly on each supported operating system, use OS file dialogs, and provide platform-appropriate packages.
 - **Local control:** Users should know which project files are opened, changed, and exported.
 
 ## Planned features
@@ -47,7 +48,7 @@ Website Indexer is intended to support two main starting points.
 - Apply themes, reusable components, and animation presets.
 - Export the project as a website.
 
-For remote URLs, availability will depend on access and browser security restrictions. A URL may be previewable without granting permission to rewrite the remote server's files. To edit a site, users will need an editable local project or another explicitly supported import method.
+Because this is a desktop application, users can choose local project folders and files through OS-provided file dialogs and grant the app access to the selected locations. A remote URL alone still does not give the application permission to rewrite a website on its server. Remote-site editing must use a supported download/import workflow or an authorized integration; the original online site will not be changed automatically.
 
 ### 2. Visual page editor
 
@@ -194,10 +195,11 @@ The product should prioritize safe, predictable edits over pretending to support
 
 This roadmap describes a possible build order; it is not a statement that the stages are complete.
 
-### Phase 1 — Reliable project foundation
-- Define the project/import format.
-- Open local website files and select an entry page.
-- Build a contained preview environment.
+### Phase 1 — Native desktop foundation
+- Select an application framework only after validating the required operating systems and architectures.
+- Build a real desktop shell with native file/folder pickers and a clear permission boundary.
+- Define the project/import format and open local website files or supported archives.
+- Build a contained preview environment that isolates imported website content from the app's privileged process.
 - Discover common HTML elements and referenced assets.
 - Make a small set of visual text and style edits.
 - Save changes to a copy and export a working project.
@@ -241,6 +243,31 @@ The experience should emphasize:
 - A clear separation between project editing, preview, and export.
 
 These are design goals; the final interface and implementation will be refined during development.
+
+## Desktop platforms and architecture targets
+
+Website Indexer is intended to ship as an installable desktop app for all three major desktop operating systems. These are **release targets, not available downloads yet**.
+
+| Operating system | Intended release targets | Planned distribution |
+|---|---|---|
+| Windows | x86 (32-bit) and x64 (64-bit) | Native installer/package such as EXE or MSI |
+| Linux | x86 (32-bit) and x64 (64-bit), where the selected runtime and dependencies support them | Appropriate formats such as AppImage, DEB, or RPM, chosen after distro testing |
+| macOS | Intel x64 and Apple Silicon arm64; a universal 64-bit package may be considered | DMG or another standard macOS package |
+
+### 32-bit compatibility on macOS
+
+There is an important operating-system limitation: Apple states that macOS Catalina 10.15 and later cannot run 32-bit apps. A 32-bit macOS build would therefore only be useful for legacy macOS versions, not modern macOS installations. The practical current macOS target is 64-bit Intel and Apple Silicon; legacy 32-bit macOS support can only be considered as a separate historical compatibility target. See [Apple's 32-bit app compatibility guidance](https://support.apple.com/en-us/103076).
+
+The 32-bit Windows and Linux targets must also be verified against the selected application framework, embedded browser/runtime, native dependencies, and packaging tools. The project must not claim an architecture as supported until an installable build has been produced and tested on that target. Framework selection should account for this requirement from the beginning rather than dropping x86 support accidentally.
+
+### Native application requirements
+
+- Installers or packages should be provided for supported OS/architecture combinations.
+- The application should launch locally and should not require users to open a hosted web page to use the editor.
+- Users choose which local folders or archives to open; the app must not scan or modify unrelated files without permission.
+- Project editing, preview, save, and export should work offline for local projects wherever the features do not inherently need network access.
+- Updates and optional network features must be clearly separated from core local editing.
+- Release notes should identify the OS version, CPU architecture, package format, and known limitations for each download.
 
 ## Copyright and usage
 
