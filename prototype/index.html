@@ -1032,7 +1032,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const css = await rewriteProjectCss(original, normalized, chain);
     chain.delete(normalized);
 
-    const previousUrl = projectAssetUrls.get(normalized);
     const processedUrl = projectObjectUrl(new Blob([css], { type: 'text/css;charset=utf-8' }));
     projectAssetUrls.set(normalized, processedUrl);
     projectCssProcessed.add(normalized);
@@ -1393,7 +1392,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         historyPosition = -1;
         saveHistory();
         savedSnapshot = makeSnapshot();
-        if (projectMode && projectEntryPath) projectPageBaselines.set(projectEntryPath, projectComparableSnapshot());
+        if (projectMode && projectEntryPath && !projectPageEdits.has(projectEntryPath)) {
+          projectPageBaselines.set(projectEntryPath, projectComparableSnapshot());
+        }
         updateSaveIndicator();
         showMessage(projectMode ? 'Website page opened. Scripts remain disabled in preview.' : 'HTML opened. Scripts and external assets are blocked in preview.');
       } else if (restoringSession) {
@@ -1985,6 +1986,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         if (entry) entry.file = new Blob([markup], { type: 'text/html;charset=utf-8' });
       });
       projectPageEdits.clear();
+      projectPageBaselines.clear();
       if (projectEntryPath) projectPageBaselines.set(projectEntryPath, projectComparableSnapshot());
       savedSnapshot = makeSnapshot();
       updateSaveIndicator();
@@ -2074,7 +2076,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function exportImportedPage() {
     if (!importedDoc) return;
-    if (hasInsertedMediaAssets()) {
+    if (projectMode || hasInsertedMediaAssets()) {
       exportImportedProject();
       return;
     }
