@@ -18,8 +18,8 @@
   --faint: #6d6d6d;
   --accent: #8a8a8a;
   --select: #454545;
-  --blue: #4f7fa7;
-  --green: #78a58a;
+  --blue: #8a8a8a;
+  --green: #999;
   font: 12px/1.4 "Segoe UI", Inter, system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
@@ -137,7 +137,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .canvas-status { position: absolute; bottom: 6px; right: 10px; color: #666; font-size: 10px; }
 .website-canvas {
   flex: 0 0 auto; width: min(1000px, calc(100% - 16px)); min-height: 520px;
-  border: 1px solid #444; background: #f6f5f2; color: #191919; overflow: hidden;
+  border: 1px solid #444; background: #f4f4f4; color: #191919; overflow: hidden;
   box-shadow: 0 12px 42px #0008; transition: width .15s ease;
   font-family: Inter, "Segoe UI", sans-serif;
 }
@@ -148,7 +148,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .imported-frame { display: block; width: 100%; height: 100%; min-height: 520px; border: 0; background: white; }
 .site-nav {
   min-height: 57px; padding: 0 5.5%; display: flex; gap: 18px; align-items: center;
-  border-bottom: 1px solid #e5e3df; background: #f9f8f5;
+  border-bottom: 1px solid #e0e0e0; background: #fafafa;
 }
 .site-brand { color: #181818; font-size: 13px; font-weight: 800; letter-spacing: .7px; }
 .site-links { margin-left: auto; display: flex; gap: 20px; font-size: 10px; color: #5e5b56; }
@@ -156,7 +156,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .site-hero {
   position: relative; min-height: 265px; padding: 43px 6% 34px;
   display: grid; grid-template-columns: 1.1fr .9fr; align-items: center; gap: 28px;
-  background: #e9e6df; overflow: hidden;
+  background: #e7e7e7; overflow: hidden;
 }
 .eyebrow { color: #737067; font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
 .site-hero h1 { max-width: 400px; margin: 12px 0 10px; font-size: clamp(26px, 3vw, 44px); line-height: 1.06; letter-spacing: -1.8px; font-weight: 750; }
@@ -167,25 +167,25 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 .hero-art {
   height: 180px; position: relative; display: grid; place-items: center; overflow: hidden;
-  background: linear-gradient(140deg, #b9b5ac, #8c8981); border: 1px solid #d0ccc4;
+  background: linear-gradient(140deg, #bdbdbd, #858585); border: 1px solid #c9c9c9;
 }
 .art-ring { position: absolute; width: 138px; height: 138px; border: 1px solid #e0ded6; border-radius: 50%; }
 .art-ring::after { content: ""; position: absolute; inset: 17px; border: 1px solid #e0ded6; border-radius: 50%; }
 .art-block { width: 104px; height: 104px; transform: rotate(32deg) skew(-9deg); border: 1px solid #efede5; background: linear-gradient(135deg, #ddd9d0aa, #66635d55); box-shadow: 15px 15px 0 #4b494555; }
-.site-section { padding: 26px 6% 32px; background: #f6f5f2; }
+.site-section { padding: 26px 6% 32px; background: #f4f4f4; }
 .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
 .section-head h2 { margin: 0; font-size: 18px; letter-spacing: -.55px; }
 .section-head span { color: #77736a; font-size: 10px; }
 .project-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 11px; }
-.project-card { min-width: 0; border: 1px solid #e1dfd8; background: #f9f8f5; }
+.project-card { min-width: 0; border: 1px solid #e1dfd8; background: #fafafa; }
 .card-image { height: 78px; display: grid; place-items: center; background: #d9d6cf; color: #77746c; font-size: 22px; }
 .card-image.second { background: #d0cec8; }
 .card-image.third { background: #e1ded7; }
 .card-copy { padding: 10px; }
 .card-copy strong { display: block; margin-bottom: 4px; font-size: 10px; }
 .card-copy small { display: block; color: #79766f; font-size: 9px; line-height: 1.5; }
-.site-footer { padding: 15px 6%; border-top: 1px solid #e3e1da; display: flex; justify-content: space-between; color: #77736a; font-size: 9px; }
-[data-node].is-selected { outline: 2px solid #5e90b9 !important; outline-offset: -2px; position: relative; }
+.site-footer { padding: 15px 6%; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-between; color: #77736a; font-size: 9px; }
+[data-node].is-selected { outline: 2px solid #888 !important; outline-offset: -2px; position: relative; }
 .site-nav.is-selected, .site-hero.is-selected, .site-section.is-selected, .site-footer.is-selected { outline-offset: -3px; }
 .details { display: flex; flex-direction: column; border-left: 1px solid #111; overflow: hidden; }
 .details-content { overflow: auto; padding-bottom: 12px; }
@@ -215,12 +215,20 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   text-align: left; color: #ccc; padding: 0; overflow: hidden;
 }
 .asset-card:hover { border-color: #777; background: #2d2d2d; }
-.asset-card.selected { border-color: #9a9a9a; background: #343434; }
+.asset-card.selected { border-color: #aaa; background: #343434; }
 .asset-thumb { height: 80px; display: grid; place-items: center; background: #1a1a1a; border-bottom: 1px solid #353535; font-size: 24px; color: #888; }
 .asset-thumb.anim-preview { position: relative; overflow: hidden; }
 .asset-thumb.anim-preview::before { content: ""; width: 28px; height: 28px; border: 1px solid #ccc; border-radius: 3px; transform: rotate(28deg); }
 .asset-label { display: block; padding: 5px 6px 0; font-size: 10px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .asset-meta { display: block; padding: 1px 6px; color: #777; font-size: 9px; }
+.asset-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.drawer-action { flex: 0 0 auto; height: 24px; margin: 4px 3px 4px 0; padding: 0 8px; font-size: 10px; }
+.media-note { flex: 0 0 100%; margin: 0 0 3px; padding: 9px 11px; border: 1px solid #3a3a3a; color: #aaa; font-size: 10px; line-height: 1.6; }
+.media-note strong { color: #e2e2e2; font-weight: 650; }
+.asset-card .asset-thumb.media-video { font-size: 25px; }
+.asset-card .asset-thumb.media-audio { font-size: 23px; }
+.asset-card .asset-thumb.media-file { font-size: 20px; }
+@media (max-width: 720px) { .drawer-action { padding: 0 5px; margin-right: 1px; } .drawer-search { width: min(160px, 30%); } }
 .empty-state { margin: auto; color: #888; text-align: center; line-height: 1.7; }
 .statusbar { gap: 12px; padding: 0 9px; background: #202020; border-top: 1px solid #111; border-bottom: 0; color: #888; font-size: 10px; }
 .status-spacer { flex: 1; }
@@ -445,6 +453,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       <button class="drawer-tab" data-drawer="assets">Assets</button>
       <span class="drawer-spacer"></span>
       <div class="drawer-search"><input id="preset-search" type="search" placeholder="Search presets by keyword…" aria-label="Search content"></div>
+      <button class="tool-button drawer-action" id="import-media" title="Import images, video, audio, fonts, and other website files">Import media</button>
+      <button class="tool-button drawer-action" id="insert-media" title="Insert selected media into the imported page" disabled>Insert</button>
+      <input type="file" id="media-files" class="hidden" multiple accept="image/*,video/*,audio/*,.svg,.woff,.woff2,.ttf,.otf,.eot,.pdf,.json,.txt,.css,.js">
       <button class="tiny-button" id="collapse-drawer" title="Hide content drawer" style="padding:0 10px">⌄</button>
     </div>
     <div class="drawer-content" id="drawer-content">
@@ -502,6 +513,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let saveCheckPending = false;
   let restoringSession = false;
   let dragState = null;
+  let mediaSequence = 0;
+  let mediaNodeSequence = 0;
+  let activeMediaId = null;
+  const mediaAssets = [];
+  let crc32Table = null;
 
   let importedFrame = null;
   let importedDoc = null;
@@ -838,6 +854,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     if (importedFrame) importedFrame.remove();
     importedFrame = null;
     canvas.classList.remove('imported');
+    updateMediaActions();
     tree.innerHTML = sampleTreeMarkup;
     document.querySelector('.outliner-footer').textContent = '13 elements · 1 page · Local demo';
     document.getElementById('export-session').innerHTML = '<span class="symbol">⇩</span>Export Draft';
@@ -876,7 +893,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     const selectionStyle = parsed.createElement('style');
     selectionStyle.setAttribute('data-webedyts-editor-style', 'true');
-    selectionStyle.textContent = '[data-webedyts-editor-selected] { outline: 2px solid #4f7fa7 !important; outline-offset: -2px !important; } [data-webedyts-editor-node] { cursor: move; } html.webedyts-dragging, html.webedyts-dragging * { cursor: grabbing !important; user-select: none !important; }';
+    selectionStyle.textContent = '[data-webedyts-editor-selected] { outline: 2px solid #888 !important; outline-offset: -2px !important; } [data-webedyts-editor-node] { cursor: move; } html.webedyts-dragging, html.webedyts-dragging * { cursor: grabbing !important; user-select: none !important; }';
     parsed.head.appendChild(selectionStyle);
 
     const animationStyle = parsed.createElement('style');
@@ -948,6 +965,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       buildImportedTree();
       const first = importedDoc.querySelector('[data-webedyts-editor-node]:not(body)');
       selectNode(getNode(selectId) ? selectId : (first ? first.dataset.webedytsEditorNode : 'page'));
+      updateMediaActions();
       if (recordHistory) {
         history = [];
         historyPosition = -1;
@@ -1019,8 +1037,540 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     return button;
   }
 
+  function activeMediaAsset() {
+    return mediaAssets.find(function (asset) { return asset.id === activeMediaId; }) || null;
+  }
+
+  function updateMediaActions() {
+    const insertButton = document.getElementById('insert-media');
+    const chosen = activeMediaAsset();
+    insertButton.disabled = !chosen || !importedMode || !importedDoc;
+    insertButton.title = !chosen ? 'Select an imported media file first' :
+      (!importedMode ? 'Open an HTML page before inserting media' : 'Insert the selected media after the selected page element');
+    if (importedMode) {
+      const hasInsertedAssets = importedDoc && importedDoc.querySelector('[data-webedyts-asset-path]');
+      document.getElementById('export-session').innerHTML = hasInsertedAssets ?
+        '<span class="symbol">⇩</span>Export Website ZIP' :
+        '<span class="symbol">⇩</span>Export HTML';
+    }
+  }
+
+  function safeAssetName(name) {
+    const leaf = String(name || 'asset').replace(/\\/g, '/').split('/').pop();
+    return leaf.replace(/[<>:"|?*\u0000-\u001f]/g, '_').replace(/[. ]+$/g, '').trim() || 'asset';
+  }
+
+  function makeUniqueAssetPath(name) {
+    const safeName = safeAssetName(name);
+    const dot = safeName.lastIndexOf('.');
+    const base = dot > 0 ? safeName.slice(0, dot) : safeName;
+    const extension = dot > 0 ? safeName.slice(dot) : '';
+    let candidate = 'media/' + safeName;
+    let suffix = 2;
+    while (mediaAssets.some(function (asset) { return asset.packagePath.toLowerCase() === candidate.toLowerCase(); })) {
+      candidate = 'media/' + base + ' (' + suffix + ')' + extension;
+      suffix += 1;
+    }
+    return candidate;
+  }
+
+  function mediaKind(file) {
+    const name = file.name.toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    if (type.startsWith('image/') || /\.(png|jpe?g|gif|webp|avif|bmp|ico|svg|tiff?)$/.test(name)) return 'image';
+    if (type.startsWith('video/') || /\.(mp4|m4v|mov|webm|ogv|ogg|avi|mkv|3gp|mpeg|mpg)$/.test(name)) return 'video';
+    if (type.startsWith('audio/') || /\.(mp3|wav|ogg|oga|m4a|aac|flac|opus|mid|midi)$/.test(name)) return 'audio';
+    if (/\.(woff2?|ttf|otf|eot)$/.test(name) || type.includes('font')) return 'font';
+    return 'file';
+  }
+
+  function mediaTypeLabel(asset) {
+    const ext = asset.file.name.includes('.') ? asset.file.name.split('.').pop().toUpperCase() : 'FILE';
+    return ext + ' · ' + formatFileSize(asset.file.size);
+  }
+
+  function formatFileSize(bytes) {
+    if (!Number.isFinite(bytes) || bytes < 0) return 'Unknown size';
+    if (bytes < 1024) return bytes + ' B';
+    const units = ['KB', 'MB', 'GB', 'TB'];
+    let size = bytes / 1024;
+    let unit = 0;
+    while (size >= 1024 && unit < units.length - 1) {
+      size /= 1024;
+      unit += 1;
+    }
+    return size.toFixed(size >= 100 ? 0 : 1) + ' ' + units[unit];
+  }
+
+  function loadMediaMetadata(asset) {
+    if (asset.kind === 'image') {
+      const image = new Image();
+      image.onload = function () {
+        asset.dimensions = image.naturalWidth + ' × ' + image.naturalHeight;
+        renderMediaLibraryIfVisible();
+      };
+      image.onerror = function () {
+        asset.dimensions = 'Preview unavailable';
+        renderMediaLibraryIfVisible();
+      };
+      image.src = asset.url;
+      return;
+    }
+    if (asset.kind === 'video' || asset.kind === 'audio') {
+      const media = document.createElement(asset.kind);
+      media.preload = 'metadata';
+      media.onloadedmetadata = function () {
+        if (asset.kind === 'video' && media.videoWidth && media.videoHeight) {
+          asset.dimensions = media.videoWidth + ' × ' + media.videoHeight;
+          if (media.videoWidth >= 7680 && media.videoHeight >= 4320) asset.dimensions += ' · 8K source';
+        } else if (Number.isFinite(media.duration) && media.duration > 0) {
+          const totalSeconds = Math.floor(media.duration);
+          asset.duration = Math.floor(totalSeconds / 60) + ':' + String(totalSeconds % 60).padStart(2, '0');
+        }
+        media.removeAttribute('src');
+        media.load();
+        renderMediaLibraryIfVisible();
+      };
+      media.onerror = function () {
+        asset.dimensions = 'Metadata unavailable';
+        renderMediaLibraryIfVisible();
+      };
+      media.src = asset.url;
+    }
+  }
+
+  function renderMediaLibraryIfVisible() {
+    const assetsTab = document.querySelector('[data-drawer="assets"]');
+    if (assetsTab && assetsTab.classList.contains('active')) renderMediaLibrary();
+  }
+
+  function renderMediaLibrary() {
+    drawerContent.innerHTML = '';
+    const note = document.createElement('div');
+    note.className = 'media-note';
+    note.innerHTML = '<strong>Website media</strong><br>Images: PNG, JPEG, GIF, WebP, AVIF, SVG and other browser-supported formats. Video and audio are added without transcoding. Video sources up to <strong>7680 × 4320 (8K) at 60 FPS</strong> can be embedded; decoding and playback depend on the browser, codec, GPU and device. Fonts and other files can also be added. Export packages include inserted files under <code>media/</code>.';
+    drawerContent.appendChild(note);
+
+    const query = presetSearch.value.trim().toLowerCase();
+    const visibleAssets = mediaAssets.filter(function (asset) {
+      const text = (asset.file.name + ' ' + asset.kind + ' ' + mediaTypeLabel(asset) + ' ' + (asset.dimensions || '')).toLowerCase();
+      return !query || text.includes(query);
+    });
+
+    visibleAssets.forEach(function (asset) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'asset-card' + (asset.id === activeMediaId ? ' selected' : '');
+      card.dataset.mediaId = asset.id;
+      card.dataset.keywords = asset.file.name + ' ' + asset.kind + ' ' + mediaTypeLabel(asset);
+
+      const thumb = document.createElement('span');
+      thumb.className = 'asset-thumb';
+      if (asset.kind === 'image') {
+        const image = document.createElement('img');
+        image.alt = '';
+        image.src = asset.url;
+        thumb.appendChild(image);
+      } else {
+        thumb.classList.add(asset.kind === 'video' ? 'media-video' : (asset.kind === 'audio' ? 'media-audio' : 'media-file'));
+        thumb.textContent = asset.kind === 'video' ? '▶' : (asset.kind === 'audio' ? '♫' : (asset.kind === 'font' ? 'Aa' : '↧'));
+      }
+
+      const label = document.createElement('span');
+      label.className = 'asset-label';
+      label.textContent = asset.file.name;
+      const meta = document.createElement('span');
+      meta.className = 'asset-meta';
+      meta.textContent = asset.dimensions || mediaTypeLabel(asset);
+      card.append(thumb, label, meta);
+      card.addEventListener('click', function () {
+        activeMediaId = asset.id;
+        drawerContent.querySelectorAll('[data-media-id]').forEach(function (item) {
+          item.classList.toggle('selected', item.dataset.mediaId === activeMediaId);
+        });
+        updateMediaActions();
+      });
+      drawerContent.appendChild(card);
+    });
+
+    if (visibleAssets.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = mediaAssets.length ? 'No matching media files.' : 'No media files yet. Choose Import media to add images, video, audio, fonts or other assets.';
+      drawerContent.appendChild(empty);
+    }
+  }
+
+  async function importMediaFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    let importedCount = 0;
+    files.forEach(function (file) {
+      const id = 'asset-' + (++mediaSequence);
+      const asset = {
+        id: id,
+        file: file,
+        kind: mediaKind(file),
+        url: URL.createObjectURL(file),
+        packagePath: makeUniqueAssetPath(file.name),
+        dimensions: '',
+        duration: ''
+      };
+      mediaAssets.push(asset);
+      importedCount += 1;
+      loadMediaMetadata(asset);
+    });
+    const assetsTab = document.querySelector('[data-drawer="assets"]');
+    if (assetsTab) assetsTab.click();
+    renderMediaLibrary();
+    updateMediaActions();
+    showMessage(importedCount + ' file' + (importedCount === 1 ? '' : 's') + ' added to the media library.');
+  }
+
+  function insertSelectedMedia() {
+    const asset = activeMediaAsset();
+    if (!asset) {
+      showMessage('Choose a media file first.');
+      return;
+    }
+    if (!importedMode || !importedDoc) {
+      showMessage('Open a website HTML file before inserting media.');
+      return;
+    }
+
+    const target = getNode(selectedId);
+    if (!target || !target.parentNode) {
+      showMessage('Select a page element before inserting media.');
+      return;
+    }
+
+    let element;
+    let kindLabel;
+    if (asset.kind === 'image') {
+      element = importedDoc.createElement('img');
+      element.src = asset.url;
+      element.alt = asset.file.name.replace(/\.[^.]+$/, '');
+      element.decoding = 'async';
+      element.style.display = 'block';
+      element.style.maxWidth = '100%';
+      element.style.height = 'auto';
+      kindLabel = 'Image';
+    } else if (asset.kind === 'video') {
+      element = importedDoc.createElement('video');
+      element.src = asset.url;
+      element.controls = true;
+      element.playsInline = true;
+      element.preload = 'metadata';
+      element.style.display = 'block';
+      element.style.width = '100%';
+      element.style.maxWidth = '100%';
+      element.style.height = 'auto';
+      element.style.background = '#000';
+      kindLabel = 'Video';
+    } else if (asset.kind === 'audio') {
+      element = importedDoc.createElement('audio');
+      element.src = asset.url;
+      element.controls = true;
+      element.preload = 'metadata';
+      element.style.display = 'block';
+      element.style.maxWidth = '100%';
+      kindLabel = 'Audio';
+    } else if (asset.kind === 'font') {
+      const family = 'WEBEDYTS ' + asset.file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, ' ').trim();
+      const fontStyle = importedDoc.createElement('style');
+      fontStyle.dataset.webedytsAssetPath = asset.packagePath;
+      fontStyle.dataset.webedytsAssetStyle = 'true';
+      fontStyle.textContent = '@font-face{font-family:"' + family.replace(/"/g, '') + '";src:url("' + asset.url + '");font-display:swap;}';
+      importedDoc.head.appendChild(fontStyle);
+      element = importedDoc.createElement('span');
+      element.textContent = 'The quick brown fox — ' + asset.file.name;
+      element.style.fontFamily = '"' + family.replace(/"/g, '') + '", sans-serif';
+      element.style.display = 'block';
+      element.style.padding = '12px 0';
+      kindLabel = 'Font sample';
+    } else {
+      element = importedDoc.createElement('a');
+      element.href = asset.url;
+      element.download = asset.file.name;
+      element.rel = 'noopener';
+      element.textContent = 'Download ' + asset.file.name;
+      element.style.display = 'inline-block';
+      element.style.padding = '8px 0';
+      kindLabel = 'File link';
+    }
+
+    const nodeId = 'media-' + (++mediaNodeSequence);
+    element.dataset.webedytsEditorNode = nodeId;
+    element.dataset.webedytsEditorLabel = kindLabel + ' — ' + asset.file.name;
+    element.dataset.webedytsEditorKind = kindLabel;
+    element.dataset.webedytsEditorTextEditable = 'false';
+    if (asset.kind !== 'font') element.dataset.webedytsAssetPath = asset.packagePath;
+
+    if (target === importedDoc.body) {
+      target.appendChild(element);
+    } else if (target.parentNode) {
+      target.parentNode.insertBefore(element, target.nextSibling);
+    } else {
+      importedDoc.body.appendChild(element);
+    }
+
+    buildImportedTree();
+    selectNode(nodeId);
+    saveHistory();
+    markChanged();
+    updateMediaActions();
+    showMessage(asset.file.name + ' added to the page.');
+  }
+
+  function crc32ForFile(file) {
+    if (!crc32Table) {
+      crc32Table = new Uint32Array(256);
+      for (let n = 0; n < 256; n += 1) {
+        let value = n;
+        for (let bit = 0; bit < 8; bit += 1) value = value & 1 ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+        crc32Table[n] = value >>> 0;
+      }
+    }
+    return (async function () {
+      let crc = 0xffffffff;
+      const chunkSize = 8 * 1024 * 1024;
+      for (let offset = 0; offset < file.size; offset += chunkSize) {
+        const bytes = new Uint8Array(await file.slice(offset, Math.min(file.size, offset + chunkSize)).arrayBuffer());
+        for (let index = 0; index < bytes.length; index += 1) crc = crc32Table[(crc ^ bytes[index]) & 0xff] ^ (crc >>> 8);
+      }
+      return (crc ^ 0xffffffff) >>> 0;
+    }());
+  }
+
+  function dosTimestamp(date) {
+    return {
+      time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
+      date: ((Math.max(1980, date.getFullYear()) - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate()
+    };
+  }
+
+  async function createZip(files) {
+    const parts = [];
+    const centralParts = [];
+    const max32 = 0xffffffffn;
+    const max16 = 0xffff;
+    let offset = 0n;
+    let centralSize = 0n;
+
+    for (const entry of files) {
+      const name = String(entry.name).replace(/\\/g, '/');
+      const nameBytes = new TextEncoder().encode(name);
+      if (nameBytes.length > max16) throw new Error('A packaged filename is too long.');
+      const file = entry.file;
+      const size = BigInt(file.size);
+      const checksum = await crc32ForFile(file);
+      const stamp = dosTimestamp(new Date());
+      const size64 = size > max32;
+      const offset64 = offset > max32;
+      const zip64Local = size64;
+      const localExtraLength = zip64Local ? 20 : 0;
+      const localHeader = new Uint8Array(30);
+      const localView = new DataView(localHeader.buffer);
+      localView.setUint32(0, 0x04034b50, true);
+      localView.setUint16(4, zip64Local ? 45 : 20, true);
+      localView.setUint16(6, 0x0800, true);
+      localView.setUint16(8, 0, true);
+      localView.setUint16(10, stamp.time, true);
+      localView.setUint16(12, stamp.date, true);
+      localView.setUint32(14, checksum, true);
+      localView.setUint32(18, size64 ? 0xffffffff : Number(size), true);
+      localView.setUint32(22, size64 ? 0xffffffff : Number(size), true);
+      localView.setUint16(26, nameBytes.length, true);
+      localView.setUint16(28, localExtraLength, true);
+
+      parts.push(localHeader, nameBytes);
+      offset += BigInt(localHeader.length + nameBytes.length);
+      if (zip64Local) {
+        const extra = new Uint8Array(20);
+        const view = new DataView(extra.buffer);
+        view.setUint16(0, 0x0001, true);
+        view.setUint16(2, 16, true);
+        view.setBigUint64(4, size, true);
+        view.setBigUint64(12, size, true);
+        parts.push(extra);
+        offset += BigInt(extra.length);
+      }
+      parts.push(file);
+      const localOffset = offset - size;
+
+      const extraFields = [];
+      const extraLength = (size64 ? 20 : 0) + (offset64 ? 12 : 0);
+      const centralExtraLength = extraLength ? extraLength : 0;
+      const centralHeader = new Uint8Array(46);
+      const view = new DataView(centralHeader.buffer);
+      view.setUint32(0, 0x02014b50, true);
+      view.setUint16(4, 45, true);
+      view.setUint16(6, (size64 || offset64) ? 45 : 20, true);
+      view.setUint16(8, 0x0800, true);
+      view.setUint16(10, 0, true);
+      view.setUint16(12, stamp.time, true);
+      view.setUint16(14, stamp.date, true);
+      view.setUint32(16, checksum, true);
+      view.setUint32(20, size64 ? 0xffffffff : Number(size), true);
+      view.setUint32(24, size64 ? 0xffffffff : Number(size), true);
+      view.setUint16(28, nameBytes.length, true);
+      view.setUint16(30, centralExtraLength, true);
+      view.setUint16(32, 0, true);
+      view.setUint16(34, 0, true);
+      view.setUint16(36, 0, true);
+      view.setUint32(38, 0, true);
+      view.setUint32(42, offset64 ? 0xffffffff : Number(localOffset), true);
+
+      if (centralExtraLength) {
+        const extra = new Uint8Array(centralExtraLength);
+        const extraView = new DataView(extra.buffer);
+        let at = 0;
+        extraView.setUint16(at, 0x0001, true);
+        extraView.setUint16(at + 2, centralExtraLength - 4, true);
+        at += 4;
+        if (size64) {
+          extraView.setBigUint64(at, size, true);
+          extraView.setBigUint64(at + 8, size, true);
+          at += 16;
+        }
+        if (offset64) extraView.setBigUint64(at, localOffset, true);
+        extraFields.push(extra);
+      }
+      centralParts.push(centralHeader, nameBytes);
+      extraFields.forEach(function (field) { centralParts.push(field); });
+      centralSize += BigInt(centralHeader.length + nameBytes.length + centralExtraLength);
+      offset += size;
+    }
+
+    const centralOffset = offset;
+    parts.push.apply(parts, centralParts);
+    offset += centralSize;
+    const zip64End = BigInt(files.length) >= 0xffffn || centralSize > max32 || centralOffset > max32 ||
+      files.some(function (entry) { return BigInt(entry.file.size) > max32; });
+
+    if (zip64End) {
+      const end = new Uint8Array(56);
+      const view = new DataView(end.buffer);
+      view.setUint32(0, 0x06064b50, true);
+      view.setBigUint64(4, 44n, true);
+      view.setUint16(12, 45, true);
+      view.setUint16(14, 45, true);
+      view.setUint32(16, 0, true);
+      view.setUint32(20, 0, true);
+      view.setBigUint64(24, BigInt(files.length), true);
+      view.setBigUint64(32, BigInt(files.length), true);
+      view.setBigUint64(40, centralSize, true);
+      view.setBigUint64(48, centralOffset, true);
+      const locator = new Uint8Array(20);
+      const locatorView = new DataView(locator.buffer);
+      locatorView.setUint32(0, 0x07064b50, true);
+      locatorView.setUint32(4, 0, true);
+      locatorView.setBigUint64(8, offset, true);
+      locatorView.setUint32(16, 1, true);
+      parts.push(end, locator);
+    }
+
+    const endRecord = new Uint8Array(22);
+    const endView = new DataView(endRecord.buffer);
+    endView.setUint32(0, 0x06054b50, true);
+    endView.setUint16(4, 0, true);
+    endView.setUint16(6, 0, true);
+    endView.setUint16(8, zip64End ? 0xffff : files.length, true);
+    endView.setUint16(10, zip64End ? 0xffff : files.length, true);
+    endView.setUint32(12, zip64End ? 0xffffffff : Number(centralSize), true);
+    endView.setUint32(16, zip64End ? 0xffffffff : Number(centralOffset), true);
+    endView.setUint16(20, 0, true);
+    parts.push(endRecord);
+    return new Blob(parts, { type: 'application/zip' });
+  }
+
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+
+  function hasInsertedMediaAssets() {
+    return Boolean(importedDoc && importedDoc.querySelector('[data-webedyts-asset-path]'));
+  }
+
+  async function exportImportedProject() {
+    if (!importedDoc) return;
+    const exportButton = document.getElementById('export-session');
+    const previousLabel = exportButton.innerHTML;
+    exportButton.disabled = true;
+    saveState.textContent = 'Preparing website ZIP…';
+    try {
+      const clone = importedDoc.documentElement.cloneNode(true);
+      const usedPaths = new Set();
+      clone.querySelectorAll('[data-webedyts-asset-path]').forEach(function (node) {
+        if (node.dataset.webedytsAssetPath) usedPaths.add(node.dataset.webedytsAssetPath);
+      });
+
+      clone.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
+        node.remove();
+      });
+      clone.querySelectorAll('[data-webedyts-animation-style]').forEach(function (node) {
+        node.removeAttribute('data-webedyts-animation-style');
+      });
+      clone.querySelectorAll('[data-webedyts-editor-selected]').forEach(function (node) {
+        node.removeAttribute('data-webedyts-editor-selected');
+      });
+      clone.querySelectorAll('*').forEach(function (node) {
+        Array.from(node.attributes).forEach(function (attribute) {
+          if (attribute.name.startsWith('data-webedyts-editor-') ||
+              attribute.name === 'data-webedyts-asset-path' ||
+              attribute.name === 'data-webedyts-asset-style') {
+            node.removeAttribute(attribute.name);
+          }
+        });
+      });
+
+      const doctype = importedDoc.doctype ? '<!DOCTYPE ' + importedDoc.doctype.name + '>' : '<!DOCTYPE html>';
+      let output = doctype + '\n' + clone.outerHTML;
+      const assets = mediaAssets.filter(function (asset) { return usedPaths.has(asset.packagePath); });
+      assets.forEach(function (asset) {
+        output = output.split(asset.url).join(asset.packagePath.replace(/\\/g, '/'));
+      });
+      const pageName = safeAssetName(importedFileName).replace(/\.(html?|HTML?)$/, '') || 'index';
+      const htmlFile = new Blob([output], { type: 'text/html;charset=utf-8' });
+      const files = [{ name: pageName + '.html', file: htmlFile }].concat(assets.map(function (asset) {
+        return { name: asset.packagePath, file: asset.file };
+      }));
+      const zip = await createZip(files);
+      downloadBlob(zip, pageName + '.webedyts.zip');
+      savedSnapshot = makeSnapshot();
+      updateSaveIndicator();
+      showMessage('Website ZIP exported with ' + assets.length + ' media file' + (assets.length === 1 ? '' : 's') + '.');
+    } catch (error) {
+      updateSaveIndicator();
+      showMessage('Export failed: ' + (error && error.message ? error.message : 'could not build the website ZIP.'));
+    } finally {
+      exportButton.disabled = false;
+      updateMediaActions();
+      if (saveState.textContent === 'Preparing website ZIP…') saveState.textContent = 'All changes saved';
+      exportButton.innerHTML = previousLabel;
+    }
+  }
+
+  document.getElementById('import-media').addEventListener('click', function () {
+    document.getElementById('media-files').click();
+  });
+  document.getElementById('media-files').addEventListener('change', function () {
+    importMediaFiles(document.getElementById('media-files').files);
+    document.getElementById('media-files').value = '';
+  });
+  document.getElementById('insert-media').addEventListener('click', insertSelectedMedia);
+
   function exportImportedPage() {
     if (!importedDoc) return;
+    if (hasInsertedMediaAssets()) {
+      exportImportedProject();
+      return;
+    }
     const clone = importedDoc.documentElement.cloneNode(true);
     clone.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
       node.remove();
@@ -1188,6 +1738,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   });
 
   presetSearch.addEventListener('input', function () {
+    const activeTab = document.querySelector('[data-drawer].active');
+    if (activeTab && activeTab.dataset.drawer === 'assets') {
+      renderMediaLibrary();
+      return;
+    }
     const query = presetSearch.value.toLowerCase().trim();
     let visible = 0;
     drawerContent.querySelectorAll('[data-keywords]').forEach(function (card) {
@@ -1298,16 +1853,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         const items = [['▤','Navigation Bar','Site structure'],['▰','Hero Section','Page section'],['▦','Project Cards','Grid layout'],['▱','Call To Action','Button'],['▥','Footer','Site structure']];
         items.forEach(function (item) { drawerContent.appendChild(makeSimpleCard(item)); });
       } else {
-        presetSearch.placeholder = 'Search assets…';
-        drawerContent.innerHTML = '';
-        const items = [['◩','Hero Artwork','Preview asset'],['◈','Project Image 01','Image'],['◇','Project Image 02','Image'],['Aa','Studio Typeface','Font reference'],['▧','Mono Icons','Icon set']];
-        items.forEach(function (item) { drawerContent.appendChild(makeSimpleCard(item)); });
+        presetSearch.placeholder = 'Search media by filename or format…';
+        renderMediaLibrary();
       }
-      const emptyState = document.createElement('div');
-      emptyState.className = 'empty-state hidden';
-      emptyState.id = 'drawer-empty';
-      emptyState.textContent = 'No matching items. Try another keyword.';
-      drawerContent.appendChild(emptyState);
+      if (mode !== 'assets') {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state hidden';
+        emptyState.id = 'drawer-empty';
+        emptyState.textContent = 'No matching items. Try another keyword.';
+        drawerContent.appendChild(emptyState);
+      }
       presetSearch.value = '';
       showMessage(mode.charAt(0).toUpperCase() + mode.slice(1) + ' drawer selected.');
     });
@@ -1546,6 +2101,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   selectNode(selectedId);
   saveHistory();
+  updateMediaActions();
   savedSnapshot = makeSnapshot();
 }());
 </script>
