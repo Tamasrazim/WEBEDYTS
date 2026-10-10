@@ -178,6 +178,26 @@ A typical redesign should look like this:
 
 The user should not need to manually edit HTML, CSS, or JavaScript to perform these common operations. The application will still need to interpret and update project files internally, and advanced or unsupported cases may require a warning or a different workflow.
 
+## Editor workspace direction
+
+The editor should feel like a serious creative tool, with a dockable, multi-panel layout inspired by professional 3D and game-engine editors. The reference is the workflow—viewport in the center, a hierarchy on the left, properties on the right, and a searchable content drawer below—not a copy of another product's branding or artwork.
+
+The planned workspace has:
+
+- **Viewport:** A live page canvas where users select elements directly and preview the current design.
+- **Page Outliner:** A tree of pages, sections, components, and individual elements.
+- **Details panel:** Context-sensitive controls for text, dimensions, spacing, colors, typography, and supported animation settings.
+- **Content Drawer:** Searchable animation presets, reusable components, images, fonts, icons, and other project assets.
+- **Toolbar and status bar:** Project controls, viewport sizes, preview, save/export actions, and useful status information.
+- **Responsive view controls:** Switch between desktop, tablet, and mobile sizes without leaving the editor.
+- **Undo and redo:** Move backward and forward through recent visual edits.
+
+### Interactive UI concept
+
+An early, self-contained interface prototype is available at [prototype/index.html](prototype/index.html). It demonstrates the dark multi-panel workspace, element selection, basic property editing, viewport presets, simple animation effects, keyword search, and session save/load.
+
+This prototype edits a sample page and saves a Website Indexer concept-session JSON file. It does **not** yet import arbitrary website projects, modify real website files, or create a native desktop build. Those require the desktop application and project-editing engine.
+
 ## Important technical boundaries
 
 A visual editor must be transparent about what it can and cannot safely edit.
