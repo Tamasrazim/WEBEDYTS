@@ -521,6 +521,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let restoringSession = false;
   let dragState = null;
   let projectMode = false;
+  let projectImportBusy = false;
   let projectRootName = '';
   let projectEntryPath = '';
   let projectNavigationFragment = '';
@@ -966,6 +967,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     updateMediaActions();
   }
 
+  function setProjectImportBusy(busy) {
+    projectImportBusy = busy;
+    ['open-project-folder', 'open-website', 'open-session', 'save-session', 'project-folder-files'].forEach(function (id) {
+      document.getElementById(id).disabled = busy;
+    });
+    document.getElementById('export-session').disabled = busy;
+    document.getElementById('project-page-select').disabled = busy;
+    updateMediaActions();
+  }
+
   function updateProjectPageSelector() {
     const selector = document.getElementById('project-page-select');
     const label = document.getElementById('project-page-label');
@@ -982,6 +993,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       selector.appendChild(option);
     });
     selector.value = projectEntryPath;
+    selector.disabled = projectImportBusy;
     selector.classList.remove('hidden');
     label.classList.remove('hidden');
   }
@@ -1291,6 +1303,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       return aIndex - bIndex || aDepth - bDepth || a.path.localeCompare(b.path);
     });
 
+    setProjectImportBusy(true);
+    saveState.textContent = 'Loading website folder…';
     clearProjectWorkspace();
     projectMode = true;
     projectRootName = rootName;
@@ -1320,8 +1334,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const preparedMarkup = await prepareProjectMarkup(markup, target.path);
       loadImportedMarkup(preparedMarkup, target.path, 'page', true);
       updateProjectPageSelector();
-      showMessage('Website folder opened · ' + entries.length + ' files · ' + pages.length + ' HTML pages.');
     } catch (error) {
+      setProjectImportBusy(false);
       clearProjectWorkspace();
       showMessage('Could not open that website folder: ' + (error && error.message ? error.message : 'unknown error'));
     }
@@ -1419,9 +1433,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     importedFrame.addEventListener('load', function () {
       importedDoc = importedFrame.contentDocument;
       if (!importedDoc || !importedDoc.body) {
+        if (projectImportBusy) setProjectImportBusy(false);
         showMessage('This HTML file could not be previewed.');
         return;
       }
+      if (projectImportBusy) setProjectImportBusy(false);
       importedDoc.addEventListener('keydown', handleEditorShortcut);
       importedDoc.addEventListener('pointerdown', function (event) {
         const target = event.target.closest('[data-webedyts-editor-node]');
@@ -1533,7 +1549,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   function updateMediaActions() {
     const insertButton = document.getElementById('insert-media');
     const chosen = activeMediaAsset();
-    insertButton.disabled = !chosen || !importedMode || !importedDoc;
+    insertButton.disabled = projectImportBusy || !chosen || !importedMode || !importedDoc;
     insertButton.title = !chosen ? 'Select an imported media file first' :
       (!importedMode ? 'Open an HTML page before inserting media' : 'Insert the selected media after the selected page element');
     const exportButton = document.getElementById('export-session');
