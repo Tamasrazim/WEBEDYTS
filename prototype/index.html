@@ -1331,9 +1331,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     if (!file) return;
     if (saveState.textContent === 'Unsaved changes' &&
         !window.confirm('Discard the current changes and open another HTML file?')) return;
-    clearProjectWorkspace();
     const reader = new FileReader();
     reader.onload = function () {
+      clearProjectWorkspace();
       loadImportedMarkup(String(reader.result), file.name, 'page', true);
     };
     reader.onerror = function () {
