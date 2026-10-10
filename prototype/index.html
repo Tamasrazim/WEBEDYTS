@@ -675,7 +675,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     link.href = url;
     link.download = 'webedyts-session.json';
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     savedSnapshot = data;
     saveState.textContent = 'All changes saved';
     saveState.style.color = '';
@@ -696,6 +696,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function importWebsiteFile(file) {
     if (!file) return;
+    if (saveState.textContent === 'Unsaved changes' &&
+        !window.confirm('Discard the current changes and open another HTML file?')) return;
     const reader = new FileReader();
     reader.onload = function () {
       loadImportedMarkup(String(reader.result), file.name, 'page', true);
@@ -740,7 +742,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       '.wi-anim-pop { animation: wiPop .55s cubic-bezier(.2,.8,.2,1) both; } .wi-anim-pulse { animation: wiPulse 1.2s ease-in-out 2; }' +
       '.wi-anim-wiggle { animation: wiWiggle .45s ease-in-out 3; } .wi-anim-blur { animation: wiBlur .8s ease both; }';
     parsed.head.appendChild(animationStyle);
-    parsed.querySelectorAll('base').forEach(function (node) { node.remove(); });
+    parsed.querySelectorAll('base, meta[http-equiv="refresh"]').forEach(function (node) { node.remove(); });
 
     const body = parsed.body;
     body.dataset.webedytsEditorNode = 'page';
@@ -928,6 +930,15 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const canEdit = node && (importedMode ? node.dataset.webedytsEditorTextEditable === 'true' : node.dataset.editableText === 'true');
     if (!canEdit) return;
     node.textContent = propertyText.value;
+    if (importedMode) {
+      const text = propertyText.value.trim().replace(/\s+/g, ' ');
+      const shortText = text.length > 30 ? text.slice(0, 27) + '…' : text;
+      node.dataset.webedytsEditorLabel = (node.tagName.toLowerCase() + (shortText ? ' — ' + shortText : '')).slice(0, 52);
+      const row = tree.querySelector('[data-select="' + selectedId + '"] .node-name');
+      if (row) row.textContent = node.dataset.webedytsEditorLabel;
+      document.getElementById('detail-name').value = node.dataset.webedytsEditorLabel;
+      document.getElementById('selection-status').textContent = 'Selected: ' + node.dataset.webedytsEditorLabel;
+    }
     markChanged();
   });
   propertyText.addEventListener('change', saveHistory);
@@ -1016,7 +1027,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   document.getElementById('save-session').addEventListener('click', downloadSession);
   document.getElementById('export-session').addEventListener('click', downloadSession);
-  document.getElementById('open-session').addEventListener('click', function () { sessionFile.click(); });
+  document.getElementById('open-session').addEventListener('click', function () {
+    if (saveState.textContent === 'Unsaved changes' &&
+        !window.confirm('Discard the current changes and open a saved session?')) return;
+    sessionFile.click();
+  });
   sessionFile.addEventListener('change', function () {
     const file = sessionFile.files[0];
     if (!file) return;
