@@ -1,6 +1,6 @@
 #pragma once
 
-// Minimal, dependency-free SHA-256 implementation for Website Indexer.
+// Minimal, dependency-free SHA-256 implementation for WEBEDYTS.
 // Algorithm: FIPS 180-4. Portable C++17 for Windows, Linux, and macOS.
 // SHA-256 is an integrity primitive, not encryption or an authorization mechanism.
 
@@ -14,7 +14,7 @@
 #include <string>
 #include <string_view>
 
-namespace website_indexer::security {
+namespace webedyts::security {
 namespace detail {
 
 inline constexpr std::array<std::uint32_t, 64> kSha256RoundConstants = {
@@ -105,4 +105,4 @@ inline std::string sha256_hex(std::string_view input) {
     return out.str();
 }
 
-}  // namespace website_indexer::security
+}  // namespace webedyts::security
