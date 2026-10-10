@@ -7,7 +7,7 @@
 #include "sha256.hpp"
 #include <string_view>
 
-namespace website_indexer::security {
+namespace webedyts::security {
 
 inline constexpr std::string_view kEmbeddedLicenseNotice = R"WI_LICENSE(Copyright (c) 2026 Robiul Rumman Razim. All rights reserved.
 
@@ -23,8 +23,8 @@ NO AI/ML PERMISSION IS GRANTED. Without prior written permission, this project
 may not be used to train, fine-tune, evaluate, benchmark, or improve an AI/ML
 model; create datasets, embeddings, or retrieval indexes from it; or use its
 protected contents as input for a generative system to produce rewrites,
-patches, ports, reconstructions, or derivative implementations of Website
-Indexer. These restrictions state the copyright holder's permission terms and
+patches, ports, reconstructions, or derivative implementations of WEBEDYTS.
+These restrictions state the copyright holder's permission terms and
 apply only to the extent permitted by applicable law.
 
 Viewing this public repository on GitHub does not grant any of the permissions
@@ -38,10 +38,10 @@ legally be restricted.
 )WI_LICENSE";
 
 // SHA-256 of the exact embedded notice above (UTF-8 bytes).
-inline constexpr std::string_view kExpectedLicenseSha256 = "e8314f505c1fff9f596f4030e65492b432b081b1af95ea16b29bd8fdcf7d5c7b";
+inline constexpr std::string_view kExpectedLicenseSha256 = "08c5e45e55f8baea59f9b9565cfd641f1c0ce2775f6101a17ea8055934e6c0be";
 
 inline bool verify_embedded_license_notice() {
     return sha256_hex(kEmbeddedLicenseNotice) == kExpectedLicenseSha256;
 }
 
-}  // namespace website_indexer::security
+}  // namespace webedyts::security
