@@ -62,6 +62,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 .tool-button:hover { border-color: #484848; background: #303030; }
 .tool-button.primary { background: #373737; border-color: #4e4e4e; color: #f2f2f2; }
+.tool-button:disabled { opacity: .38; cursor: not-allowed; }
+.tool-button:disabled:hover { border-color: transparent; background: transparent; }
+.website-canvas [data-node]:hover { cursor: move; }
+.webedyts-dragging, .webedyts-dragging * { cursor: grabbing !important; user-select: none !important; }
 .tool-button .symbol { margin-right: 6px; color: #ddd; }
 .tool-divider { width: 1px; height: 20px; background: #414141; margin: 0 4px; }
 .toolbar-spacer { flex: 1; }
@@ -486,6 +490,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let history = [];
   let historyPosition = -1;
   let savedSnapshot = '';
+  let dragState = null;
 
   let importedFrame = null;
   let importedDoc = null;
@@ -519,6 +524,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   function markChanged() {
     saveState.textContent = 'Unsaved changes';
     saveState.style.color = '#ddd';
+  }
+
+  function updateHistoryButtons() {
+    document.getElementById('undo').disabled = historyPosition <= 0;
+    document.getElementById('redo').disabled = historyPosition >= history.length - 1;
   }
 
   function rgbToHex(color) {
@@ -574,7 +584,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function saveHistory() {
     const snapshot = makeSnapshot();
-    if (historyPosition >= 0 && history[historyPosition] === snapshot) return;
+    if (historyPosition >= 0 && history[historyPosition] === snapshot) {
+      updateHistoryButtons();
+      return;
+    }
     history = history.slice(0, historyPosition + 1);
     history.push(snapshot);
     historyPosition = history.length - 1;
@@ -582,6 +595,83 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       history.shift();
       historyPosition = history.length - 1;
     }
+    updateHistoryButtons();
+  }
+
+  function startCanvasDrag(event, node, id, ownerDocument) {
+    if (!node || id === 'page' || !event.isPrimary ||
+        (typeof event.button === 'number' && event.button !== 0)) return;
+    if (event.target.closest && event.target.closest('input, textarea, select, option, audio, video')) return;
+    if (getComputedStyle(node).position === 'fixed') return;
+
+    selectNode(id);
+    const computed = getComputedStyle(node);
+    const readOffset = function (inlineValue, computedValue) {
+      const inlineNumber = Number.parseFloat(inlineValue);
+      if (Number.isFinite(inlineNumber)) return inlineNumber;
+      const computedNumber = Number.parseFloat(computedValue);
+      return computed.position === 'static' || !Number.isFinite(computedNumber) ? 0 : computedNumber;
+    };
+
+    dragState = {
+      node: node,
+      id: id,
+      ownerDocument: ownerDocument,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      left: readOffset(node.style.left, computed.left),
+      top: readOffset(node.style.top, computed.top),
+      wasStatic: computed.position === 'static',
+      imported: importedMode,
+      moved: false
+    };
+
+    ownerDocument.addEventListener('pointermove', moveCanvasElement, { passive: false });
+    ownerDocument.addEventListener('pointerup', finishCanvasDrag);
+    ownerDocument.addEventListener('pointercancel', finishCanvasDrag);
+    if (node.setPointerCapture && event.pointerId !== undefined) {
+      try { node.setPointerCapture(event.pointerId); } catch (error) { /* Capture can fail when the pointer is no longer active. */ }
+    }
+  }
+
+  function moveCanvasElement(event) {
+    if (!dragState || event.pointerId !== dragState.pointerId) return;
+    const scale = dragState.imported ? 1 : zoom / 100;
+    const dx = (event.clientX - dragState.startX) / scale;
+    const dy = (event.clientY - dragState.startY) / scale;
+    if (!dragState.moved && Math.hypot(dx, dy) < 3) return;
+
+    if (!dragState.moved) {
+      dragState.moved = true;
+      if (dragState.wasStatic) dragState.node.style.position = 'relative';
+      dragState.ownerDocument.documentElement.classList.add('webedyts-dragging');
+    }
+
+    dragState.node.style.left = Math.round(dragState.left + dx) + 'px';
+    dragState.node.style.top = Math.round(dragState.top + dy) + 'px';
+    document.getElementById('prop-x').value = Math.round(dragState.left + dx);
+    document.getElementById('prop-y').value = Math.round(dragState.top + dy);
+    if (event.cancelable) event.preventDefault();
+  }
+
+  function finishCanvasDrag(event) {
+    if (!dragState || event.pointerId !== dragState.pointerId) return;
+    const completed = dragState;
+    dragState = null;
+    completed.ownerDocument.removeEventListener('pointermove', moveCanvasElement);
+    completed.ownerDocument.removeEventListener('pointerup', finishCanvasDrag);
+    completed.ownerDocument.removeEventListener('pointercancel', finishCanvasDrag);
+    completed.ownerDocument.documentElement.classList.remove('webedyts-dragging');
+    if (completed.node.releasePointerCapture && event.pointerId !== undefined) {
+      try { completed.node.releasePointerCapture(event.pointerId); } catch (error) { /* The browser may have released it already. */ }
+    }
+    if (!completed.moved) return;
+    const selection = completed.ownerDocument.getSelection();
+    if (selection) selection.removeAllRanges();
+    saveHistory();
+    markChanged();
+    showMessage('Moved ' + nodeLabel(completed.node) + '.');
   }
 
   function makeSnapshot() {
@@ -748,7 +838,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     const selectionStyle = parsed.createElement('style');
     selectionStyle.setAttribute('data-webedyts-editor-style', 'true');
-    selectionStyle.textContent = '[data-webedyts-editor-selected] { outline: 2px solid #4f7fa7 !important; outline-offset: -2px !important; }';
+    selectionStyle.textContent = '[data-webedyts-editor-selected] { outline: 2px solid #4f7fa7 !important; outline-offset: -2px !important; } [data-webedyts-editor-node] { cursor: move; } html.webedyts-dragging, html.webedyts-dragging * { cursor: grabbing !important; user-select: none !important; }';
     parsed.head.appendChild(selectionStyle);
 
     const animationStyle = parsed.createElement('style');
@@ -806,6 +896,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         showMessage('This HTML file could not be previewed.');
         return;
       }
+      importedDoc.addEventListener('pointerdown', function (event) {
+        const target = event.target.closest('[data-webedyts-editor-node]');
+        if (target) startCanvasDrag(event, target, target.dataset.webedytsEditorNode, importedDoc);
+      });
       importedDoc.addEventListener('click', function (event) {
         const target = event.target.closest('[data-webedyts-editor-node]');
         if (!target) return;
@@ -932,6 +1026,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   tree.addEventListener('click', function (event) {
     const button = event.target.closest('[data-select]');
     if (button) selectNode(button.dataset.select);
+  });
+
+  canvas.addEventListener('pointerdown', function (event) {
+    if (importedMode) return;
+    const node = event.target.closest('[data-node]');
+    if (node) startCanvasDrag(event, node, node.dataset.node, document);
   });
 
   canvas.addEventListener('click', function (event) {
@@ -1110,12 +1210,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     if (historyPosition <= 0) { showMessage('Nothing to undo.'); return; }
     historyPosition -= 1;
     applySnapshot(history[historyPosition], false);
+    updateHistoryButtons();
     showMessage('Change undone.');
   });
   document.getElementById('redo').addEventListener('click', function () {
     if (historyPosition >= history.length - 1) { showMessage('Nothing to redo.'); return; }
     historyPosition += 1;
     applySnapshot(history[historyPosition], false);
+    updateHistoryButtons();
     showMessage('Change restored.');
   });
 
@@ -1220,6 +1322,38 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     previewMode = !previewMode;
     app.classList.toggle('preview-mode', previewMode);
     document.getElementById('preview-button').innerHTML = previewMode ? '<span class="symbol">×</span>Exit Preview' : '<span class="symbol">▷</span>Preview';
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && previewMode) {
+      document.getElementById('preview-button').click();
+      return;
+    }
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+
+    const key = event.key.toLowerCase();
+    const target = event.target;
+    const typing = target instanceof HTMLElement &&
+      (target.matches('input, textarea, select') || target.isContentEditable);
+
+    if (key === 's' && !event.shiftKey) {
+      event.preventDefault();
+      document.getElementById('save-session').click();
+      return;
+    }
+    if (key === 'o') {
+      event.preventDefault();
+      document.getElementById(event.shiftKey ? 'open-session' : 'open-website').click();
+      return;
+    }
+    if (typing) return;
+    if (key === 'z') {
+      event.preventDefault();
+      document.getElementById(event.shiftKey ? 'redo' : 'undo').click();
+    } else if (key === 'y' && !event.shiftKey) {
+      event.preventDefault();
+      document.getElementById('redo').click();
+    }
   });
 
   document.querySelectorAll('[data-menu]').forEach(function (button) {
