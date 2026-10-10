@@ -500,6 +500,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let historyPosition = -1;
   let savedSnapshot = '';
   let saveCheckPending = false;
+  let restoringSession = false;
   let dragState = null;
 
   let importedFrame = null;
@@ -955,6 +956,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         saveState.textContent = 'All changes saved';
         saveState.style.color = '';
         showMessage('HTML opened. Scripts and external assets are blocked in preview.');
+      } else if (restoringSession) {
+        restoringSession = false;
+        history = [];
+        historyPosition = -1;
+        saveHistory();
+        savedSnapshot = makeSnapshot();
+        updateSaveIndicator();
+        showMessage('Session opened.');
       } else {
         markChanged();
       }
@@ -1230,9 +1239,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const reader = new FileReader();
     reader.onload = function () {
       try {
-        applySnapshot(reader.result, true);
-        showMessage('Session opened.');
+        const data = JSON.parse(String(reader.result));
+        restoringSession = data && data.mode === 'imported';
+        applySnapshot(data, true);
+        if (!restoringSession) {
+          savedSnapshot = makeSnapshot();
+          updateSaveIndicator();
+          showMessage('Session opened.');
+        }
       } catch (error) {
+        restoringSession = false;
         showMessage(error.message || 'Could not open that session.');
       }
       sessionFile.value = '';
