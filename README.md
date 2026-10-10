@@ -137,16 +137,16 @@ Existing styles may be complex, shared, or driven by scripts. Where an edit coul
 
 ### 7. Assets and media
 
-The asset manager is planned to cover the files a modern website depends on, rather than images alone.
+The native application's asset manager is planned to cover the files a modern website depends on, rather than images alone. The current browser prototype already has a local media drawer and a first version of website-folder importing.
 
-Expected functionality:
+Planned full-application functionality:
 - Browse PNG, JPEG, GIF, WebP, AVIF, SVG, video, audio, fonts, icons, documents, and downloadable files.
 - Integrate video sources up to 8K (7680 × 4320) at 60 FPS without silently reducing or transcoding the original file.
 - Preview supported assets and search by filename, type, and properties.
 - Replace an asset while updating supported references.
-- Discover linked stylesheets, scripts, fonts, images, and other project dependencies when opening a complete website folder.
+- Discover and validate the complete dependency graph, including script-loaded resources and framework-specific asset paths.
 - Detect missing local assets and broken paths.
-- Preserve filenames and folder structure when possible, and report files that the current browser or export workflow cannot handle.
+- Preserve filenames and folder structure when possible, and report files that the current runtime or export workflow cannot handle.
 - Help users avoid unintentionally exporting private or unrelated files.
 
 The resolution and frame rate are source-integration targets, not a promise that every computer can decode every codec at that rate. Browser, codec, graphics hardware, and memory determine real playback performance.
@@ -198,11 +198,13 @@ The planned workspace has:
 
 ### Interactive UI concept
 
-An early, self-contained interface prototype is available at [prototype/index.html](prototype/index.html). The editor chrome and built-in sample are monochrome; an imported website keeps its own colors so visual edits can be judged against the real page. The workspace includes element selection, direct dragging, property editing, viewport presets, basic animation effects, keyword search, history, menus, and keyboard shortcuts.
+An early, self-contained interface prototype is available at [prototype/index.html](prototype/index.html). The editor chrome and built-in sample are monochrome; imported websites keep their original colors so visual edits can be judged against the page. The workspace includes element selection, direct dragging, property editing, viewport presets, basic animation effects, keyword search, history, working menus, keyboard shortcuts, a local media drawer, and website-folder import.
 
-The prototype can open a **single HTML file** in a contained preview and import local media through the Content Drawer. It can insert image files (including PNG, SVG, and animated GIF), video, audio, font samples, and links to other files. If inserted media is used, export creates a ZIP containing the HTML and the selected assets under a `media/` folder; otherwise it exports a standalone HTML file. The export preserves original media bytes rather than transcoding them, and the ZIP writer supports large files. Video sources up to 8K (7680 × 4320) at 60 FPS are supported as integration targets, but actual playback depends on the source codec, browser, graphics hardware, and available memory. The editor does not convert video or guarantee real-time 8K60 playback on every machine.
+The prototype can open a **single HTML file** or a **complete local website folder**. Folder import lists the HTML pages, lets you switch between them, resolves common local links to CSS, images, fonts, video, audio, and other files, and rewrites CSS `url()` and local `@import` references for the contained preview. Internal links to imported HTML pages can be opened inside the editor. Use **Export Website ZIP** to package the selected folder's files at their existing relative paths, with changed pages and inserted media included. For a single HTML file, the existing standalone-HTML export remains available unless inserted media requires a ZIP.
 
-This is still a prototype, not full project importing. You must add any media you want to insert; the editor does not yet scan an entire website folder and automatically resolve every dependency. Imported pages are isolated: scripts and external network assets are blocked in the preview for safety, and websites that rely on linked CSS, remote fonts, images, JavaScript, or backend services may not look or behave as they do when hosted. Exported projects should be tested in the intended browser before deployment. The native desktop application and complete project-folder workflow remain planned.
+The media drawer can insert PNG, SVG, animated GIF, video, audio, font samples, and links to other files. Video sources up to 8K (7680 × 4320) at 60 FPS are supported as integration targets; the original media is preserved without transcoding, but playback depends on the source codec, browser, graphics hardware, and available memory. WEBEDYTS does not guarantee smooth 8K60 playback on every machine.
+
+This remains a prototype rather than a complete website runtime. Imported scripts are intentionally disabled in the isolated preview, and external network resources are blocked. The importer does not yet resolve every script-created request, framework-specific build path, dynamic component, server route, or backend service, so complex sites may not render exactly as they do when hosted. The folder export includes the files the user selected; exported projects should be tested in the intended browser before deployment. A native desktop application and broader validation tools remain planned.
 
 ## Important technical boundaries
 
@@ -331,7 +333,7 @@ Any third-party components or assets included in the project remain subject to t
 
 ## Current status and contributions
 
-WEBEDYTS is in early prototyping. The repository has a working UI concept, a limited standalone-HTML editor, local media insertion, and a ZIP export path for inserted assets. The native desktop application, full website-folder importer, automatic dependency discovery, comprehensive linked-asset handling, production export validation, and cross-platform release builds have not been implemented yet. This README distinguishes working prototype features from the larger plan.
+WEBEDYTS is in early prototyping. The repository has a working monochrome UI concept, a standalone-HTML editor, local media insertion, and an initial website-folder importer with multi-page switching, common local-asset preview, and ZIP export that preserves selected file paths. The native desktop application, script-enabled preview, exhaustive dependency discovery, framework-specific support, comprehensive export validation, and cross-platform release builds have not been implemented yet. This README distinguishes working prototype features from the larger plan.
 
 Development should follow the project's [coding and commit rules](DEVELOPMENT.md): readable code, sensible-sized functions, no unnecessary automation or abstraction, honest testing, and short, natural commit messages.
 
