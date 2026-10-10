@@ -407,6 +407,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <section class="detail-block">
           <div class="detail-title">TRANSFORM</div>
           <div class="field-row"><label for="prop-width">Width (px)</label><input id="prop-width" type="number" min="0" max="1600" placeholder="Auto"></div>
+          <div class="field-row"><label for="prop-x">X offset (px)</label><input id="prop-x" type="number" min="-2000" max="2000" placeholder="None"></div>
+          <div class="field-row"><label for="prop-y">Y offset (px)</label><input id="prop-y" type="number" min="-2000" max="2000" placeholder="None"></div>
+          <div class="field-row"><label for="prop-font-size">Font size (px)</label><input id="prop-font-size" type="number" min="1" max="240" placeholder="Auto"></div>
+          <div class="field-row"><label for="prop-padding">Padding (px)</label><input id="prop-padding" type="number" min="0" max="300" placeholder="Auto"></div>
+          <div class="field-row"><label for="prop-opacity">Opacity (%)</label><input id="prop-opacity" type="number" min="0" max="100" placeholder="100"></div>
           <div class="field-row"><label for="prop-color">Text color</label><input id="prop-color" type="color" value="#191919"></div>
           <div class="field-row"><label for="prop-background">Background</label><input id="prop-background" type="color" value="#e9e6df"></div>
           <div class="field-help">Properties update the selected element in the preview.</div>
@@ -553,6 +558,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     propertyText.disabled = !editable;
     propertyText.value = editable ? node.textContent.trim().replace(/\s+/g, ' ') : '';
     propertyWidth.value = node.style.width ? parseInt(node.style.width, 10) : '';
+    document.getElementById('prop-x').value = node.style.left ? parseInt(node.style.left, 10) : '';
+    document.getElementById('prop-y').value = node.style.top ? parseInt(node.style.top, 10) : '';
+    document.getElementById('prop-font-size').value = node.style.fontSize ? parseInt(node.style.fontSize, 10) : '';
+    document.getElementById('prop-padding').value = node.style.padding ? parseInt(node.style.padding, 10) : '';
+    document.getElementById('prop-opacity').value = node.style.opacity !== '' ? Math.round(Number(node.style.opacity) * 100) : '';
     propertyColor.value = rgbToHex(getComputedStyle(node).color);
     propertyBackground.value = rgbToHex(getComputedStyle(node).backgroundColor);
     propertyAnimation.value = importedMode ? (node.dataset.webedytsEditorAnimation || '') : (node.dataset.animation || '');
@@ -592,6 +602,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         id: node.dataset.node,
         text: node.dataset.editableText === 'true' ? node.textContent : null,
         width: node.style.width || '',
+        left: node.style.left || '',
+        top: node.style.top || '',
+        fontSize: node.style.fontSize || '',
+        padding: node.style.padding || '',
+        opacity: node.style.opacity || '',
         color: node.style.color || '',
         background: node.style.backgroundColor || '',
         animation: node.dataset.animation || ''
@@ -624,6 +639,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       if (!node) return;
       if (saved.text !== null && saved.text !== undefined && node.dataset.editableText === 'true') node.textContent = saved.text;
       node.style.width = saved.width || '';
+      node.style.left = saved.left || '';
+      node.style.top = saved.top || '';
+      node.style.fontSize = saved.fontSize || '';
+      node.style.padding = saved.padding || '';
+      node.style.opacity = saved.opacity || '';
       node.style.color = saved.color || '';
       node.style.backgroundColor = saved.background || '';
       setAnimation(node, saved.animation || '', false);
@@ -951,6 +971,38 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     saveHistory();
     markChanged();
   });
+
+  function bindNumericStyle(id, property, unit) {
+    const field = document.getElementById(id);
+    field.addEventListener('change', function () {
+      const node = getNode(selectedId);
+      if (!node) return;
+      const raw = field.value.trim();
+      if (!raw) {
+        node.style[property] = '';
+      } else {
+        const number = Number(raw);
+        if (!Number.isFinite(number)) return;
+        if (property === 'opacity') {
+          node.style.opacity = String(Math.max(0, Math.min(100, number)) / 100);
+        } else {
+          node.style[property] = number + unit;
+          if ((property === 'left' || property === 'top') &&
+              getComputedStyle(node).position === 'static') {
+            node.style.position = 'relative';
+          }
+        }
+      }
+      saveHistory();
+      markChanged();
+    });
+  }
+
+  bindNumericStyle('prop-x', 'left', 'px');
+  bindNumericStyle('prop-y', 'top', 'px');
+  bindNumericStyle('prop-font-size', 'fontSize', 'px');
+  bindNumericStyle('prop-padding', 'padding', 'px');
+  bindNumericStyle('prop-opacity', 'opacity', '');
 
   propertyColor.addEventListener('input', function () {
     const node = getNode(selectedId);
