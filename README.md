@@ -269,6 +269,23 @@ The 32-bit Windows and Linux targets must also be verified against the selected 
 - Updates and optional network features must be clearly separated from core local editing.
 - Release notes should identify the OS version, CPU architecture, package format, and known limitations for each download.
 
+## Built-in SHA-256 license integrity
+
+The repository now includes a portable C++17 SHA-256 implementation and an embedded proprietary license notice:
+
+- `src/security/sha256.hpp` implements SHA-256 without an external dependency.
+- `src/security/license_guard.hpp` embeds the current license notice and verifies its SHA-256 digest.
+- `tests/security/sha256_test.cpp` checks known SHA-256 test vectors and validates the embedded notice.
+- `src/security/README.md` documents the intended security boundary and release-hardening requirements.
+
+This is an integrity foundation, not unbreakable copy protection. A checksum stored alongside editable source can be changed by someone who modifies the source. Production releases should add signed manifests and platform code-signing; the signing private key must stay outside this public repository. The verifier still needs to be called by the future desktop application's startup code before it becomes an app-wide check.
+
+## AI and automated-code restrictions
+
+See [AI-USE-POLICY.md](AI-USE-POLICY.md). The project explicitly withholds permission, absent prior written authorization, to use its protected source materials for AI/ML training and to use those materials as input for AI systems to produce rewrites, patches, ports, reconstructions, or derivative modifications of Website Indexer.
+
+The policy states the copyright holder's intended terms; **a policy file or SHA-256 checksum cannot technically force third-party enterprise AI services to comply**. The policy does not claim ownership of general ideas or functionality, and legal effect depends on applicable law and circumstances.
+
 ## Copyright and usage
 
 **Copyright (c) 2026 Robiul Rumman Razim. All rights reserved.**
