@@ -523,6 +523,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let projectMode = false;
   let projectRootName = '';
   let projectEntryPath = '';
+  let projectNavigationFragment = '';
   let projectFiles = [];
   let projectFilesByPath = new Map();
   let projectPathLookup = new Map();
@@ -649,7 +650,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     propertyAnimation.value = importedMode ? (node.dataset.webedytsEditorAnimation || '') : (node.dataset.animation || '');
     document.getElementById('selection-status').textContent = 'Selected: ' + nodeLabel(node);
     document.getElementById('canvas-status').textContent = importedMode ?
-      'Imported HTML · Scripts and external assets are blocked in preview' :
+      (projectMode ? 'Website project · ' + projectEntryPath + ' · Scripts disabled in preview' : 'Imported HTML · Scripts and external assets are blocked in preview') :
       canvas.offsetWidth + ' × ' + canvas.offsetHeight + ' · Selection enabled';
   }
 
@@ -909,6 +910,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     return projectFilesByPath.get(projectPathLookup.get(normalized.toLowerCase()) || normalized) || null;
   }
 
+  function projectFragmentSuffix(suffix) {
+    const hash = String(suffix || '').indexOf('#');
+    return hash < 0 ? '' : String(suffix).slice(hash);
+  }
+
   function projectReference(fromPath, reference) {
     const raw = String(reference || '').trim();
     if (!raw || raw.charAt(0) === '#' || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(raw)) return null;
@@ -939,6 +945,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     projectMode = false;
     projectRootName = '';
     projectEntryPath = '';
+    projectNavigationFragment = '';
     projectFiles = [];
     projectFilesByPath = new Map();
     projectPathLookup = new Map();
@@ -1011,7 +1018,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const resolved = projectReference(cssPath, reference);
       if (resolved) {
         const assetUrl = projectAssetUrls.get(resolved.path);
-        rewritten += assetUrl ? 'url("' + assetUrl + resolved.suffix + '")' : match[0];
+        rewritten += assetUrl ? 'url("' + assetUrl + projectFragmentSuffix(resolved.suffix) + '")' : match[0];
       } else {
         rewritten += match[0];
       }
@@ -1066,7 +1073,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       }
       const resolved = projectReference(ownerPath, parts[1]);
       const assetUrl = resolved && projectAssetUrls.get(resolved.path);
-      output.push((assetUrl ? assetUrl + resolved.suffix : parts[1]) + (parts[2] || ''));
+      output.push((assetUrl ? assetUrl + projectFragmentSuffix(resolved.suffix) : parts[1]) + (parts[2] || ''));
     }
     return output.join(', ');
   }
@@ -1101,9 +1108,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           const target = resolved && findProjectFile(resolved.path);
           if (target && node.tagName === 'A' && name === 'href' && isProjectHtmlPath(target.path)) {
             node.dataset.webedytsProjectLink = target.path;
+            const hashAt = resolved.suffix.indexOf('#');
+            if (hashAt >= 0) node.dataset.webedytsProjectFragment = resolved.suffix.slice(hashAt + 1);
             replacement = '#';
           } else if (resolved) {
-            replacement = projectAssetUrls.get(resolved.path) + resolved.suffix;
+            replacement = projectAssetUrls.get(resolved.path) + projectFragmentSuffix(resolved.suffix);
           }
         }
 
@@ -1208,7 +1217,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     updateSaveIndicator();
   }
 
-  async function loadProjectPage(path) {
+  async function loadProjectPage(path, fragment) {
     const normalized = projectPathLookup.get(normalizeProjectPath(path).toLowerCase());
     if (!normalized || !projectPagePaths.includes(normalized) || !findProjectFile(normalized)) {
       showMessage('That page is not part of this imported website.');
@@ -1220,6 +1229,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const entry = findProjectFile(normalized);
     if (!entry) return;
     projectEntryPath = normalized;
+    projectNavigationFragment = fragment || '';
     document.getElementById('project-page-select').value = normalized;
     let markup = projectPageEdits.get(normalized);
     if (markup === undefined) markup = await entry.file.text();
@@ -1406,7 +1416,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         const projectLink = event.target.closest('[data-webedyts-project-link]');
         if (projectLink && projectMode) {
           event.preventDefault();
-          loadProjectPage(projectLink.dataset.webedytsProjectLink);
+          loadProjectPage(projectLink.dataset.webedytsProjectLink, projectLink.dataset.webedytsProjectFragment || '');
           return;
         }
         const target = event.target.closest('[data-webedyts-editor-node]');
@@ -1417,6 +1427,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       buildImportedTree();
       const first = importedDoc.querySelector('[data-webedyts-editor-node]:not(body)');
       selectNode(getNode(selectId) ? selectId : (first ? first.dataset.webedytsEditorNode : 'page'));
+      if (projectMode && projectNavigationFragment) {
+        const fragment = projectNavigationFragment;
+        projectNavigationFragment = '';
+        let targetId = fragment;
+        try { targetId = decodeURIComponent(fragment); } catch (error) { /* Keep literal fragment identifiers. */ }
+        window.requestAnimationFrame(function () {
+          const destination = importedDoc && (importedDoc.getElementById(targetId) || importedDoc.getElementsByName(targetId)[0]);
+          if (destination && destination.scrollIntoView) destination.scrollIntoView({ block: 'start' });
+        });
+      }
       updateMediaActions();
       if (recordHistory) {
         history = [];
