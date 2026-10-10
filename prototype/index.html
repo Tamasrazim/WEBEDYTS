@@ -283,7 +283,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   </nav>
   <div class="toolbar">
     <button class="tool-button" id="new-session"><span class="symbol">＋</span>New</button>
-    <button class="tool-button" id="open-website"><span class="symbol">↥</span>Open Website</button>
+    <button class="tool-button" id="open-website"><span class="symbol">↥</span>Open HTML</button>
     <button class="tool-button" id="open-session"><span class="symbol">▱</span>Open Session</button>
     <button class="tool-button" id="save-session"><span class="symbol">▣</span>Save</button>
     <span class="tool-divider"></span>
@@ -612,7 +612,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       throw new Error('This file is not a WEBEDYTS session.');
     }
     if (data.mode === 'imported' && typeof data.html === 'string') {
-      loadImportedMarkup(data.html, data.fileName || 'imported-page.html', data.selected || 'page', false);
+      loadImportedMarkup(data.html, data.fileName || 'imported-page.html', data.selected || 'page', false, data.viewport);
       return;
     }
     if (!Array.isArray(data.elements)) {
@@ -706,7 +706,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     reader.readAsText(file);
   }
 
-  function loadImportedMarkup(markup, fileName, selectId, recordHistory) {
+  function loadImportedMarkup(markup, fileName, selectId, recordHistory, viewportMode) {
+    if (viewportMode && ['desktop', 'tablet', 'mobile'].includes(viewportMode)) {
+      canvas.dataset.mode = viewportMode;
+      document.getElementById('viewport-mode').value = viewportMode;
+    }
     const parsed = new DOMParser().parseFromString(markup, 'text/html');
     parsed.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style], [data-webedyts-animation-style]').forEach(function (node) {
       node.remove();
