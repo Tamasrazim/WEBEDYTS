@@ -604,6 +604,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         width: node.style.width || '',
         left: node.style.left || '',
         top: node.style.top || '',
+        position: node.style.position || '',
         fontSize: node.style.fontSize || '',
         padding: node.style.padding || '',
         opacity: node.style.opacity || '',
@@ -641,6 +642,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       node.style.width = saved.width || '';
       node.style.left = saved.left || '';
       node.style.top = saved.top || '';
+      node.style.position = saved.position || '';
       node.style.fontSize = saved.fontSize || '';
       node.style.padding = saved.padding || '';
       node.style.opacity = saved.opacity || '';
