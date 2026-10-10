@@ -880,6 +880,400 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     document.querySelector('.project-name').textContent = 'Studio Demo / Home Page';
   }
 
+  function normalizeProjectPath(path) {
+    const parts = [];
+    String(path || '').replace(/\\/g, '/').split('/').forEach(function (part) {
+      if (!part || part === '.') return;
+      if (part === '..') {
+        if (parts.length) parts.pop();
+        return;
+      }
+      parts.push(part);
+    });
+    return parts.join('/');
+  }
+
+  function isProjectHtmlPath(path) {
+    return /\.html?$/i.test(path || '');
+  }
+
+  function isProjectCssPath(path) {
+    return /\.css$/i.test(path || '');
+  }
+
+  function findProjectFile(path) {
+    const normalized = normalizeProjectPath(path);
+    return projectFilesByPath.get(projectPathLookup.get(normalized.toLowerCase()) || normalized) || null;
+  }
+
+  function projectReference(fromPath, reference) {
+    const raw = String(reference || '').trim();
+    if (!raw || raw.charAt(0) === '#' || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(raw)) return null;
+    const match = raw.match(/^([^?#]*)([\s\S]*)$/);
+    let pathPart = (match ? match[1] : raw).trim();
+    const suffix = match ? match[2] : '';
+    if (!pathPart) return null;
+
+    try { pathPart = decodeURIComponent(pathPart); } catch (error) { /* Keep literal filenames when percent escapes are malformed. */ }
+    pathPart = pathPart.replace(/\\/g, '/');
+    const combined = pathPart.charAt(0) === '/' ?
+      pathPart.slice(1) : (String(fromPath).includes('/') ? String(fromPath).slice(0, String(fromPath).lastIndexOf('/') + 1) : '') + pathPart;
+    const normalized = normalizeProjectPath(combined);
+    const actualPath = projectPathLookup.get(normalized.toLowerCase());
+    if (!actualPath || !projectAssetUrls.has(actualPath)) return null;
+    return { path: actualPath, suffix: suffix };
+  }
+
+  function projectObjectUrl(blob) {
+    const url = URL.createObjectURL(blob);
+    projectObjectUrls.add(url);
+    return url;
+  }
+
+  function disposeProjectWorkspace() {
+    projectObjectUrls.forEach(function (url) { URL.revokeObjectURL(url); });
+    projectObjectUrls.clear();
+    projectMode = false;
+    projectRootName = '';
+    projectEntryPath = '';
+    projectFiles = [];
+    projectFilesByPath = new Map();
+    projectPathLookup = new Map();
+    projectAssetUrls = new Map();
+    projectCssProcessed = new Set();
+    projectPagePaths = [];
+    projectPageEdits = new Map();
+    projectPageBaselines = new Map();
+    const selector = document.getElementById('project-page-select');
+    selector.innerHTML = '';
+    selector.classList.add('hidden');
+    document.getElementById('project-page-label').classList.add('hidden');
+  }
+
+  function clearProjectWorkspace() {
+    disposeProjectWorkspace();
+    updateMediaActions();
+  }
+
+  function updateProjectPageSelector() {
+    const selector = document.getElementById('project-page-select');
+    const label = document.getElementById('project-page-label');
+    selector.innerHTML = '';
+    if (!projectMode || !projectPagePaths.length) {
+      selector.classList.add('hidden');
+      label.classList.add('hidden');
+      return;
+    }
+    projectPagePaths.forEach(function (path) {
+      const option = document.createElement('option');
+      option.value = path;
+      option.textContent = path;
+      selector.appendChild(option);
+    });
+    selector.value = projectEntryPath;
+    selector.classList.remove('hidden');
+    label.classList.remove('hidden');
+  }
+
+  async function rewriteProjectCss(cssText, cssPath, ancestry) {
+    let output = '';
+    let cursor = 0;
+    const importPattern = /@import\s+(?:url\(\s*)?(?:(["'])(.*?)\1|([^)\s;]+))\s*\)?\s*([^;]*);/gi;
+    const imports = Array.from(String(cssText).matchAll(importPattern));
+
+    for (const match of imports) {
+      output += cssText.slice(cursor, match.index);
+      const reference = match[2] || match[3] || '';
+      const mediaQuery = String(match[4] || '').trim();
+      const resolved = projectReference(cssPath, reference);
+      const target = resolved && findProjectFile(resolved.path);
+      if (target && isProjectCssPath(target.path)) {
+        const nested = await loadProjectCss(target.path, ancestry);
+        output += mediaQuery ? '@media ' + mediaQuery + '{\n' + nested + '\n}' : nested;
+      } else {
+        output += match[0];
+      }
+      cursor = match.index + match[0].length;
+    }
+    output += cssText.slice(cursor);
+
+    let rewritten = '';
+    cursor = 0;
+    const urlPattern = /url\(\s*(?:(["'])(.*?)\1|([^)]*?))\s*\)/gi;
+    const urls = Array.from(output.matchAll(urlPattern));
+    for (const match of urls) {
+      rewritten += output.slice(cursor, match.index);
+      const reference = (match[2] !== undefined ? match[2] : match[3] || '').trim();
+      const resolved = projectReference(cssPath, reference);
+      if (resolved) {
+        const assetUrl = projectAssetUrls.get(resolved.path);
+        rewritten += assetUrl ? 'url("' + assetUrl + resolved.suffix + '")' : match[0];
+      } else {
+        rewritten += match[0];
+      }
+      cursor = match.index + match[0].length;
+    }
+    return rewritten + output.slice(cursor);
+  }
+
+  async function loadProjectCss(path, ancestry) {
+    const normalized = normalizeProjectPath(path);
+    if (projectCssProcessed.has(normalized)) return projectAssetUrls.get(normalized);
+    const chain = ancestry || new Set();
+    const rawUrl = projectAssetUrls.get(normalized);
+    if (chain.has(normalized)) return rawUrl;
+
+    const entry = findProjectFile(normalized);
+    if (!entry) return rawUrl;
+    chain.add(normalized);
+    const original = await entry.file.text();
+    const css = await rewriteProjectCss(original, normalized, chain);
+    chain.delete(normalized);
+
+    const previousUrl = projectAssetUrls.get(normalized);
+    const processedUrl = projectObjectUrl(new Blob([css], { type: 'text/css;charset=utf-8' }));
+    projectAssetUrls.set(normalized, processedUrl);
+    projectCssProcessed.add(normalized);
+    return processedUrl;
+  }
+
+  async function rewriteProjectSrcset(value, ownerPath) {
+    const entries = String(value || '').split(',');
+    const output = [];
+    for (const entry of entries) {
+      const trimmed = entry.trim();
+      if (!trimmed) continue;
+      const parts = trimmed.match(/^(\S+)([\s\S]*)$/);
+      if (!parts) {
+        output.push(trimmed);
+        continue;
+      }
+      const resolved = projectReference(ownerPath, parts[1]);
+      const assetUrl = resolved && projectAssetUrls.get(resolved.path);
+      output.push((assetUrl ? assetUrl + resolved.suffix : parts[1]) + (parts[2] || ''));
+    }
+    return output.join(', ');
+  }
+
+  async function prepareProjectMarkup(markup, htmlPath) {
+    const parsed = new DOMParser().parseFromString(markup, 'text/html');
+    const nodes = Array.from(parsed.querySelectorAll('*'));
+
+    for (const node of nodes) {
+      if (node.tagName === 'BASE') {
+        node.remove();
+        continue;
+      }
+
+      const originalAttrs = {};
+      const attributes = ['src', 'href', 'poster', 'data', 'xlink:href', 'srcset', 'style'];
+      for (const name of attributes) {
+        if (!node.hasAttribute(name)) continue;
+        const original = node.getAttribute(name);
+        let replacement = original;
+
+        if (name === 'style') {
+          replacement = await rewriteProjectCss(original, htmlPath, new Set());
+        } else if (name === 'srcset') {
+          replacement = await rewriteProjectSrcset(original, htmlPath);
+        } else {
+          const resolved = projectReference(htmlPath, original);
+          const target = resolved && findProjectFile(resolved.path);
+          if (target && node.tagName === 'A' && name === 'href' && isProjectHtmlPath(target.path)) {
+            node.dataset.webedytsProjectLink = target.path;
+            replacement = '#';
+          } else if (resolved) {
+            replacement = projectAssetUrls.get(resolved.path) + resolved.suffix;
+          }
+        }
+
+        if (replacement !== original) {
+          originalAttrs[name] = original;
+          node.setAttribute(name, replacement);
+        }
+      }
+      if (Object.keys(originalAttrs).length) {
+        node.setAttribute('data-webedyts-project-original-attrs', JSON.stringify(originalAttrs));
+      }
+
+      if (node.tagName === 'STYLE' && node.textContent) {
+        const originalCss = node.textContent;
+        const rewrittenCss = await rewriteProjectCss(originalCss, htmlPath, new Set());
+        if (rewrittenCss !== originalCss) {
+          node.setAttribute('data-webedyts-project-original-style', originalCss);
+          node.textContent = rewrittenCss;
+        }
+      }
+    }
+
+    parsed.body.setAttribute('data-webedyts-project-entry', htmlPath);
+    return '<!DOCTYPE html>\n' + parsed.documentElement.outerHTML;
+  }
+
+  function projectComparableSnapshot() {
+    const data = JSON.parse(makeSnapshot());
+    delete data.selected;
+    return JSON.stringify(data);
+  }
+
+  function relativeProjectPath(fromPath, targetPath) {
+    const fromParts = normalizeProjectPath(fromPath).split('/').slice(0, -1);
+    const targetParts = normalizeProjectPath(targetPath).split('/');
+    while (fromParts.length && targetParts.length && fromParts[0] === targetParts[0]) {
+      fromParts.shift();
+      targetParts.shift();
+    }
+    const parts = fromParts.map(function () { return '..'; }).concat(targetParts);
+    return parts.join('/') || './';
+  }
+
+  function serializeProjectPage() {
+    if (!importedDoc || !projectMode) return '';
+    const clone = importedDoc.documentElement.cloneNode(true);
+
+    clone.querySelectorAll('[data-webedyts-project-original-attrs]').forEach(function (node) {
+      let originalAttrs = {};
+      try { originalAttrs = JSON.parse(node.getAttribute('data-webedyts-project-original-attrs') || '{}'); } catch (error) { /* Ignore malformed editor metadata. */ }
+      Object.keys(originalAttrs).forEach(function (name) {
+        node.setAttribute(name, originalAttrs[name]);
+      });
+      node.removeAttribute('data-webedyts-project-original-attrs');
+    });
+    clone.querySelectorAll('[data-webedyts-project-original-style]').forEach(function (node) {
+      node.textContent = node.getAttribute('data-webedyts-project-original-style') || '';
+      node.removeAttribute('data-webedyts-project-original-style');
+    });
+    clone.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
+      node.remove();
+    });
+    clone.querySelectorAll('[data-webedyts-animation-style]').forEach(function (node) {
+      node.removeAttribute('data-webedyts-animation-style');
+    });
+    clone.querySelectorAll('*').forEach(function (node) {
+      Array.from(node.attributes).forEach(function (attribute) {
+        if (attribute.name.startsWith('data-webedyts-editor-') ||
+            attribute.name.startsWith('data-webedyts-project-') ||
+            attribute.name === 'data-webedyts-asset-path' ||
+            attribute.name === 'data-webedyts-asset-style') {
+          node.removeAttribute(attribute.name);
+        }
+      });
+    });
+
+    const doctype = importedDoc.doctype ? '<!DOCTYPE ' + importedDoc.doctype.name + '>' : '<!DOCTYPE html>';
+    let output = doctype + '\n' + clone.outerHTML;
+    mediaAssets.forEach(function (asset) {
+      output = output.split(asset.url).join(relativeProjectPath(projectEntryPath, asset.packagePath));
+    });
+    return output;
+  }
+
+  async function saveCurrentProjectPage() {
+    if (!projectMode || !importedDoc || !projectEntryPath) return;
+    const path = projectEntryPath;
+    const current = projectComparableSnapshot();
+    if (current !== projectPageBaselines.get(path)) {
+      projectPageEdits.set(path, serializeProjectPage());
+    } else {
+      projectPageEdits.delete(path);
+    }
+    updateSaveIndicator();
+  }
+
+  async function loadProjectPage(path) {
+    const normalized = projectPathLookup.get(normalizeProjectPath(path).toLowerCase());
+    if (!normalized || !projectPagePaths.includes(normalized) || !findProjectFile(normalized)) {
+      showMessage('That page is not part of this imported website.');
+      return;
+    }
+    if (normalized === projectEntryPath && importedDoc) return;
+    await saveCurrentProjectPage();
+
+    const entry = findProjectFile(normalized);
+    if (!entry) return;
+    projectEntryPath = normalized;
+    document.getElementById('project-page-select').value = normalized;
+    let markup = projectPageEdits.get(normalized);
+    if (markup === undefined) markup = await entry.file.text();
+    const preparedMarkup = await prepareProjectMarkup(markup, normalized);
+    loadImportedMarkup(preparedMarkup, normalized, 'page', true);
+  }
+
+  async function importWebsiteFolder(fileList) {
+    const selectedFiles = Array.from(fileList || []);
+    if (!selectedFiles.length) return;
+    if (saveState.textContent === 'Unsaved changes' &&
+        !window.confirm('Discard the current changes and open another website folder?')) return;
+
+    const withPaths = selectedFiles.filter(function (file) { return file.webkitRelativePath; });
+    if (!withPaths.length) {
+      showMessage('This browser did not provide folder-relative paths. Open the HTML file directly instead.');
+      return;
+    }
+
+    const roots = new Set(withPaths.map(function (file) { return file.webkitRelativePath.split('/')[0]; }));
+    const rootName = roots.values().next().value || 'Website';
+    const entries = [];
+    const seen = new Set();
+    withPaths.forEach(function (file) {
+      const parts = file.webkitRelativePath.split('/');
+      const path = normalizeProjectPath(parts.slice(1).join('/'));
+      if (!path) return;
+      if (seen.has(path.toLowerCase())) return;
+      seen.add(path.toLowerCase());
+      entries.push({ path: path, file: file });
+    });
+
+    const pages = entries.filter(function (entry) { return isProjectHtmlPath(entry.path); });
+    if (!pages.length) {
+      showMessage('No HTML pages were found in that folder.');
+      return;
+    }
+
+    pages.sort(function (a, b) {
+      const aIndex = /(^|\/)index\.html?$/i.test(a.path) ? 0 : 1;
+      const bIndex = /(^|\/)index\.html?$/i.test(b.path) ? 0 : 1;
+      const aDepth = a.path.split('/').length;
+      const bDepth = b.path.split('/').length;
+      return aDepth - bDepth || aIndex - bIndex || a.path.localeCompare(b.path);
+    });
+
+    clearProjectWorkspace();
+    projectMode = true;
+    projectRootName = rootName;
+    projectFiles = entries;
+    projectFiles.forEach(function (entry) {
+      projectFilesByPath.set(entry.path, entry);
+      projectPathLookup.set(entry.path.toLowerCase(), entry.path);
+      projectAssetUrls.set(entry.path, projectObjectUrl(entry.file));
+    });
+    projectPagePaths = pages.map(function (entry) { return entry.path; }).sort(function (a, b) { return a.localeCompare(b); });
+
+    try {
+      for (const entry of projectFiles) {
+        if (isProjectCssPath(entry.path)) await loadProjectCss(entry.path, new Set());
+      }
+      mediaAssets.forEach(function (asset) {
+        if (!projectPathLookup.has(asset.packagePath.toLowerCase())) {
+          projectPathLookup.set(asset.packagePath.toLowerCase(), asset.packagePath);
+          projectAssetUrls.set(asset.packagePath, asset.url);
+        }
+      });
+      const target = pages.find(function (entry) { return entry.path === pages[0].path; }) || pages[0];
+      projectEntryPath = target.path;
+      updateProjectPageSelector();
+      document.querySelector('.project-name').textContent = rootName + ' / ' + target.path;
+      const markup = await target.file.text();
+      const preparedMarkup = await prepareProjectMarkup(markup, target.path);
+      loadImportedMarkup(preparedMarkup, target.path, 'page', true);
+      updateProjectPageSelector();
+      showMessage('Website folder opened · ' + entries.length + ' files · ' + pages.length + ' HTML pages.');
+    } catch (error) {
+      clearProjectWorkspace();
+      showMessage('Could not open that website folder: ' + (error && error.message ? error.message : 'unknown error'));
+    }
+  }
+
   function importWebsiteFile(file) {
     if (!file) return;
     if (saveState.textContent === 'Unsaved changes' &&
