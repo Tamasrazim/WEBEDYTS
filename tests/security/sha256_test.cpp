@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main() {
-    using website_indexer::security::sha256_hex;
+    using webedyts::security::sha256_hex;
 
     if (sha256_hex("") != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855") {
         std::cerr << "SHA-256 empty-string test failed\n";
@@ -14,7 +14,7 @@ int main() {
         std::cerr << "SHA-256 abc test failed\n";
         return 1;
     }
-    if (!website_indexer::security::verify_embedded_license_notice()) {
+    if (!webedyts::security::verify_embedded_license_notice()) {
         std::cerr << "Embedded license SHA-256 mismatch\n";
         return 1;
     }
