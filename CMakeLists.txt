@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(WEBEDYTS LANGUAGES CXX)
+project(WEBEDYTS LANGUAGES C CXX)
+
+option(WEBEDYTS_BUILD_DESKTOP "Build the native CEF desktop application" OFF)
 
 add_executable(webedyts_security_test
     tests/security/sha256_test.cpp
@@ -16,3 +18,10 @@ endif()
 
 enable_testing()
 add_test(NAME webedyts_security_test COMMAND webedyts_security_test)
+
+if(WEBEDYTS_BUILD_DESKTOP)
+    if(CMAKE_VERSION VERSION_LESS 3.21)
+        message(FATAL_ERROR "The CEF desktop build requires CMake 3.21 or newer.")
+    endif()
+    add_subdirectory(desktop)
+endif()
