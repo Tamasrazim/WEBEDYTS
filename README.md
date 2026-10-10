@@ -196,7 +196,9 @@ The planned workspace has:
 
 An early, self-contained interface prototype is available at [prototype/index.html](prototype/index.html). It demonstrates the dark multi-panel workspace, element selection, basic property editing, viewport presets, simple animation effects, keyword search, and session save/load.
 
-This prototype edits a sample page and saves a WEBEDYTS concept-session JSON file. It does **not** yet import arbitrary website projects, modify real website files, or create a native desktop build. Those require the desktop application and project-editing engine.
+The prototype can also open a **single HTML file** in a contained preview, select its elements, edit supported text and inline styles, apply a few sample animations, and export a new HTML file. Try it with the [sample studio page](prototype/examples/studio-page.html).
+
+This is deliberately a small first step, not full project importing. The preview blocks JavaScript and external network assets, so websites that depend on linked CSS, images, fonts, scripts, or backend services may not look or behave as they do when hosted. It does not yet load an entire website folder, keep linked assets together, or create a native desktop build. Those are still part of the planned application.
 
 ## Important technical boundaries
 
@@ -316,7 +318,7 @@ Any third-party components or assets included in the project remain subject to t
 
 ## Current status and contributions
 
-WEBEDYTS is at the project-definition stage. Features in this README describe the intended direction and will be updated as the implementation becomes available.
+WEBEDYTS is in early prototyping. The repository has a working UI concept and a limited standalone-HTML editing demo, but the native desktop application, complete project importer, multi-file asset handling, and production export pipeline have not been implemented yet. This README distinguishes working prototype features from the larger plan.
 
 Development should follow the project's [coding and commit rules](DEVELOPMENT.md): readable code, sensible-sized functions, no unnecessary automation or abstraction, honest testing, and short, natural commit messages.
 
