@@ -983,6 +983,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function setProjectImportBusy(busy) {
     projectImportBusy = busy;
+    app.toggleAttribute('inert', busy);
     const overlay = document.getElementById('project-loading-overlay');
     overlay.classList.toggle('hidden', !busy);
     overlay.setAttribute('aria-hidden', busy ? 'false' : 'true');
