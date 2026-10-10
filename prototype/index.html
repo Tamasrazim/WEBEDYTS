@@ -343,7 +343,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </div>
       <div class="viewport-stage" id="viewport-stage">
         <span class="viewport-caption">DESIGN VIEWPORT / HOME PAGE</span>
-        <div class="website-canvas" id="website-canvas" data-mode="desktop">
+        <div class="website-canvas" id="website-canvas" data-node="page" data-label="Home Page" data-kind="Page" data-mode="desktop">
           <div class="site-nav" data-node="nav" data-label="Navigation" data-kind="Navigation">
             <span class="site-brand" data-node="brand" data-label="Brand Name" data-kind="Text" data-editable-text="true">FORM / FIELD</span>
             <div class="site-links" data-node="links" data-label="Navigation Links" data-kind="Navigation Links">
@@ -476,6 +476,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let savedSnapshot = '';
 
   function getNode(id) {
+    if (id === 'page') return canvas;
     return canvas.querySelector('[data-node="' + id + '"]');
   }
 
@@ -510,6 +511,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const node = getNode(id);
     if (!node) return;
     selectedId = id;
+    canvas.classList.toggle('is-selected', id === 'page');
     canvas.querySelectorAll('[data-node]').forEach(function (item) {
       item.classList.toggle('is-selected', item.dataset.node === id);
     });
@@ -714,7 +716,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       card.classList.toggle('hidden', !match);
       if (match) visible += 1;
     });
-    document.getElementById('drawer-empty').classList.toggle('hidden', visible > 0);
+    const emptyState = document.getElementById('drawer-empty');
+    if (emptyState) emptyState.classList.toggle('hidden', visible > 0);
   });
 
   document.getElementById('viewport-mode').addEventListener('change', function (event) {
@@ -801,6 +804,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         const items = [['◩','Hero Artwork','Preview asset'],['◈','Project Image 01','Image'],['◇','Project Image 02','Image'],['Aa','Studio Typeface','Font reference'],['▧','Mono Icons','Icon set']];
         items.forEach(function (item) { drawerContent.appendChild(makeSimpleCard(item)); });
       }
+      const emptyState = document.createElement('div');
+      emptyState.className = 'empty-state hidden';
+      emptyState.id = 'drawer-empty';
+      emptyState.textContent = 'No matching items. Try another keyword.';
+      drawerContent.appendChild(emptyState);
       presetSearch.value = '';
       showMessage(mode.charAt(0).toUpperCase() + mode.slice(1) + ' drawer selected.');
     });
