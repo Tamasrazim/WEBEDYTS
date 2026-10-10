@@ -52,7 +52,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   color: #aaa; border-radius: 3px;
 }
 .window-button:hover { background: #383838; color: white; }
-.menubar { gap: 2px; padding: 0 9px; background: #222; }
+.menubar { gap: 2px; padding: 0 9px; background: #222; position: relative; z-index: 25; }
+.menu-popover { position: absolute; top: 29px; width: 260px; padding: 5px; border: 1px solid #484848; background: #242424; box-shadow: 0 10px 28px #0009; z-index: 60; }
+.menu-item { display: flex; align-items: center; justify-content: space-between; gap: 18px; width: 100%; padding: 7px 9px; border: 0; border-radius: 2px; background: transparent; color: #ddd; text-align: left; }
+.menu-item:hover, .menu-item:focus-visible { background: #3a3a3a; }
+.menu-shortcut { color: #858585; font-size: 10px; white-space: nowrap; }
+.menu-separator { height: 1px; margin: 5px 4px; background: #414141; }
 .menu-button { padding: 4px 9px; border: 0; border-radius: 2px; background: transparent; color: #c8c8c8; }
 .menu-button:hover, .menu-button.active { background: #383838; }
 .toolbar { gap: 5px; padding: 0 9px; background: #252525; }
@@ -72,6 +77,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .saved-state { color: var(--muted); margin-right: 7px; font-size: 10px; }
 .saved-state::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--green); }
 .workspace { display: grid; min-height: 0; grid-template-columns: 228px minmax(280px, 1fr) 280px; }
+.workspace.hide-outliner { grid-template-columns: minmax(0, 1fr) 280px; }
+.workspace.hide-details { grid-template-columns: 228px minmax(0, 1fr); }
+.workspace.hide-outliner.hide-details { grid-template-columns: minmax(0, 1fr); }
 .panel { min-width: 0; min-height: 0; background: var(--panel); }
 .outliner { display: flex; flex-direction: column; border-right: 1px solid #111; }
 .panel-heading {
@@ -284,6 +292,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="menu-button optional-menu" data-menu="Help">Help</button>
     <span class="title-spacer"></span>
     <span style="color:#777;font-size:10px;padding-right:8px">LOCAL WORKSPACE</span>
+    <div class="menu-popover hidden" id="menu-popover" role="menu" aria-label="Application commands"></div>
   </nav>
   <div class="toolbar">
     <button class="tool-button" id="new-session"><span class="symbol">＋</span>New</button>
@@ -490,6 +499,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let history = [];
   let historyPosition = -1;
   let savedSnapshot = '';
+  let saveCheckPending = false;
   let dragState = null;
 
   let importedFrame = null;
@@ -521,9 +531,32 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     window.setTimeout(function () { toast.remove(); }, 2500);
   }
 
+  function hasUnsavedChanges() {
+    if (!savedSnapshot) return true;
+    try {
+      const current = JSON.parse(makeSnapshot());
+      const saved = JSON.parse(savedSnapshot);
+      delete current.selected;
+      delete saved.selected;
+      return JSON.stringify(current) !== JSON.stringify(saved);
+    } catch (error) {
+      return true;
+    }
+  }
+
+  function updateSaveIndicator() {
+    const changed = hasUnsavedChanges();
+    saveState.textContent = changed ? 'Unsaved changes' : 'All changes saved';
+    saveState.style.color = changed ? '#ddd' : '';
+  }
+
   function markChanged() {
-    saveState.textContent = 'Unsaved changes';
-    saveState.style.color = '#ddd';
+    if (saveCheckPending) return;
+    saveCheckPending = true;
+    window.requestAnimationFrame(function () {
+      saveCheckPending = false;
+      updateSaveIndicator();
+    });
   }
 
   function updateHistoryButtons() {
@@ -676,13 +709,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function makeSnapshot() {
     if (importedMode && importedDoc) {
+      const sessionMarkup = importedDoc.documentElement.cloneNode(true);
+      sessionMarkup.querySelectorAll('[data-webedyts-editor-selected]').forEach(function (node) {
+        node.removeAttribute('data-webedyts-editor-selected');
+      });
       return JSON.stringify({
         version: 1,
         mode: 'imported',
         selected: selectedId,
         fileName: importedFileName,
         viewport: canvas.dataset.mode,
-        html: importedDoc.documentElement.outerHTML
+        html: sessionMarkup.outerHTML
       });
     }
 
@@ -1326,8 +1363,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   });
 
   function handleEditorShortcut(event) {
-    if (event.key === 'Escape' && previewMode) {
-      document.getElementById('preview-button').click();
+    if (event.key === 'Escape') {
+      closeMenuPopover();
+      if (previewMode) document.getElementById('preview-button').click();
       return;
     }
     if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
@@ -1359,16 +1397,135 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   document.addEventListener('keydown', handleEditorShortcut);
 
+  const menuDefinitions = {
+    File: [
+      { label: 'New session', shortcut: '', action: 'new-session' },
+      { label: 'Open HTML…', shortcut: 'Ctrl/Cmd+O', action: 'open-website' },
+      { label: 'Open session…', shortcut: 'Ctrl/Cmd+Shift+O', action: 'open-session' },
+      { separator: true },
+      { label: 'Save current work', shortcut: 'Ctrl/Cmd+S', action: 'save-session' },
+      { label: 'Export draft', shortcut: '', action: 'export-session' }
+    ],
+    Edit: [
+      { label: 'Undo', shortcut: 'Ctrl/Cmd+Z', action: 'undo' },
+      { label: 'Redo', shortcut: 'Ctrl/Cmd+Shift+Z', action: 'redo' }
+    ],
+    View: [
+      { label: 'Preview / Exit preview', shortcut: 'Esc', action: 'preview-button' },
+      { label: 'Show / hide content drawer', shortcut: '', action: 'toggle-drawer' },
+      { separator: true },
+      { label: 'Desktop viewport', shortcut: '', action: 'viewport-desktop' },
+      { label: 'Tablet viewport', shortcut: '', action: 'viewport-tablet' },
+      { label: 'Mobile viewport', shortcut: '', action: 'viewport-mobile' }
+    ],
+    Window: [
+      { label: 'Toggle page outliner', shortcut: '', action: 'toggle-outliner' },
+      { label: 'Toggle details panel', shortcut: '', action: 'toggle-details' },
+      { label: 'Toggle content drawer', shortcut: '', action: 'toggle-drawer' }
+    ],
+    Help: [
+      { label: 'Keyboard shortcuts', shortcut: '', action: 'show-shortcuts' },
+      { label: 'Prototype limitations', shortcut: '', action: 'show-limits' }
+    ]
+  };
+
+  function closeMenuPopover() {
+    const popover = document.getElementById('menu-popover');
+    popover.classList.add('hidden');
+    popover.innerHTML = '';
+    delete popover.dataset.activeMenu;
+    document.querySelectorAll('[data-menu]').forEach(function (button) {
+      button.classList.remove('active');
+      button.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  function updateWorkspacePanelLayout() {
+    const workspace = document.querySelector('.workspace');
+    const outlinerHidden = document.getElementById('outliner').classList.contains('hidden');
+    const detailsHidden = document.getElementById('details').classList.contains('hidden');
+    workspace.classList.toggle('hide-outliner', outlinerHidden);
+    workspace.classList.toggle('hide-details', detailsHidden);
+  }
+
+  function runMenuAction(action) {
+    const button = document.getElementById(action);
+    if (button) {
+      button.click();
+      return;
+    }
+    if (action.indexOf('viewport-') === 0) {
+      const mode = action.slice('viewport-'.length);
+      const selector = document.getElementById('viewport-mode');
+      selector.value = mode;
+      selector.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+    if (action === 'toggle-outliner' || action === 'toggle-details') {
+      const id = action === 'toggle-outliner' ? 'outliner' : 'details';
+      document.getElementById(id).classList.toggle('hidden');
+      updateWorkspacePanelLayout();
+      return;
+    }
+    if (action === 'show-shortcuts') {
+      showMessage('Ctrl/Cmd+S save · Ctrl/Cmd+O open HTML · Ctrl/Cmd+Z undo · Ctrl/Cmd+Shift+Z redo · Esc exits preview');
+    } else if (action === 'show-limits') {
+      showMessage('Prototype supports one HTML file; scripts and external network assets are blocked.');
+    }
+  }
+
   document.querySelectorAll('[data-menu]').forEach(function (button) {
+    button.setAttribute('aria-haspopup', 'menu');
+    button.setAttribute('aria-expanded', 'false');
     button.addEventListener('click', function () {
       const name = button.dataset.menu;
-      if (name === 'View') {
-        document.getElementById('content-drawer').classList.toggle('hidden');
-        showMessage('Toggled the content drawer.');
-      } else {
-        showMessage(name + ' menu is a layout placeholder in this concept.');
+      const popover = document.getElementById('menu-popover');
+      if (!popover.classList.contains('hidden') && popover.dataset.activeMenu === name) {
+        closeMenuPopover();
+        return;
       }
+      closeMenuPopover();
+      (menuDefinitions[name] || []).forEach(function (item) {
+        if (item.separator) {
+          const divider = document.createElement('div');
+          divider.className = 'menu-separator';
+          divider.setAttribute('role', 'separator');
+          popover.appendChild(divider);
+          return;
+        }
+        const entry = document.createElement('button');
+        entry.className = 'menu-item';
+        entry.type = 'button';
+        entry.setAttribute('role', 'menuitem');
+        const label = document.createElement('span');
+        label.textContent = item.label;
+        entry.appendChild(label);
+        if (item.shortcut) {
+          const shortcut = document.createElement('span');
+          shortcut.className = 'menu-shortcut';
+          shortcut.textContent = item.shortcut;
+          entry.appendChild(shortcut);
+        }
+        entry.addEventListener('click', function () {
+          closeMenuPopover();
+          runMenuAction(item.action);
+        });
+        popover.appendChild(entry);
+      });
+      const menu = document.querySelector('.menubar');
+      const maximumLeft = Math.max(4, menu.clientWidth - 264);
+      popover.style.left = Math.max(4, Math.min(button.offsetLeft, maximumLeft)) + 'px';
+      popover.dataset.activeMenu = name;
+      popover.classList.remove('hidden');
+      button.classList.add('active');
+      button.setAttribute('aria-expanded', 'true');
+      const firstEntry = popover.querySelector('.menu-item');
+      if (firstEntry) firstEntry.focus();
     });
+  });
+
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('.menubar')) closeMenuPopover();
   });
 
   selectNode(selectedId);
