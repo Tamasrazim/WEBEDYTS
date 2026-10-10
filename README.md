@@ -293,14 +293,23 @@ The 32-bit Windows and Linux targets must also be verified against the selected 
 
 ## Built-in SHA-256 license integrity
 
-The repository now includes a portable C++17 SHA-256 implementation and an embedded proprietary license notice:
+The repository includes a portable C++17 SHA-256 implementation and an embedded proprietary license notice:
 
 - `src/security/sha256.hpp` implements SHA-256 without an external dependency.
 - `src/security/license_guard.hpp` embeds the current license notice and verifies its SHA-256 digest.
-- `tests/security/sha256_test.cpp` checks known SHA-256 test vectors and validates the embedded notice.
-- `src/security/README.md` documents the intended security boundary and release-hardening requirements.
+- `tests/security/sha256_test.cpp` checks standard SHA-256 test vectors and validates the embedded notice.
+- `CMakeLists.txt` provides a small build target for the security test.
+- `src/security/README.md` explains what the check does and what it cannot protect against.
 
-This is an integrity foundation, not unbreakable copy protection. A checksum stored alongside editable source can be changed by someone who modifies the source. Production releases should add signed manifests and platform code-signing; the signing private key must stay outside this public repository. The verifier still needs to be called by the future desktop application's startup code before it becomes an app-wide check.
+To build and run the test with CMake:
+
+```sh
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+This is an integrity foundation, not unbreakable copy protection. A checksum stored alongside editable source can be changed by someone who modifies the source. Production releases should add signed release manifests and platform code-signing; the signing private key must stay outside the public repository. The verifier still needs to be called by the future desktop application's startup code before it becomes an app-wide check.
 
 ## AI and automated-code restrictions
 
