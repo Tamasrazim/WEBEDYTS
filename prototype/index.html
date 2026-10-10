@@ -527,6 +527,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let projectFilesByPath = new Map();
   let projectPathLookup = new Map();
   let projectAssetUrls = new Map();
+  const projectObjectUrls = new Set();
   let projectCssProcessed = new Set();
   let projectPagePaths = [];
   let projectPageEdits = new Map();
@@ -870,6 +871,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   function leaveImportedPage() {
     importedMode = false;
     importedDoc = null;
+    clearProjectWorkspace();
     if (importedFrame) importedFrame.remove();
     importedFrame = null;
     canvas.classList.remove('imported');
@@ -1235,7 +1237,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const bIndex = /(^|\/)index\.html?$/i.test(b.path) ? 0 : 1;
       const aDepth = a.path.split('/').length;
       const bDepth = b.path.split('/').length;
-      return aDepth - bDepth || aIndex - bIndex || a.path.localeCompare(b.path);
+      return aIndex - bIndex || aDepth - bDepth || a.path.localeCompare(b.path);
     });
 
     clearProjectWorkspace();
@@ -1259,7 +1261,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           projectAssetUrls.set(asset.packagePath, asset.url);
         }
       });
-      const target = pages.find(function (entry) { return entry.path === pages[0].path; }) || pages[0];
+      const target = pages[0];
       projectEntryPath = target.path;
       updateProjectPageSelector();
       document.querySelector('.project-name').textContent = rootName + ' / ' + target.path;
@@ -1356,7 +1358,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     importedFileName = fileName || importedFileName;
     canvas.classList.add('imported');
     canvas.appendChild(importedFrame);
-    document.querySelector('.project-name').textContent = importedFileName;
+    document.querySelector('.project-name').textContent = projectMode ? projectRootName + ' / ' + importedFileName : importedFileName;
     document.getElementById('export-session').innerHTML = '<span class="symbol">⇩</span>Export HTML';
 
     importedFrame.addEventListener('load', function () {
@@ -1392,9 +1394,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         saveHistory();
         savedSnapshot = makeSnapshot();
         if (projectMode && projectEntryPath) projectPageBaselines.set(projectEntryPath, projectComparableSnapshot());
-        saveState.textContent = 'All changes saved';
-        saveState.style.color = '';
-        showMessage('HTML opened. Scripts and external assets are blocked in preview.');
+        updateSaveIndicator();
+        showMessage(projectMode ? 'Website page opened. Scripts remain disabled in preview.' : 'HTML opened. Scripts and external assets are blocked in preview.');
       } else if (restoringSession) {
         restoringSession = false;
         history = [];
@@ -1491,7 +1492,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const extension = dot > 0 ? safeName.slice(dot) : '';
     let candidate = 'media/' + safeName;
     let suffix = 2;
-    while (mediaAssets.some(function (asset) { return asset.packagePath.toLowerCase() === candidate.toLowerCase(); })) {
+    while (mediaAssets.some(function (asset) { return asset.packagePath.toLowerCase() === candidate.toLowerCase(); }) ||
+        projectPathLookup.has(candidate.toLowerCase())) {
       candidate = 'media/' + base + ' (' + suffix + ')' + extension;
       suffix += 1;
     }
@@ -1641,6 +1643,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         duration: ''
       };
       mediaAssets.push(asset);
+      if (projectMode) {
+        projectPathLookup.set(asset.packagePath.toLowerCase(), asset.packagePath);
+        projectAssetUrls.set(asset.packagePath, asset.url);
+      }
       importedCount += 1;
       loadMediaMetadata(asset);
     });
@@ -2206,6 +2212,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const files = document.getElementById('project-folder-files').files;
     if (files && files.length) importWebsiteFolder(files);
     document.getElementById('project-folder-files').value = '';
+  });
+  document.getElementById('project-page-select').addEventListener('change', function (event) {
+    if (event.target.value) loadProjectPage(event.target.value);
   });
   websiteFile.addEventListener('change', function () {
     if (websiteFile.files[0]) importWebsiteFile(websiteFile.files[0]);
