@@ -1104,15 +1104,22 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         } else if (name === 'srcset') {
           replacement = await rewriteProjectSrcset(original, htmlPath);
         } else {
-          const resolved = projectReference(htmlPath, original);
-          const target = resolved && findProjectFile(resolved.path);
-          if (target && node.tagName === 'A' && name === 'href' && isProjectHtmlPath(target.path)) {
-            node.dataset.webedytsProjectLink = target.path;
-            const hashAt = resolved.suffix.indexOf('#');
-            if (hashAt >= 0) node.dataset.webedytsProjectFragment = resolved.suffix.slice(hashAt + 1);
+          const isAnchorLink = node.tagName === 'A' && name === 'href' && original.trim().charAt(0) === '#';
+          if (isAnchorLink) {
+            node.dataset.webedytsProjectLink = htmlPath;
+            node.dataset.webedytsProjectFragment = original.trim().slice(1);
             replacement = '#';
-          } else if (resolved) {
-            replacement = projectAssetUrls.get(resolved.path) + projectFragmentSuffix(resolved.suffix);
+          } else {
+            const resolved = projectReference(htmlPath, original);
+            const target = resolved && findProjectFile(resolved.path);
+            if (target && node.tagName === 'A' && name === 'href' && isProjectHtmlPath(target.path)) {
+              node.dataset.webedytsProjectLink = target.path;
+              const hashAt = resolved.suffix.indexOf('#');
+              if (hashAt >= 0) node.dataset.webedytsProjectFragment = resolved.suffix.slice(hashAt + 1);
+              replacement = '#';
+            } else if (resolved) {
+              replacement = projectAssetUrls.get(resolved.path) + projectFragmentSuffix(resolved.suffix);
+            }
           }
         }
 
@@ -1223,7 +1230,15 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       showMessage('That page is not part of this imported website.');
       return;
     }
-    if (normalized === projectEntryPath && importedDoc) return;
+    if (normalized === projectEntryPath && importedDoc) {
+      if (fragment) {
+        let targetId = fragment;
+        try { targetId = decodeURIComponent(fragment); } catch (error) { /* Keep literal fragment identifiers. */ }
+        const destination = importedDoc.getElementById(targetId) || importedDoc.getElementsByName(targetId)[0];
+        if (destination && destination.scrollIntoView) destination.scrollIntoView({ block: 'start' });
+      }
+      return;
+    }
     await saveCurrentProjectPage();
 
     const entry = findProjectFile(normalized);
