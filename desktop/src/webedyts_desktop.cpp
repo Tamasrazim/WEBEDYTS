@@ -7,7 +7,7 @@
 #include "include/views/cef_fill_layout.h"
 #include "include/views/cef_window.h"
 
-#include "../src/security/license_guard.hpp"
+#include "../../src/security/license_guard.hpp"
 
 #include <filesystem>
 #include <iostream>
@@ -99,8 +99,21 @@ void ReplaceAll(std::string& text,
   }
 }
 
+std::filesystem::path PathFromCefString(const CefString& value) {
+#if defined(_WIN32)
+  return std::filesystem::path(value.ToWString());
+#else
+  return std::filesystem::path(value.ToString());
+#endif
+}
+
+std::string PathUtf8(const std::filesystem::path& path) {
+  const auto value = path.u8string();
+  return std::string(reinterpret_cast<const char*>(value.data()), value.size());
+}
+
 std::string FileUrl(const std::filesystem::path& file_path) {
-  std::string escaped = CefURIEncode(file_path.generic_u8string(), false).ToString();
+  std::string escaped = CefURIEncode(PathUtf8(file_path), false).ToString();
   ReplaceAll(escaped, "%2F", "/");
   ReplaceAll(escaped, "%2f", "/");
 
@@ -121,7 +134,7 @@ bool GetRuntimePaths(std::filesystem::path& executable_dir,
     return false;
   }
 
-  executable_dir = std::filesystem::u8path(exe_dir.ToString());
+  executable_dir = PathFromCefString(exe_dir);
 
 #if defined(__APPLE__)
   editor_html = (executable_dir / ".." / "Resources" / "app" / "index.html")
@@ -133,12 +146,12 @@ bool GetRuntimePaths(std::filesystem::path& executable_dir,
   if (!CefGetPath(PK_USER_DATA, data_dir) || data_dir.empty()) {
     user_data = executable_dir / "user-data";
   } else {
-    user_data = std::filesystem::u8path(data_dir.ToString()) / "WEBEDYTS";
+    user_data = PathFromCefString(data_dir) / "WEBEDYTS";
   }
 
   if (!std::filesystem::is_regular_file(editor_html)) {
     std::cerr << "WEBEDYTS could not find its bundled editor at:\n"
-              << editor_html.u8string() << "\n"
+              << PathUtf8(editor_html) << "\n"
               << "The application package is incomplete.\n";
     return false;
   }
@@ -184,20 +197,20 @@ int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
 
   CefSettings settings;
   settings.log_severity = LOGSEVERITY_WARNING;
-  CefString(&settings.cache_path) = (user_data / "Cache").u8string();
+  CefString(&settings.cache_path) = PathUtf8(user_data / "Cache");
 
 #if defined(_WIN32) || defined(__linux__)
   // The CEF resource packs and locale directory are staged beside the app.
-  CefString(&settings.resources_dir_path) = executable_dir.u8string();
+  CefString(&settings.resources_dir_path) = PathUtf8(executable_dir);
   CefString(&settings.locales_dir_path) =
-      (executable_dir / "locales").u8string();
+      PathUtf8(executable_dir / "locales");
 #endif
 
 #if defined(__APPLE__)
   const auto helper =
       (executable_dir / ".." / "Frameworks" / "WEBEDYTS Helper.app" /
        "Contents" / "MacOS" / "WEBEDYTS Helper").lexically_normal();
-  CefString(&settings.browser_subprocess_path) = helper.u8string();
+  CefString(&settings.browser_subprocess_path) = PathUtf8(helper);
 #endif
 
   CefRefPtr<CefApp> app = new WebedytsApp(FileUrl(editor_html));
