@@ -206,6 +206,14 @@ The media drawer can insert PNG, SVG, animated GIF, video, audio, font samples, 
 
 This remains a prototype rather than a complete website runtime. Imported scripts are intentionally disabled in the isolated preview, and external network resources are blocked. The importer does not yet resolve every script-created request, framework-specific build path, dynamic component, server route, or backend service, so complex sites may not render exactly as they do when hosted. The folder export includes the files the user selected; exported projects should be tested in the intended browser before deployment. A native desktop application and broader validation tools remain planned.
 
+## Native desktop build foundation
+
+The repository now includes an initial CEF-powered native window shell and an optional CMake target. It loads the bundled monochrome editor inside Chromium and runs the embedded SHA-256 license integrity check at startup. The native target also stages CEF runtime files, locale/resource packs, the macOS helper bundle, and the CEF licence notice.
+
+This is a build foundation, **not a compiled or tested release**. The CEF binary distribution must be supplied separately with `CEF_ROOT`; it is not committed to the repository. The installed app is intentionally intended to occupy hundreds of megabytes because it includes the real browser engine and runtime resources, not because dummy data is added. See [the desktop build guide](desktop/README.md).
+
+Build the native target with `-DWEBEDYTS_BUILD_DESKTOP=ON` and a matching `CEF_ROOT`. It has not yet been compiled against an installed CEF distribution or tested on each target operating system. Keep that distinction clear until packaged builds are exercised.
+
 ## Important technical boundaries
 
 A visual editor must be transparent about what it can and cannot safely edit.
@@ -274,19 +282,19 @@ These are design goals; the final interface and implementation will be refined d
 
 ## Desktop platforms and architecture targets
 
-WEBEDYTS is intended to ship as an installable desktop app for all three major desktop operating systems. These are **release targets, not available downloads yet**.
+WEBEDYTS is being developed as an installable desktop app for the major desktop operating systems. These are **release targets, not available downloads yet**. The first native-shell path bundles CEF/Chromium, so its actual architecture support is constrained by the selected CEF runtime.
 
-| Operating system | Intended release targets | Planned distribution |
+| Operating system | Current desktop-runtime direction | Planned distribution |
 |---|---|---|
-| Windows | x86 (32-bit) and x64 (64-bit) | Native installer/package such as EXE or MSI |
-| Linux | x86 (32-bit) and x64 (64-bit), where the selected runtime and dependencies support them | Appropriate formats such as AppImage, DEB, or RPM, chosen after distro testing |
-| macOS | Intel x64 and Apple Silicon arm64; a universal 64-bit package may be considered | DMG or another standard macOS package |
+| Windows | x86 (32-bit) and x64 (64-bit), subject to a matching, maintained CEF binary distribution | Native installer/package such as EXE or MSI |
+| Linux | x64 (64-bit); arm64 where supported by the selected distribution. Current upstream CEF build configuration has discontinued Linux x86 32-bit builds. | Appropriate formats such as AppImage, DEB, or RPM, chosen after distro testing |
+| macOS | Intel x64 and Apple Silicon arm64; modern macOS does not support 32-bit apps | DMG or another standard macOS package |
 
 ### 32-bit compatibility on macOS
 
 There is an important operating-system limitation: Apple states that macOS Catalina 10.15 and later cannot run 32-bit apps. A 32-bit macOS build would therefore only be useful for legacy macOS versions, not modern macOS installations. The practical current macOS target is 64-bit Intel and Apple Silicon; legacy 32-bit macOS support can only be considered as a separate historical compatibility target. See [Apple's 32-bit app compatibility guidance](https://support.apple.com/en-us/103076).
 
-The 32-bit Windows and Linux targets must also be verified against the selected application framework, embedded browser/runtime, native dependencies, and packaging tools. The project must not claim an architecture as supported until an installable build has been produced and tested on that target. Framework selection should account for this requirement from the beginning rather than dropping x86 support accidentally.
+Windows x86 will only be shipped when a compatible maintained CEF binary and the full WEBEDYTS feature set can be built and tested. Current upstream CEF build configuration states that Linux x86 32-bit builds are discontinued; WEBEDYTS will not ship an old, unsupported Chromium runtime simply to keep a row in an architecture table. If a maintained 32-bit Linux runtime becomes viable, that target can be reconsidered.
 
 ### Native application requirements
 
@@ -333,7 +341,7 @@ Any third-party components or assets included in the project remain subject to t
 
 ## Current status and contributions
 
-WEBEDYTS is in early prototyping. The repository has a working monochrome UI concept, a standalone-HTML editor, local media insertion, and an initial website-folder importer with multi-page switching, common local-asset preview, and ZIP export that preserves selected file paths. The native desktop application, script-enabled preview, exhaustive dependency discovery, framework-specific support, comprehensive export validation, and cross-platform release builds have not been implemented yet. This README distinguishes working prototype features from the larger plan.
+WEBEDYTS is in early prototyping. The repository has a working monochrome browser editor prototype, local media insertion, an initial website-folder importer, and a native CEF desktop-shell build foundation. The native target has not yet been compiled against an installed CEF distribution; no installer is available. Script-enabled preview, exhaustive dependency discovery, framework-specific support, comprehensive export validation, and verified cross-platform release builds remain unfinished. This README distinguishes implemented source from tested release capabilities.
 
 Development should follow the project's [coding and commit rules](DEVELOPMENT.md): readable code, sensible-sized functions, no unnecessary automation or abstraction, honest testing, and short, natural commit messages.
 
