@@ -1400,8 +1400,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       offset += size;
 
       const extraFields = [];
-      const extraLength = (size64 ? 20 : 0) + (offset64 ? 12 : 0);
-      const centralExtraLength = extraLength ? extraLength : 0;
+      const centralExtraLength = size64 ? (offset64 ? 28 : 20) : (offset64 ? 12 : 0);
       const centralHeader = new Uint8Array(46);
       const view = new DataView(centralHeader.buffer);
       view.setUint32(0, 0x02014b50, true);
