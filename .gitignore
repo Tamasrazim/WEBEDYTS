@@ -20,3 +20,14 @@
 # Local editor exports
 *.webedyts.html
 webedyts-session.json
+
+# Native desktop build output
+/build-desktop/
+/desktop-build/
+
+# CEF binary distributions are supplied separately and must not be committed
+/third_party/cef/
+/cef_binary_*/
+
+# Generated macOS bundles
+*.app/
