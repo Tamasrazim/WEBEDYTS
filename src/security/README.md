@@ -1,7 +1,7 @@
 # Built-in license integrity check
 
 `sha256.hpp` provides a dependency-free SHA-256 implementation in portable
-C++17. `license_guard.hpp` embeds the Website Indexer proprietary notice and
+C++17. `license_guard.hpp` embeds the WEBEDYTS proprietary notice and
 checks its UTF-8 bytes against the expected SHA-256 digest. The test program
 under `tests/security/sha256_test.cpp` validates standard SHA-256 test vectors
 and confirms the embedded notice matches its digest.
