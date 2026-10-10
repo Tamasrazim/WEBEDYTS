@@ -489,7 +489,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function getNode(id) {
     if (importedMode && importedDoc) {
-      return importedDoc.querySelector('[data-wi-node="' + id + '"]');
+      return importedDoc.querySelector('[data-webedyts-editor-node="' + id + '"]');
     }
     if (id === 'page') return canvas;
     return canvas.querySelector('[data-node="' + id + '"]');
@@ -497,7 +497,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function nodeLabel(node) {
     if (!node) return 'Nothing selected';
-    return importedMode ? (node.dataset.wiLabel || node.tagName.toLowerCase()) :
+    return importedMode ? (node.dataset.webedytsEditorLabel || node.tagName.toLowerCase()) :
       (node.dataset.label || node.dataset.node);
   }
 
@@ -531,10 +531,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     canvas.classList.toggle('is-selected', !importedMode && id === 'page');
 
     if (importedMode && importedDoc) {
-      importedDoc.querySelectorAll('[data-wi-node]').forEach(function (item) {
-        item.removeAttribute('data-wi-selected');
+      importedDoc.querySelectorAll('[data-webedyts-editor-node]').forEach(function (item) {
+        item.removeAttribute('data-webedyts-editor-selected');
       });
-      node.setAttribute('data-wi-selected', 'true');
+      node.setAttribute('data-webedyts-editor-selected', 'true');
     } else {
       canvas.querySelectorAll('[data-node]').forEach(function (item) {
         item.classList.toggle('is-selected', item.dataset.node === id);
@@ -546,16 +546,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     });
     document.getElementById('detail-name').value = nodeLabel(node);
     document.getElementById('detail-kind').value = importedMode ?
-      (node.dataset.wiKind || node.tagName.toLowerCase()) : (node.dataset.kind || 'Element');
+      (node.dataset.webedytsEditorKind || node.tagName.toLowerCase()) : (node.dataset.kind || 'Element');
     document.getElementById('detail-id').value = id;
-    const editable = importedMode ? node.dataset.wiTextEditable === 'true' :
+    const editable = importedMode ? node.dataset.webedytsEditorTextEditable === 'true' :
       node.dataset.editableText === 'true';
     propertyText.disabled = !editable;
     propertyText.value = editable ? node.textContent.trim().replace(/\s+/g, ' ') : '';
     propertyWidth.value = node.style.width ? parseInt(node.style.width, 10) : '';
     propertyColor.value = rgbToHex(getComputedStyle(node).color);
     propertyBackground.value = rgbToHex(getComputedStyle(node).backgroundColor);
-    propertyAnimation.value = importedMode ? (node.dataset.wiAnimation || '') : (node.dataset.animation || '');
+    propertyAnimation.value = importedMode ? (node.dataset.webedytsEditorAnimation || '') : (node.dataset.animation || '');
     document.getElementById('selection-status').textContent = 'Selected: ' + nodeLabel(node);
     document.getElementById('canvas-status').textContent = importedMode ?
       'Imported HTML · Scripts and external assets are blocked in preview' :
@@ -644,7 +644,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     });
 
     if (importedMode) {
-      node.dataset.wiAnimation = animation;
+      node.dataset.webedytsEditorAnimation = animation;
       if (animation) {
         void node.offsetWidth;
         node.classList.add('wi-anim-' + animation);
@@ -724,7 +724,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     const selectionStyle = parsed.createElement('style');
     selectionStyle.setAttribute('data-webedyts-editor-style', 'true');
-    selectionStyle.textContent = '[data-wi-selected] { outline: 2px solid #4f7fa7 !important; outline-offset: -2px !important; }';
+    selectionStyle.textContent = '[data-webedyts-editor-selected] { outline: 2px solid #4f7fa7 !important; outline-offset: -2px !important; }';
     parsed.head.appendChild(selectionStyle);
 
     const animationStyle = parsed.createElement('style');
@@ -743,24 +743,24 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     parsed.querySelectorAll('base').forEach(function (node) { node.remove(); });
 
     const body = parsed.body;
-    body.dataset.wiNode = 'page';
-    body.dataset.wiLabel = 'Imported Page';
-    body.dataset.wiKind = 'page';
-    body.dataset.wiTextEditable = 'false';
+    body.dataset.webedytsEditorNode = 'page';
+    body.dataset.webedytsEditorLabel = 'Imported Page';
+    body.dataset.webedytsEditorKind = 'page';
+    body.dataset.webedytsEditorTextEditable = 'false';
 
     let count = 0;
     body.querySelectorAll('*').forEach(function (node) {
       if (['SCRIPT','STYLE','META','LINK','TITLE','BASE'].includes(node.tagName)) return;
       count += 1;
       if (count > 500) return;
-      node.dataset.wiNode = 'wi-' + count;
+      node.dataset.webedytsEditorNode = 'wi-' + count;
       const tag = node.tagName.toLowerCase();
       const visibleText = (node.textContent || '').trim().replace(/\s+/g, ' ');
       const shortText = visibleText.length > 30 ? visibleText.slice(0, 27) + '…' : visibleText;
       const hint = node.id ? '#' + node.id : (shortText || (node.classList.length ? '.' + String(node.classList[0]) : ''));
-      node.dataset.wiLabel = (tag + (hint ? ' — ' + hint : '')).slice(0, 52);
-      node.dataset.wiKind = tag;
-      node.dataset.wiTextEditable = node.children.length === 0 && visibleText ? 'true' : 'false';
+      node.dataset.webedytsEditorLabel = (tag + (hint ? ' — ' + hint : '')).slice(0, 52);
+      node.dataset.webedytsEditorKind = tag;
+      node.dataset.webedytsEditorTextEditable = node.children.length === 0 && visibleText ? 'true' : 'false';
     });
 
     if (importedFrame) importedFrame.remove();
@@ -783,14 +783,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         return;
       }
       importedDoc.addEventListener('click', function (event) {
-        const target = event.target.closest('[data-wi-node]');
+        const target = event.target.closest('[data-webedyts-editor-node]');
         if (!target) return;
         event.preventDefault();
-        selectNode(target.dataset.wiNode);
+        selectNode(target.dataset.webedytsEditorNode);
       });
       buildImportedTree();
-      const first = importedDoc.querySelector('[data-wi-node]:not(body)');
-      selectNode(getNode(selectId) ? selectId : (first ? first.dataset.wiNode : 'page'));
+      const first = importedDoc.querySelector('[data-webedyts-editor-node]:not(body)');
+      selectNode(getNode(selectId) ? selectId : (first ? first.dataset.webedytsEditorNode : 'page'));
       if (recordHistory) {
         history = [];
         historyPosition = -1;
@@ -817,10 +817,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     function addChildren(parent, holder, depth) {
       Array.from(parent.children).forEach(function (child) {
-        if (!child.dataset.wiNode || ['SCRIPT','STYLE','META','LINK','TITLE','BASE'].includes(child.tagName)) return;
+        if (!child.dataset.webedytsEditorNode || ['SCRIPT','STYLE','META','LINK','TITLE','BASE'].includes(child.tagName)) return;
         if (shown >= 180 || depth > 5) return;
         shown += 1;
-        holder.appendChild(makeTreeButton(child.dataset.wiNode, child.dataset.wiLabel, child.tagName, false));
+        holder.appendChild(makeTreeButton(child.dataset.webedytsEditorNode, child.dataset.webedytsEditorLabel, child.tagName, false));
         if (child.children.length) {
           const nested = document.createElement('div');
           nested.className = 'tree-indent';
@@ -865,7 +865,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     });
     clone.querySelectorAll('*').forEach(function (node) {
       Array.from(node.attributes).forEach(function (attribute) {
-        if (attribute.name.startsWith('data-wi-')) node.removeAttribute(attribute.name);
+        if (attribute.name.startsWith('data-webedyts-editor-')) node.removeAttribute(attribute.name);
       });
     });
     const doctype = importedDoc.doctype ? '<!DOCTYPE ' + importedDoc.doctype.name + '>' : '<!DOCTYPE html>';
@@ -925,7 +925,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   propertyText.addEventListener('input', function () {
     const node = getNode(selectedId);
-    const canEdit = node && (importedMode ? node.dataset.wiTextEditable === 'true' : node.dataset.editableText === 'true');
+    const canEdit = node && (importedMode ? node.dataset.webedytsEditorTextEditable === 'true' : node.dataset.editableText === 'true');
     if (!canEdit) return;
     node.textContent = propertyText.value;
     markChanged();
