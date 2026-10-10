@@ -1926,7 +1926,85 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     return Boolean(importedDoc && importedDoc.querySelector('[data-webedyts-asset-path]'));
   }
 
+  function projectPageOutputs() {
+    const outputs = new Map(projectPageEdits);
+    if (projectMode && importedDoc && projectEntryPath) {
+      outputs.set(projectEntryPath, serializeProjectPage());
+    }
+    return outputs;
+  }
+
+  function findProjectMediaForExport(outputs) {
+    const used = new Set();
+    if (importedDoc) {
+      importedDoc.querySelectorAll('[data-webedyts-asset-path]').forEach(function (node) {
+        if (node.dataset.webedytsAssetPath) used.add(node.dataset.webedytsAssetPath);
+      });
+    }
+
+    outputs.forEach(function (markup, pagePath) {
+      mediaAssets.forEach(function (asset) {
+        const relativePath = relativeProjectPath(pagePath, asset.packagePath);
+        if (markup.includes(relativePath) || markup.includes(asset.packagePath)) used.add(asset.packagePath);
+      });
+    });
+    return mediaAssets.filter(function (asset) { return used.has(asset.packagePath); });
+  }
+
+  async function exportWholeWebsiteFolder() {
+    if (!importedDoc || !projectMode) return;
+    const exportButton = document.getElementById('export-session');
+    const previousLabel = exportButton.innerHTML;
+    exportButton.disabled = true;
+    saveState.textContent = 'Preparing website ZIP…';
+
+    try {
+      await saveCurrentProjectPage();
+      const outputs = projectPageOutputs();
+      const usedAssets = findProjectMediaForExport(outputs);
+      const files = projectFiles.map(function (entry) {
+        const editedMarkup = outputs.get(entry.path);
+        if (editedMarkup !== undefined) {
+          return { name: entry.path, file: new Blob([editedMarkup], { type: 'text/html;charset=utf-8' }) };
+        }
+        return { name: entry.path, file: entry.file };
+      });
+
+      usedAssets.forEach(function (asset) {
+        if (projectFilesByPath.has(asset.packagePath)) {
+          throw new Error('The output path already exists: ' + asset.packagePath);
+        }
+        files.push({ name: asset.packagePath, file: asset.file });
+      });
+
+      const zip = await createZip(files);
+      downloadBlob(zip, safeAssetName(projectRootName || 'website') + '.webedyts.zip');
+
+      outputs.forEach(function (markup, path) {
+        const entry = findProjectFile(path);
+        if (entry) entry.file = new Blob([markup], { type: 'text/html;charset=utf-8' });
+      });
+      projectPageEdits.clear();
+      if (projectEntryPath) projectPageBaselines.set(projectEntryPath, projectComparableSnapshot());
+      savedSnapshot = makeSnapshot();
+      updateSaveIndicator();
+      showMessage('Website ZIP exported · ' + files.length + ' files · ' + usedAssets.length + ' inserted media files.');
+    } catch (error) {
+      updateSaveIndicator();
+      showMessage('Export failed: ' + (error && error.message ? error.message : 'could not build the website ZIP.'));
+    } finally {
+      exportButton.disabled = false;
+      updateMediaActions();
+      if (saveState.textContent === 'Preparing website ZIP…') updateSaveIndicator();
+      exportButton.innerHTML = previousLabel;
+    }
+  }
+
   async function exportImportedProject() {
+    if (projectMode) {
+      await exportWholeWebsiteFolder();
+      return;
+    }
     if (!importedDoc) return;
     const exportButton = document.getElementById('export-session');
     const previousLabel = exportButton.innerHTML;
