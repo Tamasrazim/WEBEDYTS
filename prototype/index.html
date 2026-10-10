@@ -907,7 +907,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function findProjectFile(path) {
     const normalized = normalizeProjectPath(path);
-    return projectFilesByPath.get(projectPathLookup.get(normalized.toLowerCase()) || normalized) || null;
+    return projectFilesByPath.get(normalized) || projectFilesByPath.get(projectPathLookup.get(normalized.toLowerCase()) || '') || null;
   }
 
   function projectFragmentSuffix(suffix) {
@@ -928,7 +928,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const combined = pathPart.charAt(0) === '/' ?
       pathPart.slice(1) : (String(fromPath).includes('/') ? String(fromPath).slice(0, String(fromPath).lastIndexOf('/') + 1) : '') + pathPart;
     const normalized = normalizeProjectPath(combined);
-    const actualPath = projectPathLookup.get(normalized.toLowerCase());
+    const actualPath = projectFilesByPath.has(normalized) ? normalized : projectPathLookup.get(normalized.toLowerCase());
     if (!actualPath || !projectAssetUrls.has(actualPath)) return null;
     return { path: actualPath, suffix: suffix };
   }
@@ -1272,8 +1272,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const parts = file.webkitRelativePath.split('/');
       const path = normalizeProjectPath(parts.slice(1).join('/'));
       if (!path) return;
-      if (seen.has(path.toLowerCase())) return;
-      seen.add(path.toLowerCase());
+      if (seen.has(path)) return;
+      seen.add(path);
       entries.push({ path: path, file: file });
     });
 
