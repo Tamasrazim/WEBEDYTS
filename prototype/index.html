@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Website Indexer — Editor Preview</title>
+<title>WEBEDYTS — Editor Preview</title>
 <style>
 :root {
   color-scheme: dark;
@@ -131,6 +131,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 .website-canvas[data-mode="tablet"] { width: min(760px, calc(100% - 16px)); }
 .website-canvas[data-mode="mobile"] { width: min(390px, calc(100% - 16px)); min-height: 570px; }
+.website-canvas.imported { height: min(72vh, 760px); min-height: 520px; }
+.website-canvas.imported > :not(iframe) { display: none !important; }
+.imported-frame { display: block; width: 100%; height: 100%; min-height: 520px; border: 0; background: white; }
 .site-nav {
   min-height: 57px; padding: 0 5.5%; display: flex; gap: 18px; align-items: center;
   border-bottom: 1px solid #e5e3df; background: #f9f8f5;
@@ -260,7 +263,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 <div class="app" id="app">
   <header class="titlebar">
     <div class="brand-mark">WI</div>
-    <span class="brand-name">Website Indexer</span>
+    <span class="brand-name">WEBEDYTS</span>
     <span class="version">EDITOR CONCEPT</span>
     <span class="title-spacer"></span>
     <span class="project-name">Studio Demo / Home Page</span>
@@ -280,7 +283,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   </nav>
   <div class="toolbar">
     <button class="tool-button" id="new-session"><span class="symbol">＋</span>New</button>
-    <button class="tool-button" id="open-session"><span class="symbol">↥</span>Open Session</button>
+    <button class="tool-button" id="open-website"><span class="symbol">↥</span>Open Website</button>
+    <button class="tool-button" id="open-session"><span class="symbol">▱</span>Open Session</button>
     <button class="tool-button" id="save-session"><span class="symbol">▣</span>Save</button>
     <span class="tool-divider"></span>
     <button class="tool-button" id="undo"><span class="symbol">↶</span>Undo</button>
@@ -291,6 +295,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <span class="saved-state" id="save-state">All changes saved</span>
     <button class="tool-button" id="preview-button"><span class="symbol">▷</span>Preview</button>
     <button class="tool-button primary" id="export-session"><span class="symbol">⇩</span>Export Draft</button>
+    <input type="file" id="website-file" accept=".html,.htm,text/html" class="hidden">
     <input type="file" id="session-file" accept=".json,application/json" class="hidden">
   </div>
   <main class="workspace">
@@ -459,6 +464,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   const app = document.getElementById('app');
   const canvas = document.getElementById('website-canvas');
   const tree = document.getElementById('tree');
+  const sampleTreeMarkup = tree.innerHTML;
   const propertyText = document.getElementById('prop-text');
   const propertyWidth = document.getElementById('prop-width');
   const propertyColor = document.getElementById('prop-color');
@@ -466,6 +472,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   const propertyAnimation = document.getElementById('prop-animation');
   const saveState = document.getElementById('save-state');
   const sessionFile = document.getElementById('session-file');
+  const websiteFile = document.getElementById('website-file');
   const drawerContent = document.getElementById('drawer-content');
   const presetSearch = document.getElementById('preset-search');
   let selectedId = 'hero-title';
@@ -475,13 +482,23 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let historyPosition = -1;
   let savedSnapshot = '';
 
+  let importedFrame = null;
+  let importedDoc = null;
+  let importedMode = false;
+  let importedFileName = 'imported-page.html';
+
   function getNode(id) {
+    if (importedMode && importedDoc) {
+      return importedDoc.querySelector('[data-wi-node="' + id + '"]');
+    }
     if (id === 'page') return canvas;
     return canvas.querySelector('[data-node="' + id + '"]');
   }
 
   function nodeLabel(node) {
-    return node ? (node.dataset.label || node.dataset.node) : 'Nothing selected';
+    if (!node) return 'Nothing selected';
+    return importedMode ? (node.dataset.wiLabel || node.tagName.toLowerCase()) :
+      (node.dataset.label || node.dataset.node);
   }
 
   function showMessage(message) {
@@ -511,26 +528,38 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const node = getNode(id);
     if (!node) return;
     selectedId = id;
-    canvas.classList.toggle('is-selected', id === 'page');
-    canvas.querySelectorAll('[data-node]').forEach(function (item) {
-      item.classList.toggle('is-selected', item.dataset.node === id);
-    });
+    canvas.classList.toggle('is-selected', !importedMode && id === 'page');
+
+    if (importedMode && importedDoc) {
+      importedDoc.querySelectorAll('[data-wi-node]').forEach(function (item) {
+        item.removeAttribute('data-wi-selected');
+      });
+      node.setAttribute('data-wi-selected', 'true');
+    } else {
+      canvas.querySelectorAll('[data-node]').forEach(function (item) {
+        item.classList.toggle('is-selected', item.dataset.node === id);
+      });
+    }
+
     tree.querySelectorAll('[data-select]').forEach(function (item) {
       item.classList.toggle('selected', item.dataset.select === id);
     });
     document.getElementById('detail-name').value = nodeLabel(node);
-    document.getElementById('detail-kind').value = node.dataset.kind || 'Element';
+    document.getElementById('detail-kind').value = importedMode ?
+      (node.dataset.wiKind || node.tagName.toLowerCase()) : (node.dataset.kind || 'Element');
     document.getElementById('detail-id').value = id;
-    const editable = node.dataset.editableText === 'true';
+    const editable = importedMode ? node.dataset.wiTextEditable === 'true' :
+      node.dataset.editableText === 'true';
     propertyText.disabled = !editable;
-    propertyText.value = editable ? node.textContent.trim().replace(/\s+/g, ' ') : '';
+    propertyText.value = editable ? node.textContent.trim().replace(/\\s+/g, ' ') : '';
     propertyWidth.value = node.style.width ? parseInt(node.style.width, 10) : '';
     propertyColor.value = rgbToHex(getComputedStyle(node).color);
-    const background = getComputedStyle(node).backgroundColor;
-    propertyBackground.value = rgbToHex(background);
-    propertyAnimation.value = node.dataset.animation || '';
+    propertyBackground.value = rgbToHex(getComputedStyle(node).backgroundColor);
+    propertyAnimation.value = importedMode ? (node.dataset.wiAnimation || '') : (node.dataset.animation || '');
     document.getElementById('selection-status').textContent = 'Selected: ' + nodeLabel(node);
-    document.getElementById('canvas-status').textContent = canvas.offsetWidth + ' × ' + canvas.offsetHeight + ' · Selection enabled';
+    document.getElementById('canvas-status').textContent = importedMode ?
+      'Imported HTML · Scripts and external assets are blocked in preview' :
+      canvas.offsetWidth + ' × ' + canvas.offsetHeight + ' · Selection enabled';
   }
 
   function saveHistory() {
@@ -546,6 +575,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 
   function makeSnapshot() {
+    if (importedMode && importedDoc) {
+      return JSON.stringify({
+        version: 1,
+        mode: 'imported',
+        selected: selectedId,
+        fileName: importedFileName,
+        viewport: canvas.dataset.mode,
+        html: importedDoc.documentElement.outerHTML
+      });
+    }
+
     const elements = [];
     canvas.querySelectorAll('[data-node]').forEach(function (node) {
       elements.push({
@@ -559,6 +599,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     });
     return JSON.stringify({
       version: 1,
+      mode: 'sample',
       selected: selectedId,
       viewport: canvas.dataset.mode,
       elements: elements
@@ -567,9 +608,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function applySnapshot(snapshot, recordHistory) {
     const data = typeof snapshot === 'string' ? JSON.parse(snapshot) : snapshot;
-    if (!data || data.version !== 1 || !Array.isArray(data.elements)) {
-      throw new Error('This file is not a Website Indexer concept session.');
+    if (!data || data.version !== 1) {
+      throw new Error('This file is not a WEBEDYTS session.');
     }
+    if (data.mode === 'imported' && typeof data.html === 'string') {
+      loadImportedMarkup(data.html, data.fileName || 'imported-page.html', data.selected || 'page', false);
+      return;
+    }
+    if (!Array.isArray(data.elements)) {
+      throw new Error('This file is not a WEBEDYTS concept session.');
+    }
+    if (importedMode) leaveImportedPage();
     data.elements.forEach(function (saved) {
       const node = getNode(saved.id);
       if (!node) return;
@@ -589,13 +638,25 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 
   function setAnimation(node, animation, record) {
-    const classes = ['anim-fade', 'anim-slide', 'anim-pop', 'anim-pulse', 'anim-wiggle', 'anim-blur'];
-    classes.forEach(function (name) { node.classList.remove(name); });
-    node.dataset.animation = animation;
-    if (animation) {
-      void node.offsetWidth;
-      node.classList.add('anim-' + animation);
+    const names = ['fade', 'slide', 'pop', 'pulse', 'wiggle', 'blur'];
+    names.forEach(function (name) {
+      node.classList.remove((importedMode ? 'wi-anim-' : 'anim-') + name);
+    });
+
+    if (importedMode) {
+      node.dataset.wiAnimation = animation;
+      if (animation) {
+        void node.offsetWidth;
+        node.classList.add('wi-anim-' + animation);
+      }
+    } else {
+      node.dataset.animation = animation;
+      if (animation) {
+        void node.offsetWidth;
+        node.classList.add('anim-' + animation);
+      }
     }
+
     if (record) {
       saveHistory();
       markChanged();
@@ -603,18 +664,220 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 
   function downloadSession() {
+    if (importedMode && importedDoc) {
+      exportImportedPage();
+      return;
+    }
     const data = makeSnapshot();
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'website-indexer-session.json';
+    link.download = 'webedyts-session.json';
     link.click();
     URL.revokeObjectURL(url);
     savedSnapshot = data;
     saveState.textContent = 'All changes saved';
     saveState.style.color = '';
     showMessage('Session saved as JSON.');
+  }
+
+  function leaveImportedPage() {
+    importedMode = false;
+    importedDoc = null;
+    if (importedFrame) importedFrame.remove();
+    importedFrame = null;
+    canvas.classList.remove('imported');
+    tree.innerHTML = sampleTreeMarkup;
+    document.querySelector('.outliner-footer').textContent = '13 elements · 1 page · Local demo';
+    document.getElementById('export-session').innerHTML = '<span class="symbol">⇩</span>Export Draft';
+    document.querySelector('.project-name').textContent = 'Studio Demo / Home Page';
+  }
+
+  function importWebsiteFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function () {
+      loadImportedMarkup(String(reader.result), file.name, 'page', true);
+    };
+    reader.onerror = function () {
+      showMessage('Could not read that HTML file.');
+    };
+    reader.readAsText(file);
+  }
+
+  function loadImportedMarkup(markup, fileName, selectId, recordHistory) {
+    const parsed = new DOMParser().parseFromString(markup, 'text/html');
+    parsed.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style], [data-webedyts-animation-style]').forEach(function (node) {
+      node.remove();
+    });
+
+    const policy = parsed.createElement('meta');
+    policy.setAttribute('http-equiv', 'Content-Security-Policy');
+    policy.setAttribute('content', "default-src 'none'; script-src 'none'; connect-src 'none'; img-src data: blob:; style-src 'unsafe-inline' data:; font-src data:; media-src data: blob:; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'");
+    policy.setAttribute('data-webedyts-preview-policy', 'true');
+    parsed.head.prepend(policy);
+
+    const selectionStyle = parsed.createElement('style');
+    selectionStyle.setAttribute('data-webedyts-editor-style', 'true');
+    selectionStyle.textContent = '[data-wi-selected] { outline: 2px solid #4f7fa7 !important; outline-offset: -2px !important; }';
+    parsed.head.appendChild(selectionStyle);
+
+    const animationStyle = parsed.createElement('style');
+    animationStyle.setAttribute('data-webedyts-animation-style', 'true');
+    animationStyle.textContent =
+      '@keyframes wiFade { from { opacity: .2; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }' +
+      '@keyframes wiSlide { from { opacity: .2; transform: translateX(-22px); } to { opacity: 1; transform: translateX(0); } }' +
+      '@keyframes wiPop { 0% { transform: scale(.9); } 70% { transform: scale(1.03); } 100% { transform: scale(1); } }' +
+      '@keyframes wiPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }' +
+      '@keyframes wiWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }' +
+      '@keyframes wiBlur { from { opacity: .35; filter: blur(7px); } to { opacity: 1; filter: blur(0); } }' +
+      '.wi-anim-fade { animation: wiFade .7s ease both; } .wi-anim-slide { animation: wiSlide .65s ease both; }' +
+      '.wi-anim-pop { animation: wiPop .55s cubic-bezier(.2,.8,.2,1) both; } .wi-anim-pulse { animation: wiPulse 1.2s ease-in-out 2; }' +
+      '.wi-anim-wiggle { animation: wiWiggle .45s ease-in-out 3; } .wi-anim-blur { animation: wiBlur .8s ease both; }';
+    parsed.head.appendChild(animationStyle);
+    parsed.querySelectorAll('base').forEach(function (node) { node.remove(); });
+
+    const body = parsed.body;
+    body.dataset.wiNode = 'page';
+    body.dataset.wiLabel = 'Imported Page';
+    body.dataset.wiKind = 'page';
+    body.dataset.wiTextEditable = 'false';
+
+    let count = 0;
+    body.querySelectorAll('*').forEach(function (node) {
+      if (['SCRIPT','STYLE','META','LINK','TITLE','BASE'].includes(node.tagName)) return;
+      count += 1;
+      if (count > 500) return;
+      node.dataset.wiNode = 'wi-' + count;
+      const tag = node.tagName.toLowerCase();
+      const visibleText = (node.textContent || '').trim().replace(/\\s+/g, ' ');
+      const shortText = visibleText.length > 30 ? visibleText.slice(0, 27) + '…' : visibleText;
+      const hint = node.id ? '#' + node.id : (shortText || (node.classList.length ? '.' + String(node.classList[0]) : ''));
+      node.dataset.wiLabel = (tag + (hint ? ' — ' + hint : '')).slice(0, 52);
+      node.dataset.wiKind = tag;
+      node.dataset.wiTextEditable = node.children.length === 0 && visibleText ? 'true' : 'false';
+    });
+
+    if (importedFrame) importedFrame.remove();
+    importedFrame = document.createElement('iframe');
+    importedFrame.className = 'imported-frame';
+    importedFrame.setAttribute('sandbox', 'allow-same-origin');
+    importedFrame.title = 'Imported website preview (scripts disabled)';
+    importedMode = true;
+    importedDoc = null;
+    importedFileName = fileName || importedFileName;
+    canvas.classList.add('imported');
+    canvas.appendChild(importedFrame);
+    document.querySelector('.project-name').textContent = importedFileName;
+    document.getElementById('export-session').innerHTML = '<span class="symbol">⇩</span>Export HTML';
+
+    importedFrame.addEventListener('load', function () {
+      importedDoc = importedFrame.contentDocument;
+      if (!importedDoc || !importedDoc.body) {
+        showMessage('This HTML file could not be previewed.');
+        return;
+      }
+      importedDoc.addEventListener('click', function (event) {
+        const target = event.target.closest('[data-wi-node]');
+        if (!target) return;
+        event.preventDefault();
+        selectNode(target.dataset.wiNode);
+      });
+      buildImportedTree();
+      const first = importedDoc.querySelector('[data-wi-node]:not(body)');
+      selectNode(getNode(selectId) ? selectId : (first ? first.dataset.wiNode : 'page'));
+      if (recordHistory) {
+        history = [];
+        historyPosition = -1;
+        saveHistory();
+        savedSnapshot = makeSnapshot();
+        saveState.textContent = 'All changes saved';
+        saveState.style.color = '';
+        showMessage('HTML opened. Scripts and external assets are blocked in preview.');
+      } else {
+        markChanged();
+      }
+    }, { once: true });
+
+    const doctype = parsed.doctype ? '<!DOCTYPE ' + parsed.doctype.name + '>' : '<!DOCTYPE html>';
+    importedFrame.srcdoc = doctype + '\\n' + parsed.documentElement.outerHTML;
+  }
+
+  function buildImportedTree() {
+    tree.innerHTML = '';
+    tree.appendChild(makeTreeButton('page', 'Imported Page', 'PAGE', true));
+    const branch = document.createElement('div');
+    branch.className = 'tree-indent';
+    let shown = 0;
+
+    function addChildren(parent, holder, depth) {
+      Array.from(parent.children).forEach(function (child) {
+        if (!child.dataset.wiNode || ['SCRIPT','STYLE','META','LINK','TITLE','BASE'].includes(child.tagName)) return;
+        if (shown >= 180 || depth > 5) return;
+        shown += 1;
+        holder.appendChild(makeTreeButton(child.dataset.wiNode, child.dataset.wiLabel, child.tagName, false));
+        if (child.children.length) {
+          const nested = document.createElement('div');
+          nested.className = 'tree-indent';
+          holder.appendChild(nested);
+          addChildren(child, nested, depth + 1);
+        }
+      });
+    }
+
+    addChildren(importedDoc.body, branch, 1);
+    tree.appendChild(branch);
+    document.querySelector('.outliner-footer').textContent = shown + ' elements shown · Imported HTML';
+  }
+
+  function makeTreeButton(id, label, kind, isRoot) {
+    const button = document.createElement('button');
+    button.className = 'tree-label' + (isRoot ? ' tree-root' : '');
+    button.dataset.select = id;
+    const arrow = document.createElement('span');
+    arrow.className = 'chevron';
+    const icon = document.createElement('span');
+    icon.className = 'node-icon';
+    icon.textContent = isRoot ? '▣' : kind.toLowerCase().slice(0, 1);
+    const name = document.createElement('span');
+    name.className = 'node-name';
+    name.textContent = label;
+    const type = document.createElement('span');
+    type.className = 'node-type';
+    type.textContent = kind.toUpperCase();
+    button.append(arrow, icon, name, type);
+    return button;
+  }
+
+  function exportImportedPage() {
+    if (!importedDoc) return;
+    const clone = importedDoc.documentElement.cloneNode(true);
+    clone.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
+      node.remove();
+    });
+    clone.querySelectorAll('[data-webedyts-animation-style]').forEach(function (node) {
+      node.removeAttribute('data-webedyts-animation-style');
+    });
+    clone.querySelectorAll('*').forEach(function (node) {
+      Array.from(node.attributes).forEach(function (attribute) {
+        if (attribute.name.startsWith('data-wi-')) node.removeAttribute(attribute.name);
+      });
+    });
+    const doctype = importedDoc.doctype ? '<!DOCTYPE ' + importedDoc.doctype.name + '>' : '<!DOCTYPE html>';
+    const output = doctype + '\\n' + clone.outerHTML;
+    const blob = new Blob([output], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const baseName = importedFileName.replace(/\\.(html?|HTML?)$/, '');
+    link.download = baseName + '.webedyts.html';
+    link.click();
+    URL.revokeObjectURL(url);
+    savedSnapshot = makeSnapshot();
+    saveState.textContent = 'All changes saved';
+    saveState.style.color = '';
+    showMessage('Exported the edited HTML file.');
   }
 
   function resetSession() {
@@ -658,7 +921,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   propertyText.addEventListener('input', function () {
     const node = getNode(selectedId);
-    if (!node || node.dataset.editableText !== 'true') return;
+    const canEdit = node && (importedMode ? node.dataset.wiTextEditable === 'true' : node.dataset.editableText === 'true');
+    if (!canEdit) return;
     node.textContent = propertyText.value;
     markChanged();
   });
@@ -738,6 +1002,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     canvas.style.transform = 'scale(' + (zoom / 100) + ')';
     canvas.style.transformOrigin = 'center center';
     document.getElementById('zoom-label').textContent = zoom + '%';
+  });
+
+  document.getElementById('open-website').addEventListener('click', function () { websiteFile.click(); });
+  websiteFile.addEventListener('change', function () {
+    if (websiteFile.files[0]) importWebsiteFile(websiteFile.files[0]);
+    websiteFile.value = '';
   });
 
   document.getElementById('save-session').addEventListener('click', downloadSession);
