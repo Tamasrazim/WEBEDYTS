@@ -1,6 +1,6 @@
 # Development Rules
 
-These rules apply to anyone changing Website Indexer, including automated coding tools.
+These rules apply to anyone changing WEBEDYTS, including automated coding tools.
 
 ## 1. Write understandable code
 
