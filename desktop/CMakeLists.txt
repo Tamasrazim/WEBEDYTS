@@ -194,6 +194,12 @@ endif()
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)
+    add_test(
+        NAME webedyts_bundle_size_test
+        COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/tests/desktop/test_bundle_size.py"
+    )
+
     if(OS_MAC)
         set(WEBEDYTS_BUNDLE_TO_CHECK "${WEBEDYTS_APP}")
     else()
