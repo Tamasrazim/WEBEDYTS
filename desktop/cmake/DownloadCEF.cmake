@@ -4,6 +4,10 @@
 # It is an integrity check, not a signature or a guarantee of publisher identity.
 
 function(webedyts_download_cef output_variable download_directory cef_version)
+    if(NOT cef_version MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+\\+g[0-9a-fA-F]+\\+chromium-[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$")
+        message(FATAL_ERROR
+            "CEF version must look like 154.0.34+g14c5a08+chromium-154.0.8037.98; got '${cef_version}'.")
+    endif()
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
         if(CMAKE_GENERATOR_PLATFORM MATCHES "ARM64" OR
            CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "ARM64" OR
