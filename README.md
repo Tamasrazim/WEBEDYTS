@@ -6,7 +6,7 @@ WEBEDYTS is being developed as a real, installable desktop application for Windo
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Project status:** The native CEF application compiles on Windows x64, Linux x64, and macOS arm64 in CI. The latest Linux and macOS test jobs passed, but the Windows native startup smoke test still exits with access violation code `3221225477` (`0xC0000005`) before the editor page reports a successful load. Custom installer packaging is now wired into CI, but a Windows installer is withheld until that startup test passes. No signed, notarized, or permanent public release is available yet.
+> **Release track:** The planned first public preview is version `0.1.0`, maintained in the root VERSION file. It is not released yet. Recent Linux and macOS CI jobs passed, but the Windows native startup smoke test failed with access violation code `3221225477` (`0xC0000005`). A release tag can create a draft early-access release only after the complete Windows, Linux, and macOS test-and-installer matrix passes. Installers are not signed or notarized yet.
 
 ## Native build verification
 
@@ -20,7 +20,7 @@ The [three-platform native build](https://github.com/Tamasrazim/WEBEDYTS/actions
 
 These are installed-footprint measurements of the staged application tree, not the compressed GitHub Actions artifact sizes. The hashes are for the generated platform package files; each package also has a `.sha256` sidecar. The CI artifacts are temporary and retained for 14 days. They are not installers, signed releases, or permanent downloads.
 
-The earlier runtime-packaging measurements above are retained for reference. In the latest CI run, Linux and macOS native tests passed while the Windows startup smoke test failed with an access violation. CI only creates an installable package for a platform after that platform's native tests pass. Even then, automated startup checks are not a substitute for manual testing of import, element editing, media insertion, preview, export, and uninstall on each OS.
+The earlier runtime-footprint measurements above are retained for reference; they are not official release downloads. The current release gate requires the native startup test and installer build to pass on every target. Manual validation of import, editing, media insertion, preview, export, upgrade, and uninstall is still needed before publishing an early-access release.
 
 ## The idea
 

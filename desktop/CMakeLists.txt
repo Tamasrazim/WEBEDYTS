@@ -52,7 +52,11 @@ if(OS_MAC)
     set(CMAKE_OBJCXX_EXTENSIONS OFF)
 endif()
 
-set(WEBEDYTS_VERSION "0.1.0")
+file(STRINGS "${CMAKE_SOURCE_DIR}/VERSION" WEBEDYTS_VERSION LIMIT_COUNT 1)
+if(NOT WEBEDYTS_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR
+        "VERSION must contain a plain semantic version such as 0.1.0.")
+endif()
 set(WEBEDYTS_SOURCES
     src/webedyts_desktop.cpp
 )

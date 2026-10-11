@@ -12,6 +12,26 @@ PACKAGING = ROOT / "packaging"
 
 
 class InstallerSourceTests(unittest.TestCase):
+    def test_release_version_has_one_source_of_truth(self) -> None:
+        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        self.assertRegex(version, r"^\d+\.\d+\.\d+$")
+
+        cmake = (ROOT / "desktop" / "CMakeLists.txt").read_text(encoding="utf-8")
+        self.assertIn('file(STRINGS "${CMAKE_SOURCE_DIR}/VERSION" WEBEDYTS_VERSION LIMIT_COUNT 1)', cmake)
+
+        native_workflow = (ROOT / ".github" / "workflows" / "native-desktop-build.yml").read_text(encoding="utf-8")
+        self.assertIn("WEBEDYTS_VERSION=$APP_VERSION", native_workflow)
+        self.assertIn('      - "v*"', native_workflow)
+        self.assertNotIn("/DAppVersion=0.1.0", native_workflow)
+
+    def test_official_release_is_gated_and_draft_only(self) -> None:
+        workflow = (ROOT / ".github" / "workflows" / "native-desktop-build.yml").read_text(encoding="utf-8")
+        self.assertIn("needs: build", workflow)
+        self.assertIn("needs.build.result == \'success\'", workflow)
+        self.assertIn("--verify-tag", workflow)
+        self.assertIn("--draft", workflow)
+        self.assertIn("--prerelease", workflow)
+
     def test_windows_setup_is_branded_and_per_user(self) -> None:
         source = (PACKAGING / "windows" / "WEBEDYTS.iss").read_text(encoding="utf-8")
         for expected in (

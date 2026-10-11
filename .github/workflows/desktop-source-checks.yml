@@ -11,6 +11,9 @@ on:
       - ".github/workflows/native-desktop-build.yml"
       - "prototype/**"
       - "packaging/**"
+      - "VERSION"
+      - "CHANGELOG.md"
+      - "docs/**"
   pull_request:
   workflow_dispatch:
 

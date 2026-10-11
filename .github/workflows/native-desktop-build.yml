@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
     paths:
       - "CMakeLists.txt"
       - "desktop/**"
@@ -12,6 +14,7 @@ on:
       - "tests/desktop/**"
       - "tests/security/**"
       - "packaging/**"
+      - "VERSION"
       - ".github/workflows/native-desktop-build.yml"
   workflow_dispatch:
     inputs:
@@ -86,6 +89,17 @@ jobs:
           WINDOWS_ARCH: ${{ inputs.windows_arch || 'x64' }}
           MACOS_ARCH: ${{ inputs.macos_arch || 'auto' }}
         run: |
+          APP_VERSION="$(tr -d '\r\n' < VERSION)"
+          if [[ ! "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "VERSION is not a plain semantic version: $APP_VERSION" >&2
+            exit 2
+          fi
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$APP_VERSION" ]]; then
+            echo "Tag $GITHUB_REF_NAME does not match VERSION ($APP_VERSION)." >&2
+            exit 2
+          fi
+          echo "WEBEDYTS_VERSION=$APP_VERSION" >> "$GITHUB_ENV"
+
           cmake_args=(-S . -B build-desktop)
 
           if [[ "$RUNNER_OS" == "Windows" ]]; then
@@ -157,11 +171,11 @@ jobs:
           $stageDir = Join-Path $env:GITHUB_WORKSPACE "build-desktop\desktop\Release"
           $outputDir = Join-Path $env:GITHUB_WORKSPACE "build-desktop\packages"
           New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
-          & $compiler "packaging\windows\WEBEDYTS.iss" "/DAppVersion=0.1.0" "/DAppArch=$env:WINDOWS_ARCH" "/DStageDir=$stageDir" "/DOutputDir=$outputDir"
+          & $compiler "packaging\windows\WEBEDYTS.iss" "/DAppVersion=$env:WEBEDYTS_VERSION" "/DAppArch=$env:WINDOWS_ARCH" "/DStageDir=$stageDir" "/DOutputDir=$outputDir"
           if ($LASTEXITCODE -ne 0) {
             throw "Inno Setup failed with exit code $LASTEXITCODE."
           }
-          $installer = Join-Path $outputDir "WEBEDYTS-Setup-$env:WINDOWS_ARCH-v0.1.0.exe"
+          $installer = Join-Path $outputDir "WEBEDYTS-Setup-$($env:WINDOWS_ARCH)-v$($env:WEBEDYTS_VERSION).exe"
           if (-not (Test-Path $installer)) {
             throw "The expected Windows installer was not created: $installer"
           }
@@ -171,7 +185,7 @@ jobs:
       - name: Build Debian / Ubuntu installer
         if: runner.os == 'Linux'
         run: |
-          bash packaging/linux/build-deb.sh build-desktop/desktop/Release build-desktop/packages 0.1.0 "$(dpkg --print-architecture)"
+          bash packaging/linux/build-deb.sh build-desktop/desktop/Release build-desktop/packages "$WEBEDYTS_VERSION" "$(dpkg --print-architecture)"
 
       - name: Build macOS drag-install disk image
         if: runner.os == 'macOS'
@@ -181,7 +195,7 @@ jobs:
         run: |
           architecture="$MACOS_ARCH"
           if [ "$architecture" = "auto" ]; then architecture="$(uname -m)"; fi
-          bash packaging/macos/build-dmg.sh "build-desktop/desktop/Release/WEBEDYTS.app" build-desktop/packages 0.1.0 "$architecture"
+          bash packaging/macos/build-dmg.sh "build-desktop/desktop/Release/WEBEDYTS.app" build-desktop/packages "$WEBEDYTS_VERSION" "$architecture"
 
       - name: Upload installer and runtime package for inspection
         uses: actions/upload-artifact@v7
@@ -190,3 +204,45 @@ jobs:
           path: build-desktop/packages/*
           if-no-files-found: error
           retention-days: 14
+
+  draft-release:
+    name: Assemble a draft release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/') && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the tagged release notes
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Download installers and portable packages
+        uses: actions/download-artifact@v8
+        with:
+          pattern: WEBEDYTS-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Verify every release checksum
+        shell: bash
+        run: |
+          cd release-assets
+          shopt -s nullglob
+          checksums=( *.sha256 )
+          if [[ "${#checksums[@]}" -eq 0 ]]; then echo "No SHA-256 sidecars were produced." >&2; exit 2; fi
+          for checksum in "${checksums[@]}"; do sha256sum --check "$checksum"; done
+
+      - name: Create a draft early-access release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          APP_VERSION="$(tr -d '\r\n' < VERSION)"
+          if [[ "$GITHUB_REF_NAME" != "v$APP_VERSION" ]]; then echo "The release tag no longer matches VERSION." >&2; exit 2; fi
+          sed "s/@VERSION@/$APP_VERSION/g" docs/release-notes-template.md > release-notes.md
+          shopt -s nullglob
+          assets=( release-assets/* )
+          if [[ "${#assets[@]}" -lt 6 ]]; then echo "Expected installer, portable package, and checksum files for all platforms." >&2; printf 'Found: %s\n' "${assets[*]}" >&2; exit 2; fi
+          gh release create "$GITHUB_REF_NAME" "${assets[@]}" --verify-tag --draft --prerelease --title "WEBEDYTS $GITHUB_REF_NAME — Early Access" --notes-file release-notes.md
