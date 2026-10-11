@@ -41,7 +41,6 @@ def runtime_files(root: Path) -> tuple[list[Path], list[tuple[Path, ...]], Path 
             root / "Contents" / "Resources" / "app" / "index.html",
             framework / "Chromium Embedded Framework",
             pak_directory / "icudtl.dat",
-            pak_directory / "locales",
         ]
         return required, alternatives, pak_directory
 
@@ -77,7 +76,22 @@ def main() -> int:
         if not any(path.is_file() for path in group)
     ]
     missing_packs = not pak_directory or not any(pak_directory.glob("*.pak"))
-    if missing or missing_groups or missing_packs:
+    if pak_directory is None:
+        missing_locales = True
+    elif root.name.endswith(".app"):
+        # macOS CEF stores each locale in a Cocoa-style .lproj directory.
+        # It does not use the locales/ directory found on Windows and Linux.
+        missing_locales = not any(
+            path.is_file() for path in pak_directory.glob("*.lproj/locale.pak")
+        )
+    else:
+        locale_directory = root / "locales"
+        missing_locales = (
+            not locale_directory.is_dir()
+            or not any(locale_directory.glob("*.pak"))
+        )
+
+    if missing or missing_groups or missing_packs or missing_locales:
         print("Required app or Chromium files are missing:", file=sys.stderr)
         for path in missing:
             print(f"  - {path}", file=sys.stderr)
@@ -85,6 +99,11 @@ def main() -> int:
             print("  - one of: " + ", ".join(str(path) for path in group), file=sys.stderr)
         if missing_packs:
             print(f"  - at least one Chromium .pak resource in {pak_directory}", file=sys.stderr)
+        if missing_locales:
+            if root.name.endswith(".app"):
+                print(f"  - at least one locale pack in {pak_directory}/*.lproj/locale.pak", file=sys.stderr)
+            else:
+                print(f"  - at least one locale .pak in {root / 'locales'}", file=sys.stderr)
         return 2
 
     total = installed_size(root)
