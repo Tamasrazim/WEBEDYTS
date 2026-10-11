@@ -6,7 +6,7 @@ WEBEDYTS is planned as a real, installable desktop application for Windows, Linu
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Project status:** WEBEDYTS is at the specification stage; the desktop application has not been implemented yet. This README describes the intended product and platform targets, not features already available. Features will be marked as implemented only after they exist and have been tested.
+> **Project status:** WEBEDYTS has a working browser-based editor prototype and an initial native CEF desktop-shell/build scaffold. The desktop target has not yet been compiled against a real CEF distribution or tested on target operating systems, and there is no installer or release download yet. This README distinguishes available prototype features, source-level scaffolding, and unverified release goals.
 
 ## The idea
 
@@ -204,7 +204,7 @@ The prototype can open a **single HTML file** or a **complete local website fold
 
 The media drawer can insert PNG, SVG, animated GIF, video, audio, font samples, and links to other files. Video sources up to 8K (7680 × 4320) at 60 FPS are supported as integration targets; the original media is preserved without transcoding, but playback depends on the source codec, browser, graphics hardware, and available memory. ZIP checksum calculation runs in 8 MB chunks and reports the active filename, processed bytes, and progress. There is no small hardcoded per-file size cap, so a few-hundred-MB project should be feasible on suitable hardware; that scale has not yet been stress-tested, and final ZIP Blob/download limits depend on the browser and available memory. WEBEDYTS does not guarantee smooth 8K60 playback on every machine.
 
-This remains a prototype rather than a complete website runtime. Imported scripts are intentionally disabled in the isolated preview, and external network resources are blocked. The importer does not yet resolve every script-created request, framework-specific build path, dynamic component, server route, or backend service, so complex sites may not render exactly as they do when hosted. The folder export includes the files the user selected; exported projects should be tested in the intended browser before deployment. A native desktop application and broader validation tools remain planned.
+This remains a prototype rather than a complete website runtime. Imported scripts are intentionally disabled in the isolated preview, and external network resources are blocked. The importer does not yet resolve every script-created request, framework-specific build path, dynamic component, server route, or backend service, so complex sites may not render exactly as they do when hosted. The folder export includes the files the user selected; exported projects should be tested in the intended browser before deployment. The native shell and CEF packaging source have been started, while deeper app integration and export validation remain unfinished.
 
 ## Native desktop build foundation
 
@@ -323,7 +323,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-This is an integrity foundation, not unbreakable copy protection. A checksum stored alongside editable source can be changed by someone who modifies the source. Production releases should add signed release manifests and platform code-signing; the signing private key must stay outside the public repository. The verifier still needs to be called by the future desktop application's startup code before it becomes an app-wide check.
+This is an integrity foundation, not unbreakable copy protection. A checksum stored alongside editable source can be changed by someone who modifies the source. Production releases should add signed release manifests and platform code-signing; the signing private key must stay outside the public repository. The current native shell checks the embedded notice during startup. This is an integrity check for the bundled notice, not tamper-proof protection; production releases still need signed manifests and platform code-signing.
 
 ## AI and automated-code restrictions
 
