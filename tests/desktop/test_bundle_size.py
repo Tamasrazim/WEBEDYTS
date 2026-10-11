@@ -101,6 +101,28 @@ class BundleSizeTests(unittest.TestCase):
             self.assertIn("Installed footprint:", output)
             self.assertIn("below 1 MiB", error)
 
+    def test_default_package_size_threshold_is_200_mib(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            touch(root / "resources" / "app" / "index.html", b"<html></html>")
+            touch(root / "resources.pak")
+            touch(root / "icudtl.dat")
+            touch(root / "locales" / "en-US.pak")
+            touch(root / "libcef.so")
+
+            old_argv = sys.argv
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            sys.argv = [str(CHECKER_PATH), str(root), "--fail-below-minimum"]
+            try:
+                with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                    result = checker.main()
+            finally:
+                sys.argv = old_argv
+
+            self.assertEqual(result, 3)
+            self.assertIn("below 200 MiB", stderr.getvalue())
+
     def test_macos_checks_framework_resources(self) -> None:
         with tempfile.TemporaryDirectory(suffix=".app") as temp:
             root = Path(temp)
