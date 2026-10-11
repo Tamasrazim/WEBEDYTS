@@ -122,6 +122,13 @@ class EditorSourceTests(unittest.TestCase):
         ):
             self.assertIn(keyframe, self.source)
 
+        # The library should demonstrate the selected motion before it is applied.
+        for preset in presets:
+            self.assertIn(
+                f'.asset-card[data-preset="{preset}"]:is(:hover,:focus-visible) .anim-preview::before',
+                self.source,
+            )
+
     def test_imported_element_actions_are_wired(self) -> None:
         for expected in (
             'id="duplicate-element"',
