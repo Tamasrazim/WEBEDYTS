@@ -65,7 +65,7 @@ jobs:
             libcairo2 libdrm2 libgbm1 libgtk-3-0t64 libgtk-3-dev \
             libnss3 libnss3-dev libpango-1.0-0 libx11-dev libx11-xcb1 \
             libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 \
-            libxrandr2 libxshmfence1
+            libxrandr2 libxshmfence1 xvfb xauth
 
       - name: Configure the full CEF runtime
         shell: bash
@@ -101,7 +101,12 @@ jobs:
       - name: Build desktop application
         run: cmake --build build-desktop --config Release --parallel 2
 
+      - name: Run tests with a virtual display
+        if: runner.os == 'Linux'
+        run: xvfb-run -a ctest --test-dir build-desktop -C Release --output-on-failure
+
       - name: Run tests
+        if: runner.os != 'Linux'
         run: ctest --test-dir build-desktop -C Release --output-on-failure
 
       - name: Package the complete runtime
