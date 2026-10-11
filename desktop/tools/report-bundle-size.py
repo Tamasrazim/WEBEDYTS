@@ -55,7 +55,7 @@ def main() -> int:
     parser.add_argument(
         "--minimum-mib",
         type=int,
-        default=120,
+        default=200,
         help="Minimum installed size to report (default: 200 MiB)",
     )
     parser.add_argument(
