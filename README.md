@@ -6,7 +6,7 @@ WEBEDYTS is planned as a real, installable desktop application for Windows, Linu
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Project status:** WEBEDYTS has a working browser-based editor prototype and an initial native CEF desktop-shell/build scaffold. The desktop target has not yet been compiled against a real CEF distribution or tested on target operating systems, and there is no installer or release download yet. This README distinguishes available prototype features, source-level scaffolding, and unverified release goals.
+> **Project status:** WEBEDYTS has a working browser-based editor prototype and an initial native CEF desktop-shell/build scaffold. The first full CEF build exposed compiler issues on the target platforms; fixes have been committed and a follow-up three-platform build is underway. No native package has yet been verified, and there is no installer or release download. This README distinguishes available prototype features, source-level scaffolding, and unverified release goals.
 
 ## The idea
 
