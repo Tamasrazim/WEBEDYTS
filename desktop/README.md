@@ -61,9 +61,20 @@ cmake --build build-desktop --parallel
 cmake --build build-desktop --target webedyts_report_bundle_size
 ```
 
-CEF's Linux sandbox helper may require owner and permission setup for the
-chosen installation format. The CMake build prints the required command; do
-not silently disable the sandbox to get around a packaging problem.
+CEF's Linux sandbox helper needs the correct owner and SUID permissions
+for the installed location. CEF's CMake macro prints the command during the
+build. For a portable tar archive, apply it to the extracted app's
+`chrome-sandbox` file after installation:
+
+```sh
+sudo chown root:root /path/to/WEBEDYTS/chrome-sandbox
+sudo chmod 4755 /path/to/WEBEDYTS/chrome-sandbox
+```
+
+Use the actual installation path, keep the sandbox enabled, and do not launch
+the app until the helper has been configured. A future system package/installer
+should apply the permissions in its installation step rather than asking users
+to repeat these commands manually.
 
 ### macOS
 
