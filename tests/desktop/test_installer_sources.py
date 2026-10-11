@@ -66,6 +66,16 @@ class InstallerSourceTests(unittest.TestCase):
         ):
             self.assertIn(expected, source)
 
+
+    def test_windows_shell_uses_native_window_path(self) -> None:
+        source = (ROOT / "desktop" / "src" / "webedyts_desktop.cpp").read_text(encoding="utf-8")
+        self.assertIn("CefBrowserHost::CreateBrowser", source)
+        self.assertIn("window_info.SetAsChild(window, client_rect)", source)
+        self.assertIn("case WM_SIZE:", source)
+        self.assertIn("case WM_CLOSE:", source)
+        self.assertIn("#if !defined(_WIN32)\n      // CEF Views powers the Linux/macOS shell.", source)
+        self.assertIn("CreateNativeMainWindow(", source)
+
     def test_macos_image_uses_drag_install_and_integrity_check(self) -> None:
         source = (PACKAGING / "macos" / "build-dmg.sh").read_text(encoding="utf-8")
         for expected in (

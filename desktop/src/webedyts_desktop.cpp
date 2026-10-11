@@ -1,4 +1,5 @@
 #include "include/cef_app.h"
+#include "include/cef_browser.h"
 #include "include/cef_browser_process_handler.h"
 #include "include/cef_client.h"
 #include "include/cef_download_handler.h"
@@ -6,6 +7,7 @@
 #include "include/cef_display_handler.h"
 #include "include/cef_frame.h"
 #include "include/cef_load_handler.h"
+#include "include/cef_life_span_handler.h"
 #include "include/cef_command_line.h"
 #include "include/cef_path_util.h"
 #include "include/cef_parser.h"
@@ -37,7 +39,14 @@ namespace {
 
 CefRefPtr<CefWindow> g_main_window;
 
+#if defined(_WIN32)
+HWND g_native_window = nullptr;
+CefRefPtr<CefBrowser> g_native_browser;
+bool g_native_close_requested = false;
+#endif
+
 std::filesystem::path PathFromCefString(const CefString& value);
+void ResizeNativeBrowser();
 
 void TraceStartup(const std::string& message) {
   const char* trace_path = std::getenv("WEBEDYTS_STARTUP_TRACE_PATH");
@@ -59,7 +68,8 @@ void TraceStartup(const std::string& message) {
 class EditorClient final : public CefClient,
                           public CefDownloadHandler,
                           public CefDisplayHandler,
-                          public CefLoadHandler {
+                          public CefLoadHandler,
+                          public CefLifeSpanHandler {
  public:
   EditorClient(bool smoke_test,
                CefString smoke_marker_path,
@@ -70,6 +80,38 @@ class EditorClient final : public CefClient,
 
   CefRefPtr<CefLoadHandler> GetLoadHandler() override {
     return this;
+  }
+
+  CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override {
+    return this;
+  }
+
+  void OnAfterCreated(CefRefPtr<CefBrowser> browser) override {
+#if defined(_WIN32)
+    if (browser && !browser->IsPopup()) {
+      g_native_browser = browser;
+      TraceStartup("main browser created");
+      ResizeNativeBrowser();
+    }
+#else
+    (void)browser;
+#endif
+  }
+
+  void OnBeforeClose(CefRefPtr<CefBrowser> browser) override {
+#if defined(_WIN32)
+    if (browser && !browser->IsPopup()) {
+      g_native_browser = nullptr;
+      TraceStartup("main browser closed");
+      if (g_native_window) {
+        PostMessageW(g_native_window, WM_CLOSE, 0, 0);
+      } else {
+        CefQuitMessageLoop();
+      }
+    }
+#else
+    (void)browser;
+#endif
   }
 
   void OnLoadEnd(CefRefPtr<CefBrowser> /*browser*/,
@@ -115,9 +157,17 @@ class EditorClient final : public CefClient,
 
   void OnTitleChange(CefRefPtr<CefBrowser> /*browser*/,
                      const CefString& title) override {
-    if (window_) {
-      window_->SetTitle(title.empty() ? CefString("WEBEDYTS") : title);
+    const CefString safe_title = title.empty() ? CefString("WEBEDYTS") : title;
+#if defined(_WIN32)
+    if (g_native_window) {
+      const std::wstring wide_title = safe_title.ToWString();
+      SetWindowTextW(g_native_window, wide_title.c_str());
     }
+#else
+    if (window_) {
+      window_->SetTitle(safe_title);
+    }
+#endif
   }
 
   bool OnBeforeDownload(
@@ -172,11 +222,19 @@ class EditorClient final : public CefClient,
       }
     }
 
+#if defined(_WIN32)
+    if (g_native_window) {
+      PostMessageW(g_native_window, WM_CLOSE, 0, 0);
+    } else {
+      CefQuitMessageLoop();
+    }
+#else
     if (g_main_window) {
       g_main_window->Close();
     } else {
       CefQuitMessageLoop();
     }
+#endif
   }
 
   bool smoke_test_ = false;
@@ -186,6 +244,122 @@ class EditorClient final : public CefClient,
 
   IMPLEMENT_REFCOUNTING(EditorClient);
 };
+
+#if defined(_WIN32)
+
+void ResizeNativeBrowser() {
+  if (!g_native_window || !g_native_browser) {
+    return;
+  }
+  HWND browser_window = g_native_browser->GetHost()->GetWindowHandle();
+  if (!browser_window) {
+    return;
+  }
+  RECT client_rect{};
+  if (!GetClientRect(g_native_window, &client_rect)) {
+    return;
+  }
+  const int width = client_rect.right - client_rect.left;
+  const int height = client_rect.bottom - client_rect.top;
+  SetWindowPos(browser_window, nullptr, 0, 0, width, height,
+               SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
+LRESULT CALLBACK NativeWindowProc(HWND window,
+                                  UINT message,
+                                  WPARAM wparam,
+                                  LPARAM lparam) {
+  switch (message) {
+    case WM_SIZE:
+      ResizeNativeBrowser();
+      return 0;
+
+    case WM_CLOSE:
+      if (g_native_browser) {
+        if (!g_native_close_requested) {
+          g_native_close_requested = true;
+          TraceStartup("requesting browser close");
+          g_native_browser->GetHost()->CloseBrowser(false);
+        }
+        return 0;
+      }
+      DestroyWindow(window);
+      return 0;
+
+    case WM_DESTROY:
+      if (g_native_window == window) {
+        g_native_window = nullptr;
+        g_native_close_requested = false;
+      }
+      TraceStartup("native window destroyed");
+      CefQuitMessageLoop();
+      return 0;
+
+    default:
+      return DefWindowProcW(window, message, wparam, lparam);
+  }
+}
+
+bool CreateNativeMainWindow(CefRefPtr<EditorClient> client,
+                            const CefString& start_url) {
+  const HINSTANCE instance = GetModuleHandleW(nullptr);
+  constexpr wchar_t kWindowClass[] = L"WEBEDYTSNativeMainWindow";
+
+  WNDCLASSEXW window_class{};
+  window_class.cbSize = sizeof(window_class);
+  window_class.style = CS_HREDRAW | CS_VREDRAW;
+  window_class.lpfnWndProc = NativeWindowProc;
+  window_class.hInstance = instance;
+  window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+  window_class.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
+  window_class.hbrBackground =
+      reinterpret_cast<HBRUSH>(static_cast<INT_PTR>(COLOR_WINDOW + 1));
+  window_class.lpszClassName = kWindowClass;
+
+  if (!RegisterClassExW(&window_class) &&
+      GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
+    std::cerr << "WEBEDYTS could not register its Windows window class.\n";
+    return false;
+  }
+
+  HWND window = CreateWindowExW(
+      0, kWindowClass, L"WEBEDYTS", WS_OVERLAPPEDWINDOW,
+      60, 50, 1440, 900, nullptr, nullptr, instance, nullptr);
+  if (!window) {
+    std::cerr << "WEBEDYTS could not create its Windows window.\n";
+    return false;
+  }
+
+  g_native_window = window;
+  g_native_close_requested = false;
+  ShowWindow(window, SW_SHOW);
+  UpdateWindow(window);
+
+  RECT client_rect{};
+  if (!GetClientRect(window, &client_rect)) {
+    DestroyWindow(window);
+    return false;
+  }
+
+  const CefRect browser_rect(
+      0, 0, client_rect.right - client_rect.left,
+      client_rect.bottom - client_rect.top);
+  CefWindowInfo window_info;
+  window_info.SetAsChild(window, browser_rect);
+  CefBrowserSettings browser_settings;
+  TraceStartup("before creating native Windows browser");
+  if (!CefBrowserHost::CreateBrowser(
+          window_info, client, start_url, browser_settings, nullptr, nullptr)) {
+    std::cerr << "WEBEDYTS could not create its Windows browser.\n";
+    DestroyWindow(window);
+    return false;
+  }
+
+  TraceStartup("native Windows browser creation accepted");
+  return true;
+}
+
+#endif  // defined(_WIN32)
 
 class EditorBrowserViewDelegate final : public CefBrowserViewDelegate {
  public:
@@ -275,9 +449,12 @@ class WebedytsApp final : public CefApp,
   void OnBeforeCommandLineProcessing(
       const CefString& process_type,
       CefRefPtr<CefCommandLine> command_line) override {
-    // The Views API is needed by the native window and browser-view classes.
     if (process_type.empty()) {
+#if !defined(_WIN32)
+      // CEF Views powers the Linux/macOS shell. Windows uses a native HWND
+      // parent because the CEF Views window path crashes under bootstrap.
       command_line->AppendSwitch("use-views");
+#endif
       smoke_test_ = command_line->HasSwitch("webedyts-smoke-test");
       if (smoke_test_) {
         smoke_marker_path_ =
@@ -288,6 +465,15 @@ class WebedytsApp final : public CefApp,
 
   void OnContextInitialized() override {
     TraceStartup("CEF context initialized");
+#if defined(_WIN32)
+    TraceStartup("before creating native Windows window");
+    if (!CreateNativeMainWindow(
+            new EditorClient(smoke_test_, smoke_marker_path_, start_url_),
+            start_url_)) {
+      TraceStartup("native Windows window creation failed");
+      CefQuitMessageLoop();
+    }
+#else
     TraceStartup("before CreateTopLevelWindow");
     g_main_window = CefWindow::CreateTopLevelWindow(
         new EditorWindowDelegate(
@@ -299,6 +485,7 @@ class WebedytsApp final : public CefApp,
       std::cerr << "WEBEDYTS could not create its desktop window.\n";
       CefQuitMessageLoop();
     }
+#endif
   }
 
  private:
