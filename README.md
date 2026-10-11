@@ -212,7 +212,7 @@ The repository now includes an initial CEF-powered native window shell and an op
 
 This is a build foundation, **not a compiled or tested release**. The CEF binary distribution must be supplied separately with `CEF_ROOT`; it is not committed to the repository. The installed app is intentionally intended to occupy hundreds of megabytes because it includes the real browser engine and runtime resources, not because dummy data is added. See [the desktop build guide](desktop/README.md).
 
-Build the native target with `-DWEBEDYTS_BUILD_DESKTOP=ON` and a matching `CEF_ROOT`. It has not yet been compiled against an installed CEF distribution or tested on each target operating system. Keep that distinction clear until packaged builds are exercised.
+Build the native target with `-DWEBEDYTS_BUILD_DESKTOP=ON`. You can provide an extracted `CEF_ROOT`, or opt in to downloading the full official CEF SDK with `-DWEBEDYTS_DOWNLOAD_CEF=ON`. The default version and override are documented in [the desktop build guide](desktop/README.md). This source has not yet been compiled against an installed CEF distribution or tested on each target operating system. Keep that distinction clear until packaged builds are exercised.
 
 ## Important technical boundaries
 
