@@ -825,7 +825,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       throw new Error('This file is not a WEBEDYTS session.');
     }
     if (data.mode === 'imported' && typeof data.html === 'string') {
-      loadImportedMarkup(data.html, data.fileName || 'imported-page.html', data.selected || 'page', false, data.viewport);
+      loadImportedMarkup(data.html, data.fileName || 'imported-page.html', data.selected || 'page', false, data.viewport, true);
       return;
     }
     if (!Array.isArray(data.elements)) {
@@ -1396,7 +1396,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     reader.readAsText(file);
   }
 
-  function loadImportedMarkup(markup, fileName, selectId, recordHistory, viewportMode) {
+  function loadImportedMarkup(markup, fileName, selectId, recordHistory, viewportMode, preserveEditorMetadata) {
     if (viewportMode && ['desktop', 'tablet', 'mobile'].includes(viewportMode)) {
       canvas.dataset.mode = viewportMode;
       document.getElementById('viewport-mode').value = viewportMode;
@@ -1447,6 +1447,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           node.hasAttribute('data-webedyts-project-original-node')) return;
       count += 1;
       if (count > 500) return;
+      if (preserveEditorMetadata && node.dataset.webedytsEditorNode && node.dataset.webedytsEditorLabel) return;
       node.dataset.webedytsEditorNode = 'wi-' + count;
       const tag = node.tagName.toLowerCase();
       const visibleText = (node.textContent || '').trim().replace(/\s+/g, ' ');
