@@ -224,6 +224,13 @@ if(Python3_Interpreter_FOUND)
         COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_SOURCE_DIR}/tests/desktop/test_bundle_size.py"
     )
+    add_test(
+        NAME webedyts_cef_bootstrap_test
+        COMMAND "${CMAKE_COMMAND}"
+            "-DCEF_TEST_DOWNLOAD_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}/cef-bootstrap-test"
+            "-DCEF_TEST_MODULE=${CMAKE_CURRENT_SOURCE_DIR}/cmake/DownloadCEF.cmake"
+            -P "${CMAKE_SOURCE_DIR}/tests/desktop/test_cef_bootstrap.cmake"
+    )
 
     if(OS_MAC)
         set(WEBEDYTS_BUNDLE_TO_CHECK "${WEBEDYTS_APP}")
