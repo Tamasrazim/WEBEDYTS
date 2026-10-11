@@ -159,7 +159,7 @@ class BundleSizeTests(unittest.TestCase):
                 b"framework binary",
             )
             touch(resources / "icudtl.dat")
-            touch(resources / "locales" / "en-US.pak")
+            touch(resources / "en.lproj" / "locale.pak")
             touch(resources / "cef.pak")
 
             result, output, error = self.run_checker(root)
