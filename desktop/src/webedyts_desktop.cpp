@@ -13,6 +13,7 @@
 #include "../../src/security/license_guard.hpp"
 
 #include <filesystem>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <system_error>
@@ -225,6 +226,37 @@ std::string FileUrl(const std::filesystem::path& file_path) {
 #endif
 }
 
+std::filesystem::path DefaultUserDataRoot() {
+#if defined(_WIN32)
+  const wchar_t* local_app_data = _wgetenv(L"LOCALAPPDATA");
+  if (local_app_data && *local_app_data) {
+    return std::filesystem::path(local_app_data) / "WEBEDYTS";
+  }
+#else
+  const char* xdg_config_home = std::getenv("XDG_CONFIG_HOME");
+  if (xdg_config_home && *xdg_config_home) {
+    return std::filesystem::path(xdg_config_home) / "WEBEDYTS";
+  }
+
+  const char* home = std::getenv("HOME");
+  if (home && *home) {
+#if defined(__APPLE__)
+    return std::filesystem::path(home) / "Library" / "Application Support" /
+           "WEBEDYTS";
+#else
+    return std::filesystem::path(home) / ".config" / "WEBEDYTS";
+#endif
+  }
+#endif
+
+  std::error_code error;
+  const auto temporary = std::filesystem::temp_directory_path(error);
+  if (error) {
+    return {};
+  }
+  return temporary / "WEBEDYTS";
+}
+
 bool GetRuntimePaths(std::filesystem::path& executable_dir,
                      std::filesystem::path& editor_html,
                      std::filesystem::path& user_data) {
@@ -245,9 +277,14 @@ bool GetRuntimePaths(std::filesystem::path& executable_dir,
 #endif
 
   if (!CefGetPath(PK_USER_DATA, data_dir) || data_dir.empty()) {
-    user_data = executable_dir / "user-data";
+    user_data = DefaultUserDataRoot();
   } else {
     user_data = PathFromCefString(data_dir) / "WEBEDYTS";
+  }
+
+  if (user_data.empty()) {
+    std::cerr << "WEBEDYTS could not determine a writable user-data directory.\\n";
+    return false;
   }
 
   std::error_code error;
