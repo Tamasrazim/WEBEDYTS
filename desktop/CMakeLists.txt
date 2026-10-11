@@ -13,6 +13,10 @@ endif()
 set(CMAKE_MODULE_PATH "${CEF_ROOT}/cmake" ${CMAKE_MODULE_PATH})
 find_package(CEF REQUIRED)
 
+if(OS_MAC)
+    enable_language(OBJC OBJCXX)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -104,7 +108,7 @@ else()
         # when sandbox integration is enabled.
         add_library(webedyts_desktop SHARED ${WEBEDYTS_SOURCES})
         SET_LIBRARY_TARGET_PROPERTIES(webedyts_desktop)
-        set_target_properties(webedyts_desktop PROPERTIES OUTPUT_NAME "webedyts_desktop")
+        set_target_properties(webedyts_desktop PROPERTIES OUTPUT_NAME "WEBEDYTS")
         target_link_libraries(webedyts_desktop PRIVATE
             libcef_lib
             libcef_dll_wrapper
