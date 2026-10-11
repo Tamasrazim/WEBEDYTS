@@ -50,7 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-26.04
+          - os: ubuntu-latest
             artifact: linux
           - os: windows-latest
             artifact: windows
