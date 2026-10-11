@@ -10,7 +10,6 @@
 #include <iomanip>
 #include <limits>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -45,7 +44,7 @@ inline constexpr std::uint32_t rotate_right(std::uint32_t value, unsigned amount
 inline std::string sha256_hex(std::string_view input) {
     if (input.size() > (std::numeric_limits<std::uint64_t>::max() / 8U) ||
         input.size() > (std::numeric_limits<std::size_t>::max() - 72U)) {
-        throw std::length_error("SHA-256 input is too large");
+        return {};  // Signal an unrepresentable input without requiring exceptions.
     }
 
     std::array<std::uint32_t, 8> hash = {
