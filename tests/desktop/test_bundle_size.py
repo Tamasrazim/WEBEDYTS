@@ -56,6 +56,7 @@ class BundleSizeTests(unittest.TestCase):
 
     def test_cef_downloader_rejects_malformed_versions_before_network_access(self) -> None:
         module_path = PROJECT_ROOT / "desktop" / "cmake" / "DownloadCEF.cmake"
+        test_script = PROJECT_ROOT / "tests" / "desktop" / "test_cef_invalid_version.cmake"
         with tempfile.TemporaryDirectory() as temp:
             result = subprocess.run(
                 [
@@ -64,16 +65,16 @@ class BundleSizeTests(unittest.TestCase):
                     "-DCEF_TEST_VERSION=not-a-cef-version",
                     f"-DCEF_TEST_MODULE={module_path}",
                     "-P",
-                    str(PROJECT_ROOT / "tests" / "desktop" / "test_cef_invalid_version.cmake"),
+                    str(test_script),
                 ],
                 capture_output=True,
                 text=True,
                 check=False,
             )
 
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("CEF version must look like", result.stderr)
-        self.assertEqual(list(Path(temp).iterdir()), [] if Path(temp).exists() else [])
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("CEF version must look like", result.stderr)
+            self.assertEqual(list(Path(temp).iterdir()), [])
 
     def test_linux_or_windows_runtime_is_accepted(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
