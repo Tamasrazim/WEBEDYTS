@@ -1,0 +1,74 @@
+name: Native desktop build
+
+on:
+  workflow_dispatch:
+    inputs:
+      cef_version:
+        description: "Official CEF standard distribution version"
+        required: true
+        default: "154.0.34+g14c5a08+chromium-154.0.8037.98"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }} with bundled Chromium
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: linux
+          - os: windows-latest
+            artifact: windows
+          - os: macos-latest
+            artifact: macos
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Linux runtime dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            libasound2t64 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 \
+            libcairo2 libdrm2 libgbm1 libgtk-3-0 libnss3 libpango-1.0-0 \
+            libx11-xcb1 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 \
+            libxrandr2 libxshmfence1
+
+      - name: Configure the full CEF runtime
+        shell: bash
+        run: |
+          cmake -S . -B build-desktop \
+            -DWEBEDYTS_BUILD_DESKTOP=ON \
+            -DWEBEDYTS_DOWNLOAD_CEF=ON \
+            -DWEBEDYTS_CEF_VERSION="${{ inputs.cef_version }}" \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build desktop application
+        run: cmake --build build-desktop --config Release --parallel 2
+
+      - name: Run tests
+        run: ctest --test-dir build-desktop -C Release --output-on-failure
+
+      - name: Package the complete runtime
+        run: cmake --build build-desktop --config Release --target webedyts_package
+
+      - name: Upload portable package for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: WEBEDYTS-${{ matrix.artifact }}-${{ inputs.cef_version }}
+          path: build-desktop/packages/*
+          if-no-files-found: error
+          retention-days: 14
