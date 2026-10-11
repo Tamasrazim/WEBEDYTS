@@ -241,6 +241,14 @@ bool GetRuntimePaths(std::filesystem::path& executable_dir,
     return false;
   }
 
+  error.clear();
+  std::filesystem::create_directories(user_data / "Logs", error);
+  if (error) {
+    std::cerr << "WEBEDYTS could not create its log directory: "
+              << error.message() << "\n";
+    return false;
+  }
+
   return true;
 }
 
@@ -274,6 +282,7 @@ int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
 
   CefSettings settings;
   settings.log_severity = LOGSEVERITY_WARNING;
+  CefString(&settings.log_file) = PathUtf8(user_data / "Logs" / "webedyts.log");
   CefString(&settings.cache_path) = PathUtf8(user_data / "Cache");
 
 #if defined(_WIN32) || defined(__linux__)
