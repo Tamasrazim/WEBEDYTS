@@ -46,7 +46,9 @@ bool g_native_close_requested = false;
 #endif
 
 std::filesystem::path PathFromCefString(const CefString& value);
+#if defined(_WIN32)
 void ResizeNativeBrowser();
+#endif
 
 void TraceStartup(const std::string& message) {
   const char* trace_path = std::getenv("WEBEDYTS_STARTUP_TRACE_PATH");
