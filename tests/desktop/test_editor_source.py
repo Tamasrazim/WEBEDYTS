@@ -134,6 +134,23 @@ class EditorSourceTests(unittest.TestCase):
                 self.source,
             )
 
+    def test_zip_export_uses_canonical_serializer(self) -> None:
+        start = self.source.index("async function exportImportedProject()")
+        end = self.source.index("document.getElementById('import-media')", start)
+        export_code = self.source[start:end]
+
+        self.assertIn(
+            "elementsIncludingRoot(importedDoc.documentElement, '[data-webedyts-asset-path]')",
+            export_code,
+        )
+        self.assertIn("let output = serializeImportedPage();", export_code)
+        self.assertNotIn(
+            "const clone = importedDoc.documentElement.cloneNode(true)",
+            export_code,
+        )
+        self.assertIn("attribute.name === 'data-webedyts-asset-path'", self.source)
+        self.assertIn("attribute.name === 'data-webedyts-asset-style'", self.source)
+
     def test_imported_element_actions_are_wired(self) -> None:
         for expected in (
             'id="duplicate-element"',
