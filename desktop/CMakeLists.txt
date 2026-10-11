@@ -182,6 +182,15 @@ if(EXISTS "${CEF_ROOT}/LICENSE.txt")
     add_custom_command(TARGET webedyts_desktop POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${WEBEDYTS_LICENSE_DEST}"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/LICENSE"
+            "${WEBEDYTS_LICENSE_DEST}/WEBEDYTS-LICENSE.txt"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/AI-USE-POLICY.md"
+            "${WEBEDYTS_LICENSE_DEST}/AI-USE-POLICY.md"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/THIRD-PARTY-NOTICES.md"
+            "${WEBEDYTS_LICENSE_DEST}/THIRD-PARTY-NOTICES.md"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CEF_ROOT}/LICENSE.txt"
             "${WEBEDYTS_LICENSE_DEST}/CEF-LICENSE.txt"
         VERBATIM
