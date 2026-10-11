@@ -84,7 +84,7 @@ jobs:
               *) echo "Unsupported Windows architecture: $WINDOWS_ARCH" >&2; exit 2 ;;
             esac
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            cmake_args+=(-G Xcode)
+            cmake_args+=(-G Xcode "-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0")
             if [[ "$MACOS_ARCH" != "auto" ]]; then
               cmake_args+=("-DPROJECT_ARCH=$MACOS_ARCH")
             fi
