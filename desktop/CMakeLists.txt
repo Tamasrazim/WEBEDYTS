@@ -46,7 +46,7 @@ if(OS_MAC)
         @ONLY
     )
 
-    add_executable(webedyts_desktop MACOSX_BUNDLE ${WEBEDYTS_SOURCES})
+    add_executable(webedyts_desktop MACOSX_BUNDLE ${WEBEDYTS_SOURCES} src/main_mac.mm)
     SET_EXECUTABLE_TARGET_PROPERTIES(webedyts_desktop)
     set_target_properties(webedyts_desktop PROPERTIES
         OUTPUT_NAME "WEBEDYTS"
