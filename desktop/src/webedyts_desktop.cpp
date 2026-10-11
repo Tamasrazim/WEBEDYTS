@@ -1,6 +1,8 @@
 #include "include/cef_app.h"
 #include "include/cef_browser_process_handler.h"
 #include "include/cef_client.h"
+#include "include/cef_download_handler.h"
+#include "include/cef_download_item.h"
 #include "include/cef_command_line.h"
 #include "include/cef_path_util.h"
 #include "include/cef_parser.h"
@@ -29,7 +31,46 @@
 
 namespace {
 
-class EditorClient final : public CefClient {
+class EditorClient final : public CefClient, public CefDownloadHandler {
+ public:
+  CefRefPtr<CefDownloadHandler> GetDownloadHandler() override {
+    return this;
+  }
+
+  bool OnBeforeDownload(
+      CefRefPtr<CefBrowser> /*browser*/,
+      CefRefPtr<CefDownloadItem> /*download_item*/,
+      const CefString& suggested_name,
+      CefRefPtr<CefBeforeDownloadCallback> callback) override {
+    if (!callback) {
+      return false;
+    }
+
+    // Use the operating system's Save As dialog for exported websites and media.
+    callback->Continue(suggested_name, true);
+    return true;
+  }
+
+  void OnDownloadUpdated(
+      CefRefPtr<CefBrowser> /*browser*/,
+      CefRefPtr<CefDownloadItem> download_item,
+      CefRefPtr<CefDownloadItemCallback> /*callback*/) override {
+    if (!download_item) {
+      return;
+    }
+
+    if (download_item->IsComplete()) {
+      std::cerr << "WEBEDYTS saved "
+                << download_item->GetReceivedBytes() << " bytes to "
+                << download_item->GetFullPath().ToString() << "\n";
+    } else if (download_item->IsCanceled()) {
+      std::cerr << "WEBEDYTS export canceled by the user.\n";
+    } else if (download_item->IsInterrupted()) {
+      std::cerr << "WEBEDYTS export was interrupted. Reason: "
+                << download_item->GetInterruptReason() << "\n";
+    }
+  }
+
  private:
   IMPLEMENT_REFCOUNTING(EditorClient);
 };
