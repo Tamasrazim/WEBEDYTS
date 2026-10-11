@@ -3422,7 +3422,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         '<meta http-equiv="refresh" content="0;url=https://example.invalid/redirect"></head>' +
         '<body><main><h1 id="workflow-heading" onclick="window.__webedytsUnsafeClick = true">Original heading</h1>' +
         '<a id="unsafe-link" href="javascript:window.__webedytsUnsafeLink = true">Unsafe link</a>' +
-        '<script>window.__webedytsInjectedScript = true</script></main></body></html>';
+        '<scr' + 'ipt>window.__webedytsInjectedScript = true</scr' + 'ipt></main></body></html>';
       loadImportedMarkup(fixture, 'stage-a-validation.html', 'page', true);
       const deadline = Date.now() + 10000;
       while ((!importedDoc || !importedDoc.getElementById('workflow-heading')) && Date.now() < deadline) {
