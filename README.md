@@ -6,11 +6,11 @@ WEBEDYTS is being developed as a real, installable desktop application for Windo
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Release track:** The planned first public preview is version `0.1.0`, maintained in the root VERSION file. It is not released yet. The latest [native desktop workflow](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38149511431) passed its Windows x64, Linux x64, and macOS ARM64 CI jobs, including the configured test and package steps. This confirms the build pipeline, not full manual validation of website editing. Installers are not signed or notarized yet.
+> **Release track:** The planned first public preview is version `0.1.0`, maintained in the root VERSION file. It is not released yet. The latest [native desktop workflow](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38176514596) passed its Windows x64, Linux x64, and macOS ARM64 CI jobs, including the configured test and package steps. This confirms the build pipeline, not full manual validation of website editing. Installers are not signed or notarized yet.
 
 ## Native build verification
 
-The [latest three-platform native build](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38149511431) completed successfully on 11 October 2026.
+The [latest three-platform native build](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38176514596) completed successfully on 11 October 2026.
 
 | Target | Staged installed footprint | Portable package SHA-256 |
 | --- | ---: | --- |
@@ -212,7 +212,7 @@ The planned workspace has:
 
 ### Interactive UI concept
 
-The main editor source is [desktop/resources/app/index.html](desktop/resources/app/index.html). This is the same file the native CEF build packages into the application on Windows, Linux, and macOS; it is not a separate browser-only demo. The editor chrome and built-in sample are monochrome, while imported websites keep their original colors so visual edits can be judged against the page. The workspace includes element selection, direct dragging, duplicate/delete controls, dimensions and offsets, display/position/margin/gap controls, typography settings, color and spacing edits, viewport presets, basic animation effects, keyword search, history, working menus, keyboard shortcuts, a local media drawer, and website-folder import.
+The main editor source is [desktop/resources/app/index.html](desktop/resources/app/index.html). This is the same file the native CEF build packages into the application on Windows, Linux, and macOS; it is not a separate browser-only demo. The editor chrome and built-in sample are monochrome, while imported websites keep their original colors so visual edits can be judged against the page. The workspace includes element selection, direct dragging, duplicate/delete controls, dimensions and offsets, display/position/margin/gap controls, typography settings, color and spacing edits, viewport presets, fifteen searchable animation presets with hover/focus previews, keyword search, history, working menus, keyboard shortcuts, a local media drawer, and website-folder import.
 
 The editor can open a **single HTML file** or a **complete local website folder**. Folder import lists the HTML pages, lets you switch between them, resolves common local links to CSS, images, fonts, video, audio, and other files, and rewrites CSS `url()` and local `@import` references for the contained preview. Internal links to imported HTML pages can be opened inside the editor. Use **Export Website ZIP** to package the selected folder's files at their existing relative paths, with changed pages and inserted media included. For a single HTML file, the existing standalone-HTML export remains available unless inserted media requires a ZIP.
 
@@ -359,7 +359,7 @@ Any third-party components or assets included in the project remain subject to t
 
 ## Current status and contributions
 
-WEBEDYTS is in active prototyping. The repository has a monochrome visual editor, a local website-folder importer, media insertion, five editable reusable components, session history, website export, and element duplication/deletion for imported pages with undo support. Duplicate and Delete controls are disabled for the sample canvas and page root; Ctrl/Cmd+D duplicates a selected element, and Delete removes it when the editor is active. Source checks now verify that the editor HTML has unique IDs and its inline JavaScript parses before packaging. The native CEF shell has built and passed automated checks in CI for Windows x64, Linux x64, and macOS arm64 on the previously verified source revision. No permanent installer or signed release is available yet. Script-enabled preview, exhaustive dependency discovery, framework-specific support, comprehensive export validation, and manual interactive checks on each OS remain unfinished. This README distinguishes implemented source from tested release capabilities.
+WEBEDYTS is in active prototyping. The repository has a monochrome visual editor, a local website-folder importer, media insertion, five editable reusable components, fifteen searchable animation presets with motion previews, session history, website export, and element duplication/deletion for imported pages with undo support. Duplicate and Delete controls are disabled for the sample canvas and page root; Ctrl/Cmd+D duplicates a selected element, and Delete removes it when the editor is active. Source checks now verify that the editor HTML has unique IDs and its inline JavaScript parses before packaging. The native CEF shell has built and passed automated checks in CI for Windows x64, Linux x64, and macOS arm64 on the previously verified source revision. No permanent installer or signed release is available yet. Script-enabled preview, exhaustive dependency discovery, framework-specific support, comprehensive export validation, and manual interactive checks on each OS remain unfinished. This README distinguishes implemented source from tested release capabilities.
 
 Development should follow the project's [coding and commit rules](DEVELOPMENT.md): readable code, sensible-sized functions, no unnecessary automation or abstraction, honest testing, and short, natural commit messages.
 
