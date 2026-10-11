@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Fast checks for the single-file visual editor prototype."""
+
+from __future__ import annotations
+
+import re
+import subprocess
+import tempfile
+import unittest
+from html.parser import HTMLParser
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+EDITOR_PATH = PROJECT_ROOT / "prototype" / "index.html"
+
+
+class EditorMarkupParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.ids: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        for name, value in attrs:
+            if name == "id" and value:
+                self.ids.append(value)
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+
+
+class EditorSourceTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.source = EDITOR_PATH.read_text(encoding="utf-8")
+
+    def test_editor_html_has_unique_ids(self) -> None:
+        parser = EditorMarkupParser()
+        parser.feed(self.source)
+        duplicates = sorted(
+            value for value in set(parser.ids) if parser.ids.count(value) > 1
+        )
+        self.assertEqual(duplicates, [], f"Duplicate HTML IDs: {duplicates}")
+
+    def test_inline_editor_script_passes_node_syntax_check(self) -> None:
+        scripts = re.findall(
+            r"<script\\b[^>]*>([\\s\\S]*?)</script\\s*>",
+            self.source,
+            flags=re.IGNORECASE,
+        )
+        self.assertEqual(len(scripts), 1, "Expected one inline editor script")
+
+        with tempfile.TemporaryDirectory() as temp:
+            script_path = Path(temp) / "editor.js"
+            script_path.write_text(scripts[0], encoding="utf-8")
+            result = subprocess.run(
+                ["node", "--check", str(script_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(
+            result.returncode,
+            0,
+            f"JavaScript syntax check failed:\\n{result.stdout}\\n{result.stderr}",
+        )
+
+    def test_imported_element_actions_are_wired(self) -> None:
+        for expected in (
+            'id="duplicate-element"',
+            'id="delete-element"',
+            "function duplicateSelectedElement()",
+            "function deleteSelectedElement()",
+            "document.getElementById('duplicate-element').addEventListener",
+            "document.getElementById('delete-element').addEventListener",
+            "node === importedDoc.body",
+        ):
+            self.assertIn(expected, self.source)
+
+
+if __name__ == "__main__":
+    unittest.main()
