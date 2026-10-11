@@ -78,10 +78,21 @@ application startup. A shipped app should run locally with its bundled runtime.
 
 Use `desktop/tools/report-bundle-size.py` to inspect the staged package. The
 check verifies key Chromium files, resource packs, ICU data, locale data, and
-reports the installed footprint; a small output folder is a sign that required
-runtime files may be missing. It does not generate extra data to hit a target
-size. A focused test suite covers complete Linux/Windows-style output, missing
-runtime files, macOS framework resources, and symlink size accounting. Run it
+reports the installed footprint; it does not generate extra data to hit a
+target size. Packaging requires at least 200 MiB of installed runtime files, so
+a build missing a substantial part of Chromium will not produce a package.
+
+Build a portable archive after the app has built:
+
+```sh
+cmake --build build-desktop --target webedyts_package --config Release
+```
+
+The output is written to `build-desktop/packages/`. Windows uses ZIP; Linux
+and macOS use gzip-compressed tar archives. The archive contains the actual
+staged app and browser runtime—no placeholder files. A focused test suite covers
+complete Linux/Windows-style output, missing runtime files, macOS framework
+resources, symlink size accounting, and the package size requirement. Run it
 with `ctest --test-dir build-desktop -C Release --output-on-failure` (use the
 matching build directory and configuration for your generator).
 
