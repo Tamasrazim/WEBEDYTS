@@ -21,7 +21,7 @@ def installed_size(root: Path) -> int:
     return total
 
 
-def runtime_files(root: Path) -> tuple[list[Path], list[tuple[Path, ...]]]:
+def runtime_files(root: Path) -> tuple[list[Path], list[tuple[Path, ...]], Path | None]:
     required = [
         root / "resources" / "app" / "index.html",
         root / "resources.pak",
@@ -29,18 +29,24 @@ def runtime_files(root: Path) -> tuple[list[Path], list[tuple[Path, ...]]]:
         root / "locales",
     ]
     alternatives: list[tuple[Path, ...]] = []
+    pak_directory = root
 
     if root.name.endswith(".app"):
+        framework = (
+            root / "Contents" / "Frameworks" /
+            "Chromium Embedded Framework.framework" / "Versions" / "A"
+        )
+        pak_directory = framework / "Resources"
         required = [
             root / "Contents" / "Resources" / "app" / "index.html",
-            root / "Contents" / "Frameworks" /
-            "Chromium Embedded Framework.framework" / "Versions" / "A" /
-            "Chromium Embedded Framework",
+            framework / "Chromium Embedded Framework",
+            pak_directory / "icudtl.dat",
+            pak_directory / "locales",
         ]
-    else:
-        alternatives.append((root / "libcef.dll", root / "libcef.so"))
+        return required, alternatives, pak_directory
 
-    return required, alternatives
+    alternatives.append((root / "libcef.dll", root / "libcef.so"))
+    return required, alternatives, pak_directory
 
 
 def main() -> int:
@@ -59,18 +65,21 @@ def main() -> int:
         print(f"Bundle directory not found: {root}", file=sys.stderr)
         return 2
 
-    required, alternatives = runtime_files(root)
+    required, alternatives, pak_directory = runtime_files(root)
     missing = [path for path in required if not path.exists()]
     missing_groups = [
         group for group in alternatives
         if not any(path.is_file() for path in group)
     ]
-    if missing or missing_groups:
+    missing_packs = not pak_directory or not any(pak_directory.glob("*.pak"))
+    if missing or missing_groups or missing_packs:
         print("Required app or Chromium files are missing:", file=sys.stderr)
         for path in missing:
             print(f"  - {path}", file=sys.stderr)
         for group in missing_groups:
             print("  - one of: " + ", ".join(str(path) for path in group), file=sys.stderr)
+        if missing_packs:
+            print(f"  - at least one Chromium .pak resource in {pak_directory}", file=sys.stderr)
         return 2
 
     total = installed_size(root)
