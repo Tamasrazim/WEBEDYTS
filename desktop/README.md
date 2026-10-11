@@ -148,11 +148,13 @@ provided by the selected CEF distribution.
 
 ## Current status
 
-This is the first native CEF shell and packaging foundation, not a released
-installer. The repository does not include hundreds of megabytes of CEF
-binaries; you supply the official binary distribution at build time. Until a
-package has been built and exercised on each target OS, no downloadable binary
-or cross-platform build should be advertised as finished.
+The native CEF shell and packaging path have built successfully in CI for
+Windows x64, Linux x64, and macOS arm64, with automated tests and temporary
+package artifacts. This is still not a released installer. The repository does
+not include hundreds of megabytes of CEF binaries; you supply the official
+binary distribution at build time. Manual interactive workflow checks on each
+operating system, signing/notarization, and permanent release downloads remain
+pending.
 
 CEF's current upstream platform matrix also has limits. In particular, its
 current CMake setup says Linux x86 32-bit builds are discontinued; current
