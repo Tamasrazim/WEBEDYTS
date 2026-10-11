@@ -2418,33 +2418,15 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     exportButton.disabled = true;
     saveState.textContent = 'Preparing website ZIP…';
     try {
-      const clone = importedDoc.documentElement.cloneNode(true);
       const usedPaths = new Set();
-      clone.querySelectorAll('[data-webedyts-asset-path]').forEach(function (node) {
+      elementsIncludingRoot(importedDoc.documentElement, '[data-webedyts-asset-path]').forEach(function (node) {
         if (node.dataset.webedytsAssetPath) usedPaths.add(node.dataset.webedytsAssetPath);
       });
 
-      clone.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
-        node.remove();
-      });
-      clone.querySelectorAll('[data-webedyts-animation-style]').forEach(function (node) {
-        node.removeAttribute('data-webedyts-animation-style');
-      });
-      clone.querySelectorAll('[data-webedyts-editor-selected]').forEach(function (node) {
-        node.removeAttribute('data-webedyts-editor-selected');
-      });
-      clone.querySelectorAll('*').forEach(function (node) {
-        Array.from(node.attributes).forEach(function (attribute) {
-          if (attribute.name.startsWith('data-webedyts-editor-') ||
-              attribute.name === 'data-webedyts-asset-path' ||
-              attribute.name === 'data-webedyts-asset-style') {
-            node.removeAttribute(attribute.name);
-          }
-        });
-      });
-
-      const doctype = importedDoc.doctype ? '<!DOCTYPE ' + importedDoc.doctype.name + '>' : '<!DOCTYPE html>';
-      let output = doctype + '\n' + clone.outerHTML;
+      // Reuse the canonical serializer so archive exports restore the source
+      // attributes and nodes suspended only for preview safety, just like a
+      // plain HTML export. The same pass also removes editor-only metadata.
+      let output = serializeImportedPage();
       const assets = mediaAssets.filter(function (asset) { return usedPaths.has(asset.packagePath); });
       assets.forEach(function (asset) {
         output = output.split(asset.url).join(asset.packagePath.replace(/\\/g, '/'));
@@ -2497,7 +2479,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     restorePreviewSafetyEdits(clone);
     elementsIncludingRoot(clone, '*').forEach(function (node) {
       Array.from(node.attributes).forEach(function (attribute) {
-        if (attribute.name.startsWith('data-webedyts-editor-')) node.removeAttribute(attribute.name);
+        if (attribute.name.startsWith('data-webedyts-editor-') ||
+            attribute.name === 'data-webedyts-asset-path' ||
+            attribute.name === 'data-webedyts-asset-style') {
+          node.removeAttribute(attribute.name);
+        }
       });
     });
     const doctype = importedDoc.doctype ? '<!DOCTYPE ' + importedDoc.doctype.name + '>' : '<!DOCTYPE html>';
@@ -3538,6 +3524,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       }
       check(Boolean(importedDoc && importedDoc.querySelectorAll('h1').length === 2), 'Undo did not restore the deleted duplicate.');
 
+      heading.setAttribute('data-webedyts-asset-path', 'assets/fixture.png');
+      heading.setAttribute('data-webedyts-asset-style', 'fixture');
       const output = serializeImportedPage();
       const exported = new DOMParser().parseFromString(output, 'text/html');
       check(exported.documentElement.getAttribute('onload') === 'window.__webedytsUnsafeRoot = true', 'Export failed to restore the original HTML-root attribute.');
@@ -3546,6 +3534,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       check(Boolean(exported.querySelector('base[href="https://example.invalid/"]')), 'Export failed to restore the original BASE element.');
       check(Boolean(exported.querySelector('meta[http-equiv="refresh"]')), 'Export failed to restore the original refresh metadata.');
       check(elementsIncludingRoot(exported.documentElement, '[data-webedyts-preview-original-attrs]').length === 0, 'Export leaked internal preview attribute metadata.');
+      check(elementsIncludingRoot(exported.documentElement, '[data-webedyts-asset-path], [data-webedyts-asset-style]').length === 0, 'Export leaked internal media-path metadata.');
       check(elementsIncludingRoot(exported.documentElement, '[data-webedyts-preview-original-node]').length === 0, 'Export leaked internal preview node placeholders.');
       check(elementsIncludingRoot(exported.documentElement, '[data-webedyts-editor-node], [data-webedyts-editor-label], [data-webedyts-editor-kind], [data-webedyts-editor-text-editable]').length === 0, 'Export leaked internal editor node metadata.');
       check(!exported.querySelector('[data-webedyts-preview-policy]'), 'Export leaked the preview-only Content Security Policy.');
