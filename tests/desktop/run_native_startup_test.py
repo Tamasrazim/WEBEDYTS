@@ -38,6 +38,37 @@ def stop_process_tree(process: subprocess.Popen[str]) -> None:
         pass
 
 
+def startup_diagnostics(marker: Path) -> str:
+    """Collect the startup marker and CEF log when a native launch fails."""
+    sections: list[str] = []
+
+    if marker.is_file():
+        try:
+            sections.append(
+                "Startup marker:\n" + marker.read_text(encoding="utf-8", errors="replace")
+            )
+        except OSError as error:
+            sections.append(f"Could not read startup marker: {error}")
+    else:
+        sections.append("Startup marker: not created")
+
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        runtime_root = Path(local_app_data) / "WEBEDYTS"
+        if runtime_root.is_dir():
+            for log_path in sorted(runtime_root.rglob("webedyts.log")):
+                try:
+                    log_text = log_path.read_text(encoding="utf-8", errors="replace")
+                except OSError as error:
+                    sections.append(f"Could not read {log_path}: {error}")
+                    continue
+                sections.append(
+                    f"CEF log ({log_path}):\n{log_text[-12000:]}"
+                )
+
+    return "\n\n".join(sections)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--executable", type=Path, required=True)
@@ -94,12 +125,14 @@ def main() -> int:
                 f"WEBEDYTS exited with code {process.returncode}.",
                 file=sys.stderr,
             )
+            print(startup_diagnostics(marker), file=sys.stderr)
             return 1
         if not marker.is_file():
             print(
                 "WEBEDYTS exited without reporting that the editor page loaded.",
                 file=sys.stderr,
             )
+            print(startup_diagnostics(marker), file=sys.stderr)
             return 1
 
         result = {}

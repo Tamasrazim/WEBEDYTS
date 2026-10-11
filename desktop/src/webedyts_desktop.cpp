@@ -232,6 +232,10 @@ class WebedytsApp final : public CefApp,
  public:
   explicit WebedytsApp(CefString start_url) : start_url_(start_url) {}
 
+  void SetStartUrl(const CefString& start_url) {
+    start_url_ = start_url;
+  }
+
   CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override {
     return this;
   }
@@ -405,9 +409,12 @@ int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
     return 2;
   }
 
-  CefRefPtr<CefApp> process_app = new WebedytsApp("");
+  // CEF expects the same application object to be supplied to both
+  // CefExecuteProcess and CefInitialize. The URL is filled in only after the
+  // browser process is identified, so child processes can exit cleanly first.
+  CefRefPtr<WebedytsApp> app = new WebedytsApp("");
   const int process_exit_code =
-      CefExecuteProcess(main_args, process_app, sandbox_info);
+      CefExecuteProcess(main_args, app, sandbox_info);
   if (process_exit_code >= 0) {
     return process_exit_code;
   }
@@ -432,7 +439,7 @@ int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
 #endif
 
 
-  CefRefPtr<CefApp> app = new WebedytsApp(FileUrl(editor_html));
+  app->SetStartUrl(FileUrl(editor_html));
   if (!CefInitialize(main_args, settings, app, sandbox_info)) {
     std::cerr << "WEBEDYTS could not initialize the Chromium runtime.\n";
     return 4;

@@ -40,6 +40,9 @@ class EditorSourceTests(unittest.TestCase):
         self.assertIn("resources/app/index.html", cmake)
         self.assertNotIn("prototype/index.html", cmake)
         self.assertIn("forward slashes in file URLs", native_source)
+        self.assertIn("CefExecuteProcess(main_args, app, sandbox_info)", native_source)
+        self.assertIn("CefInitialize(main_args, settings, app, sandbox_info)", native_source)
+        self.assertIn("app->SetStartUrl(FileUrl(editor_html))", native_source)
     def test_editor_html_has_unique_ids(self) -> None:
         parser = EditorMarkupParser()
         parser.feed(self.source)
