@@ -1,6 +1,17 @@
 name: Native desktop build
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "CMakeLists.txt"
+      - "desktop/**"
+      - "prototype/**"
+      - "src/**"
+      - "tests/desktop/**"
+      - "tests/security/**"
+      - ".github/workflows/native-desktop-build.yml"
   workflow_dispatch:
     inputs:
       cef_version:
