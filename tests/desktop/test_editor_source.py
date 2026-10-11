@@ -43,7 +43,7 @@ class EditorSourceTests(unittest.TestCase):
 
     def test_inline_editor_script_passes_node_syntax_check(self) -> None:
         scripts = re.findall(
-            r"<script\\b[^>]*>([\\s\\S]*?)</script\\s*>",
+            r"<script\b[^>]*>([\s\S]*?)</script\s*>",
             self.source,
             flags=re.IGNORECASE,
         )
@@ -62,7 +62,7 @@ class EditorSourceTests(unittest.TestCase):
         self.assertEqual(
             result.returncode,
             0,
-            f"JavaScript syntax check failed:\\n{result.stdout}\\n{result.stderr}",
+            f"JavaScript syntax check failed:\n{result.stdout}\n{result.stderr}",
         )
 
     def test_imported_element_actions_are_wired(self) -> None:
