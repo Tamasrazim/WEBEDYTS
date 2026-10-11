@@ -103,6 +103,25 @@ class EditorSourceTests(unittest.TestCase):
         self.assertNotIn("Minimize concept window", self.source)
         self.assertNotIn("Maximize concept window", self.source)
 
+    def test_animation_presets_are_available_in_both_preview_modes(self) -> None:
+        presets = (
+            "fade", "slide", "pop", "pulse", "wiggle", "blur",
+            "rise", "drift", "rotate", "spring", "wipe",
+            "float", "glow", "flip", "zoom",
+        )
+        for preset in presets:
+            self.assertIn(f'data-preset="{preset}"', self.source)
+            self.assertIn(f'value="{preset}"', self.source)
+            self.assertIn(f"'{preset}'", self.source)
+
+        for keyframe in (
+            "@keyframes wiRise", "@keyframes wiDrift", "@keyframes wiRotate",
+            "@keyframes wiSpring", "@keyframes wiWipe", "@keyframes wiFloat",
+            "@keyframes wiGlow", "@keyframes wiFlip", "@keyframes wiZoom",
+            ".wi-anim-rise", ".wi-anim-wipe", ".wi-anim-flip",
+        ):
+            self.assertIn(keyframe, self.source)
+
     def test_imported_element_actions_are_wired(self) -> None:
         for expected in (
             'id="duplicate-element"',
