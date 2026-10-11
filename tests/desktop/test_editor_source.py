@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fast checks for the single-file visual editor prototype."""
+"""Fast checks for the editor shipped inside the native application."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-EDITOR_PATH = PROJECT_ROOT / "prototype" / "index.html"
+EDITOR_PATH = PROJECT_ROOT / "desktop" / "resources" / "app" / "index.html"
 
 
 class EditorMarkupParser(HTMLParser):
@@ -33,6 +33,13 @@ class EditorSourceTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.source = EDITOR_PATH.read_text(encoding="utf-8")
 
+    def test_native_build_uses_the_shipped_editor_source(self) -> None:
+        cmake = (PROJECT_ROOT / "desktop" / "CMakeLists.txt").read_text(encoding="utf-8")
+        native_source = (PROJECT_ROOT / "desktop" / "src" / "webedyts_desktop.cpp").read_text(encoding="utf-8")
+
+        self.assertIn("resources/app/index.html", cmake)
+        self.assertNotIn("prototype/index.html", cmake)
+        self.assertIn("forward slashes in file URLs", native_source)
     def test_editor_html_has_unique_ids(self) -> None:
         parser = EditorMarkupParser()
         parser.feed(self.source)

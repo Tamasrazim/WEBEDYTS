@@ -293,7 +293,12 @@ std::string PathUtf8(const std::filesystem::path& path) {
 }
 
 std::string FileUrl(const std::filesystem::path& file_path) {
-  std::string escaped = CefURIEncode(PathUtf8(file_path), false).ToString();
+  // CEF expects forward slashes in file URLs. Encoding a Windows path before
+  // normalizing its separators turns every backslash into %5C and breaks load.
+  std::string path = PathUtf8(file_path);
+  ReplaceAll(path, "\\", "/");
+
+  std::string escaped = CefURIEncode(path, false).ToString();
   ReplaceAll(escaped, "%2F", "/");
   ReplaceAll(escaped, "%2f", "/");
   ReplaceAll(escaped, "%3A", ":");

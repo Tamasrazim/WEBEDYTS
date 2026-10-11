@@ -153,7 +153,7 @@ if(OS_MAC)
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${WEBEDYTS_APP}/Contents/Resources/app"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/prototype/index.html"
+            "${CMAKE_CURRENT_SOURCE_DIR}/resources/app/index.html"
             "${WEBEDYTS_APP}/Contents/Resources/app/index.html"
         VERBATIM
     )
@@ -198,7 +198,7 @@ else()
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${CEF_TARGET_OUT_DIR}/resources/app"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/prototype/index.html"
+            "${CMAKE_CURRENT_SOURCE_DIR}/resources/app/index.html"
             "${CEF_TARGET_OUT_DIR}/resources/app/index.html"
         VERBATIM
     )
