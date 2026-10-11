@@ -241,12 +241,6 @@ int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
       PathUtf8(executable_dir / "locales");
 #endif
 
-#if defined(__APPLE__)
-  const auto helper =
-      (executable_dir / ".." / "Frameworks" / "WEBEDYTS Helper.app" /
-       "Contents" / "MacOS" / "WEBEDYTS Helper").lexically_normal();
-  CefString(&settings.browser_subprocess_path) = PathUtf8(helper);
-#endif
 
   CefRefPtr<CefApp> app = new WebedytsApp(FileUrl(editor_html));
   if (!CefInitialize(main_args, settings, app, sandbox_info)) {
