@@ -275,14 +275,6 @@ bool GetRuntimePaths(std::filesystem::path& executable_dir,
 }
 
 int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
-#if defined(__APPLE__)
-  CefScopedLibraryLoader library_loader;
-  if (!library_loader.LoadInMain()) {
-    std::cerr << "WEBEDYTS could not load the Chromium framework.\n";
-    return 1;
-  }
-#endif
-
   if (!webedyts::security::verify_embedded_license_notice()) {
     std::cerr << "WEBEDYTS license integrity check failed.\n";
     return 2;
