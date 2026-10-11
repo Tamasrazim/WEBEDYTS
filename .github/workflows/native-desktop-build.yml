@@ -155,11 +155,12 @@ jobs:
         run: |
           $dumpDir = Join-Path $env:RUNNER_TEMP "WEBEDYTS-crash-dumps"
           New-Item -ItemType Directory -Force -Path $dumpDir | Out-Null
-          $key = "HKCU:\Software\Microsoft\Windows\Windows Error Reporting\LocalDumps\WEBEDYTS.exe"
+          # WER LocalDumps is machine-scoped; HKCU settings are ignored.
+          $key = "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\WEBEDYTS.exe"
           New-Item -Path $key -Force | Out-Null
           New-ItemProperty -Path $key -Name DumpFolder -Value $dumpDir -PropertyType ExpandString -Force | Out-Null
-          New-ItemProperty -Path $key -Name DumpType -Value 1 -PropertyType DWord -Force | Out-Null
-          New-ItemProperty -Path $key -Name DumpCount -Value 5 -PropertyType DWord -Force | Out-Null
+          New-ItemProperty -Path $key -Name DumpType -Value 2 -PropertyType DWord -Force | Out-Null
+          New-ItemProperty -Path $key -Name DumpCount -Value 2 -PropertyType DWord -Force | Out-Null
           "WEBEDYTS_CRASH_DUMP_DIR=$dumpDir" >> $env:GITHUB_ENV
 
       - name: Run tests
@@ -191,6 +192,14 @@ jobs:
             }
           }
 
+      - name: Upload Windows crash dump for diagnosis
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: WEBEDYTS-windows-crash-diagnostics
+          path: ${{ runner.temp }}/WEBEDYTS-crash-dumps/*.dmp
+          if-no-files-found: warn
+          retention-days: 3
       - name: Package the complete runtime
         run: cmake --build build-desktop --config Release --target webedyts_package
 
