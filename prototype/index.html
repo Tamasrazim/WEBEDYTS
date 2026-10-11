@@ -320,7 +320,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <div class="menu-popover hidden" id="menu-popover" role="menu" aria-label="Application commands"></div>
   </nav>
   <div class="toolbar">
-    <button class="tool-button" id="new-session"><span class="symbol">＋</span>New</button>
+    <button class="tool-button" id="new-session" title="Reset the sample page"><span class="symbol">＋</span>New Sample</button>
+    <button class="tool-button" id="new-website" title="Create a new editable website page"><span class="symbol">＋</span>New Website</button>
     <button class="tool-button" id="open-website"><span class="symbol">↥</span>Open HTML</button>
     <button class="tool-button" id="open-project-folder" title="Open a complete local website folder">Open Folder</button>
     <button class="tool-button" id="open-session"><span class="symbol">▱</span>Open Session</button>
@@ -1003,7 +1004,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const overlay = document.getElementById('project-loading-overlay');
     overlay.classList.toggle('hidden', !busy);
     overlay.setAttribute('aria-hidden', busy ? 'false' : 'true');
-    ['open-project-folder', 'open-website', 'open-session', 'save-session', 'new-session', 'undo', 'redo', 'preview-button', 'toggle-drawer', 'project-folder-files'].forEach(function (id) {
+    ['open-project-folder', 'open-website', 'open-session', 'save-session', 'new-session', 'new-website', 'undo', 'redo', 'preview-button', 'toggle-drawer', 'project-folder-files'].forEach(function (id) {
       document.getElementById(id).disabled = busy;
     });
     document.getElementById('export-session').disabled = busy;
@@ -1379,6 +1380,29 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       updateSaveIndicator();
       showMessage('Could not open that website folder: ' + (error && error.message ? error.message : 'unknown error'));
     }
+  }
+
+  function createNewWebsite() {
+    if (saveState.textContent === 'Unsaved changes' &&
+        !window.confirm('Discard the current changes and create a new website?')) return;
+
+    const starterMarkup = '<!doctype html>\n' +
+      '<html lang="en"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<title>Untitled Website</title>' +
+      '<style>' +
+      ':root{color-scheme:light;font-family:Arial,Helvetica,sans-serif;color:#171717;background:#fff}' +
+      '*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff;line-height:1.55}' +
+      'main{width:min(calc(100% - 40px),1000px);margin:clamp(36px,8vw,96px) auto}' +
+      'h1{max-width:760px;font-size:clamp(32px,5vw,62px);line-height:1.05;letter-spacing:-.045em;margin:0 0 18px}' +
+      'p{max-width:620px;color:#555;margin:0;font-size:16px}' +
+      '</style></head><body><main>' +
+      '<h1>Start building your website.</h1>' +
+      '<p>Choose a component from the Content Drawer to begin, then select text on the page to edit it visually.</p>' +
+      '</main></body></html>';
+
+    clearProjectWorkspace();
+    loadImportedMarkup(starterMarkup, 'untitled.html', 'page', true);
   }
 
   function importWebsiteFile(file) {
@@ -2450,6 +2474,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   });
 
   document.getElementById('open-website').addEventListener('click', function () { websiteFile.click(); });
+  document.getElementById('new-website').addEventListener('click', createNewWebsite);
   document.getElementById('open-project-folder').addEventListener('click', function () {
     document.getElementById('project-folder-files').click();
   });
@@ -2925,7 +2950,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   const menuDefinitions = {
     File: [
-      { label: 'New session', shortcut: '', action: 'new-session' },
+      { label: 'New sample session', shortcut: '', action: 'new-session' },
+      { label: 'New website…', shortcut: '', action: 'new-website' },
       { label: 'Open HTML…', shortcut: 'Ctrl/Cmd+O', action: 'open-website' },
       { label: 'Open website folder…', shortcut: '', action: 'open-project-folder' },
       { label: 'Open session…', shortcut: 'Ctrl/Cmd+Shift+O', action: 'open-session' },
