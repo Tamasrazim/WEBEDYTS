@@ -177,7 +177,7 @@ class WebedytsApp final : public CefApp,
     g_main_window = CefWindow::CreateTopLevelWindow(
         new EditorWindowDelegate(new EditorClient(), start_url_));
     if (!g_main_window) {
-      std::cerr << "WEBEDYTS could not create its desktop window.\\n";
+      std::cerr << "WEBEDYTS could not create its desktop window.\n";
       CefQuitMessageLoop();
     }
   }
