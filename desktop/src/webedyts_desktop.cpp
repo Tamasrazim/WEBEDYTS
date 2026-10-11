@@ -4,6 +4,8 @@
 #include "include/cef_download_handler.h"
 #include "include/cef_download_item.h"
 #include "include/cef_display_handler.h"
+#include "include/cef_frame.h"
+#include "include/cef_load_handler.h"
 #include "include/cef_command_line.h"
 #include "include/cef_path_util.h"
 #include "include/cef_parser.h"
@@ -14,6 +16,7 @@
 #include "../../src/security/license_guard.hpp"
 
 #include <filesystem>
+#include <fstream>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -30,10 +33,51 @@ namespace {
 
 CefRefPtr<CefWindow> g_main_window;
 
+std::filesystem::path PathFromCefString(const CefString& value);
+
 class EditorClient final : public CefClient,
                           public CefDownloadHandler,
-                          public CefDisplayHandler {
+                          public CefDisplayHandler,
+                          public CefLoadHandler {
  public:
+  EditorClient(bool smoke_test,
+               CefString smoke_marker_path,
+               CefString expected_url)
+      : smoke_test_(smoke_test),
+        smoke_marker_path_(smoke_marker_path),
+        expected_url_(expected_url) {}
+
+  CefRefPtr<CefLoadHandler> GetLoadHandler() override {
+    return this;
+  }
+
+  void OnLoadEnd(CefRefPtr<CefBrowser> /*browser*/,
+                 CefRefPtr<CefFrame> frame,
+                 int /*http_status_code*/) override {
+    if (!IsSmokeTestMainFrame(frame)) {
+      return;
+    }
+
+    const std::string loaded_url = frame->GetURL().ToString();
+    const std::string expected_url = expected_url_.ToString();
+    FinishSmokeTest(
+        loaded_url == expected_url ? "loaded" : "unexpected_url",
+        loaded_url);
+  }
+
+  void OnLoadError(CefRefPtr<CefBrowser> /*browser*/,
+                   CefRefPtr<CefFrame> frame,
+                   ErrorCode error_code,
+                   const CefString& error_text,
+                   const CefString& failed_url) override {
+    if (!IsSmokeTestMainFrame(frame)) {
+      return;
+    }
+
+    std::cerr << "WEBEDYTS startup test could not load the editor page ("
+              << error_code << "): " << error_text.ToString() << "\n";
+    FinishSmokeTest("load_error", failed_url.ToString());
+  }
   CefRefPtr<CefDownloadHandler> GetDownloadHandler() override {
     return this;
   }
@@ -88,6 +132,32 @@ class EditorClient final : public CefClient,
   }
 
  private:
+  bool IsSmokeTestMainFrame(CefRefPtr<CefFrame> frame) const {
+    return smoke_test_ && frame && frame->IsMain();
+  }
+
+  void FinishSmokeTest(const std::string& status, const std::string& url) {
+    const auto marker_path = PathFromCefString(smoke_marker_path_);
+    if (!marker_path.empty()) {
+      std::ofstream marker(marker_path, std::ios::binary | std::ios::trunc);
+      if (marker) {
+        marker << "status=" << status << "\n";
+        marker << "url=" << url << "\n";
+      } else {
+        std::cerr << "WEBEDYTS could not write its startup test marker.\n";
+      }
+    }
+
+    if (g_main_window) {
+      g_main_window->Close();
+    } else {
+      CefQuitMessageLoop();
+    }
+  }
+
+  bool smoke_test_ = false;
+  CefString smoke_marker_path_;
+  CefString expected_url_;
   CefWindow* window_ = nullptr;  // Owned by CEF; cleared before window teardown.
 
   IMPLEMENT_REFCOUNTING(EditorClient);
@@ -172,12 +242,19 @@ class WebedytsApp final : public CefApp,
     // The Views API is needed by the native window and browser-view classes.
     if (process_type.empty()) {
       command_line->AppendSwitch("use-views");
+      smoke_test_ = command_line->HasSwitch("webedyts-smoke-test");
+      if (smoke_test_) {
+        smoke_marker_path_ =
+            command_line->GetSwitchValue("webedyts-smoke-test-marker");
+      }
     }
   }
 
   void OnContextInitialized() override {
     g_main_window = CefWindow::CreateTopLevelWindow(
-        new EditorWindowDelegate(new EditorClient(), start_url_));
+        new EditorWindowDelegate(
+            new EditorClient(smoke_test_, smoke_marker_path_, start_url_),
+            start_url_));
     if (!g_main_window) {
       std::cerr << "WEBEDYTS could not create its desktop window.\n";
       CefQuitMessageLoop();
@@ -186,6 +263,8 @@ class WebedytsApp final : public CefApp,
 
  private:
   CefString start_url_;
+  bool smoke_test_ = false;
+  CefString smoke_marker_path_;
 
   IMPLEMENT_REFCOUNTING(WebedytsApp);
 };
