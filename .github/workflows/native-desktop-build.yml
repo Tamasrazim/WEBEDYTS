@@ -54,7 +54,7 @@ jobs:
             artifact: linux
           - os: windows-2022
             artifact: windows
-          - os: macos-15
+          - os: macos-26
             artifact: macos
 
     steps:
