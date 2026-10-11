@@ -1,11 +1,6 @@
 name: Native desktop build
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/native-desktop-build.yml"
   workflow_dispatch:
     inputs:
       cef_version:
@@ -37,7 +32,6 @@ permissions:
 
 jobs:
   build:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Run WEBEDYTS native build' }}
     name: Build ${{ matrix.os }} with bundled Chromium
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
