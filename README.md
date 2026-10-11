@@ -288,7 +288,7 @@ WEBEDYTS is being developed as an installable desktop app for the major desktop 
 
 | Operating system | Current desktop-runtime direction | Planned distribution |
 |---|---|---|
-| Windows | x86 (32-bit) and x64 (64-bit), subject to a matching, maintained CEF binary distribution | Native installer/package such as EXE or MSI |
+| Windows | x86 (32-bit), x64 (64-bit), and ARM64 where a matching maintained CEF distribution and toolchain are available | Native installer/package such as EXE or MSI |
 | Linux | x64 (64-bit); arm64 where supported by the selected distribution. Current upstream CEF build configuration has discontinued Linux x86 32-bit builds. | Appropriate formats such as AppImage, DEB, or RPM, chosen after distro testing |
 | macOS | Intel x64 and Apple Silicon arm64; modern macOS does not support 32-bit apps | DMG or another standard macOS package |
 
@@ -296,7 +296,7 @@ WEBEDYTS is being developed as an installable desktop app for the major desktop 
 
 There is an important operating-system limitation: Apple states that macOS Catalina 10.15 and later cannot run 32-bit apps. A 32-bit macOS build would therefore only be useful for legacy macOS versions, not modern macOS installations. The practical current macOS target is 64-bit Intel and Apple Silicon; legacy 32-bit macOS support can only be considered as a separate historical compatibility target. See [Apple's 32-bit app compatibility guidance](https://support.apple.com/en-us/103076).
 
-Windows x86 will only be shipped when a compatible maintained CEF binary and the full WEBEDYTS feature set can be built and tested. Current upstream CEF build configuration states that Linux x86 32-bit builds are discontinued; WEBEDYTS will not ship an old, unsupported Chromium runtime simply to keep a row in an architecture table. If a maintained 32-bit Linux runtime becomes viable, that target can be reconsidered.
+Windows x86 and ARM64 will only be shipped when a compatible maintained CEF binary and the full WEBEDYTS feature set can be built and tested. Current upstream CEF build configuration states that Linux x86 32-bit builds are discontinued; WEBEDYTS will not ship an old, unsupported Chromium runtime simply to keep a row in an architecture table. If a maintained 32-bit Linux runtime becomes viable, that target can be reconsidered.
 
 ### Native application requirements
 
