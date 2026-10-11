@@ -5,6 +5,7 @@ All notable, user-facing changes to WEBEDYTS are recorded here. Release entries 
 ## Unreleased
 
 - Expand the animation drawer from six to fifteen searchable presets, including rise, drift, spring, wipe, float, glow, flip, and zoom; wire the same effects into the imported-page preview and the bundled demo, with reduced-motion handling.
+- Animate each preset thumbnail only while its card is hovered or keyboard-focused, so motion can be previewed without keeping the entire library in constant motion.
 - Make panel controls usable from the interface and remove decorative window buttons that did not control the native window.
 - Respect the operating system's reduced-motion preference and announce editor messages to assistive technology.
 - Neutralize imported inline event handlers, script URLs, base elements, and refresh redirects inside the isolated preview while preserving original markup for export.
