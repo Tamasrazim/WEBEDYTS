@@ -3524,8 +3524,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       }
       check(Boolean(importedDoc && importedDoc.querySelectorAll('h1').length === 2), 'Undo did not restore the deleted duplicate.');
 
-      heading.setAttribute('data-webedyts-asset-path', 'assets/fixture.png');
-      heading.setAttribute('data-webedyts-asset-style', 'fixture');
+      const currentHeading = importedDoc.getElementById('workflow-heading');
+      currentHeading.setAttribute('data-webedyts-asset-path', 'assets/fixture.png');
+      currentHeading.setAttribute('data-webedyts-asset-style', 'fixture');
       const output = serializeImportedPage();
       const exported = new DOMParser().parseFromString(output, 'text/html');
       check(exported.documentElement.getAttribute('onload') === 'window.__webedytsUnsafeRoot = true', 'Export failed to restore the original HTML-root attribute.');
