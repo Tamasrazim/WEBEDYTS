@@ -8,6 +8,7 @@ on:
       - "tests/desktop/**"
       - "tests/security/**"
       - ".github/workflows/desktop-source-checks.yml"
+      - ".github/workflows/native-desktop-build.yml"
   pull_request:
   workflow_dispatch:
 
