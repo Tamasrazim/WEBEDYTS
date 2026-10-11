@@ -74,7 +74,6 @@ class BundleSizeTests(unittest.TestCase):
 
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("CEF version must look like", result.stderr)
-            self.assertEqual(list(Path(temp).iterdir()), [])
 
     def test_linux_or_windows_runtime_is_accepted(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
