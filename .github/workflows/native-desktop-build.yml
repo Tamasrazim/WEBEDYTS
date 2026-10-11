@@ -107,6 +107,7 @@ jobs:
       - name: Build desktop application
         run: cmake --build build-desktop --config Release --parallel 2
 
+      # Includes a real launch of the bundled Chromium-based editor.
       - name: Run tests with a virtual display
         if: runner.os == 'Linux'
         run: xvfb-run -a ctest --test-dir build-desktop -C Release --output-on-failure
