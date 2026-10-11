@@ -76,6 +76,11 @@ class EditorSourceTests(unittest.TestCase):
         for expected in (
             'id="duplicate-element"',
             'id="delete-element"',
+            'id="prop-height"',
+            'id="prop-display"',
+            'id="prop-margin"',
+            'id="prop-font-weight"',
+            "bindSelectStyle('prop-display', 'display')",
             "function duplicateSelectedElement()",
             "function deleteSelectedElement()",
             "document.getElementById('duplicate-element').addEventListener",

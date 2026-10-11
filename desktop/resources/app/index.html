@@ -461,6 +461,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <section class="detail-block">
           <div class="detail-title">TRANSFORM</div>
           <div class="field-row"><label for="prop-width">Width (px)</label><input id="prop-width" type="number" min="0" max="1600" placeholder="Auto"></div>
+          <div class="field-row"><label for="prop-height">Height (px)</label><input id="prop-height" type="number" min="0" max="2000" placeholder="Auto"></div>
           <div class="field-row"><label for="prop-x">X offset (px)</label><input id="prop-x" type="number" min="-2000" max="2000" placeholder="None"></div>
           <div class="field-row"><label for="prop-y">Y offset (px)</label><input id="prop-y" type="number" min="-2000" max="2000" placeholder="None"></div>
           <div class="field-row"><label for="prop-font-size">Font size (px)</label><input id="prop-font-size" type="number" min="1" max="240" placeholder="Auto"></div>
@@ -469,6 +470,20 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div class="field-row"><label for="prop-color">Text color</label><input id="prop-color" type="color" value="#191919"></div>
           <div class="field-row"><label for="prop-background">Background</label><input id="prop-background" type="color" value="#e9e6df"></div>
           <div class="field-help">Properties update the selected element in the preview.</div>
+        </section>
+        <section class="detail-block">
+          <div class="detail-title">LAYOUT</div>
+          <div class="field-row"><label for="prop-display">Display</label><select id="prop-display"><option value="">Default</option><option value="block">Block</option><option value="inline">Inline</option><option value="inline-block">Inline block</option><option value="flex">Flex</option><option value="grid">Grid</option><option value="contents">Contents</option><option value="none">Hidden</option></select></div>
+          <div class="field-row"><label for="prop-position">Position</label><select id="prop-position"><option value="">Default</option><option value="static">Static</option><option value="relative">Relative</option><option value="absolute">Absolute</option><option value="sticky">Sticky</option><option value="fixed">Fixed</option></select></div>
+          <div class="field-row"><label for="prop-margin">Margin (px)</label><input id="prop-margin" type="number" min="-500" max="1000" placeholder="Auto"></div>
+          <div class="field-row"><label for="prop-gap">Gap (px)</label><input id="prop-gap" type="number" min="0" max="500" placeholder="Auto"></div>
+          <div class="field-row"><label for="prop-border-radius">Corner radius (px)</label><input id="prop-border-radius" type="number" min="0" max="500" placeholder="None"></div>
+          <div class="field-help">Use layout controls to adjust the selected element without editing CSS by hand.</div>
+        </section>
+        <section class="detail-block">
+          <div class="detail-title">TYPOGRAPHY</div>
+          <div class="field-row"><label for="prop-font-weight">Font weight</label><select id="prop-font-weight"><option value="">Default</option><option value="300">Light · 300</option><option value="400">Regular · 400</option><option value="500">Medium · 500</option><option value="600">Semibold · 600</option><option value="700">Bold · 700</option><option value="800">Extra bold · 800</option><option value="900">Black · 900</option></select></div>
+          <div class="field-row"><label for="prop-text-align">Text alignment</label><select id="prop-text-align"><option value="">Default</option><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option><option value="justify">Justify</option><option value="start">Start</option><option value="end">End</option></select></div>
         </section>
         <section class="detail-block">
           <div class="detail-title">ANIMATION</div>
@@ -683,6 +698,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     propertyText.disabled = !editable;
     propertyText.value = editable ? node.textContent.trim().replace(/\s+/g, ' ') : '';
     propertyWidth.value = node.style.width ? parseInt(node.style.width, 10) : '';
+    document.getElementById('prop-height').value = node.style.height ? parseInt(node.style.height, 10) : '';
+    document.getElementById('prop-display').value = node.style.display || '';
+    document.getElementById('prop-position').value = node.style.position || '';
+    document.getElementById('prop-margin').value = node.style.margin ? parseInt(node.style.margin, 10) : '';
+    document.getElementById('prop-gap').value = node.style.gap ? parseInt(node.style.gap, 10) : '';
+    document.getElementById('prop-border-radius').value = node.style.borderRadius ? parseInt(node.style.borderRadius, 10) : '';
+    document.getElementById('prop-font-weight').value = node.style.fontWeight || '';
+    document.getElementById('prop-text-align').value = node.style.textAlign || '';
     document.getElementById('prop-x').value = node.style.left ? parseInt(node.style.left, 10) : '';
     document.getElementById('prop-y').value = node.style.top ? parseInt(node.style.top, 10) : '';
     document.getElementById('prop-font-size').value = node.style.fontSize ? parseInt(node.style.fontSize, 10) : '';
@@ -812,6 +835,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         id: node.dataset.node,
         text: node.dataset.editableText === 'true' ? node.textContent : null,
         width: node.style.width || '',
+        height: node.style.height || '',
+        display: node.style.display || '',
+        margin: node.style.margin || '',
+        gap: node.style.gap || '',
+        borderRadius: node.style.borderRadius || '',
+        fontWeight: node.style.fontWeight || '',
+        textAlign: node.style.textAlign || '',
         left: node.style.left || '',
         top: node.style.top || '',
         position: node.style.position || '',
@@ -850,6 +880,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       if (!node) return;
       if (saved.text !== null && saved.text !== undefined && node.dataset.editableText === 'true') node.textContent = saved.text;
       node.style.width = saved.width || '';
+      node.style.height = saved.height || '';
+      node.style.display = saved.display || '';
+      node.style.margin = saved.margin || '';
+      node.style.gap = saved.gap || '';
+      node.style.borderRadius = saved.borderRadius || '';
+      node.style.fontWeight = saved.fontWeight || '';
+      node.style.textAlign = saved.textAlign || '';
       node.style.left = saved.left || '';
       node.style.top = saved.top || '';
       node.style.position = saved.position || '';
@@ -2409,9 +2446,29 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   bindNumericStyle('prop-x', 'left', 'px');
   bindNumericStyle('prop-y', 'top', 'px');
+  bindNumericStyle('prop-height', 'height', 'px');
+  bindNumericStyle('prop-margin', 'margin', 'px');
+  bindNumericStyle('prop-gap', 'gap', 'px');
+  bindNumericStyle('prop-border-radius', 'borderRadius', 'px');
   bindNumericStyle('prop-font-size', 'fontSize', 'px');
   bindNumericStyle('prop-padding', 'padding', 'px');
   bindNumericStyle('prop-opacity', 'opacity', '');
+
+  function bindSelectStyle(id, property) {
+    const field = document.getElementById(id);
+    field.addEventListener('change', function () {
+      const node = getNode(selectedId);
+      if (!node) return;
+      node.style[property] = field.value;
+      saveHistory();
+      markChanged();
+    });
+  }
+
+  bindSelectStyle('prop-display', 'display');
+  bindSelectStyle('prop-position', 'position');
+  bindSelectStyle('prop-font-weight', 'fontWeight');
+  bindSelectStyle('prop-text-align', 'textAlign');
 
   propertyColor.addEventListener('input', function () {
     const node = getNode(selectedId);
