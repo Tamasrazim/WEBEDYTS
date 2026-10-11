@@ -1,0 +1,47 @@
+name: Desktop source checks
+
+on:
+  push:
+    paths:
+      - "CMakeLists.txt"
+      - "desktop/**"
+      - "tests/desktop/**"
+      - "tests/security/**"
+      - ".github/workflows/desktop-source-checks.yml"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-checks:
+    name: Source and packaging checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check Python bundle tests
+        run: python -m unittest discover -s tests/desktop -p "test_*.py" -v
+
+      - name: Check CEF platform selection without downloading the SDK
+        run: >
+          cmake
+          -DCEF_TEST_DOWNLOAD_DIRECTORY="$RUNNER_TEMP/cef-bootstrap-test"
+          -DCEF_TEST_MODULE="$GITHUB_WORKSPACE/desktop/cmake/DownloadCEF.cmake"
+          -P tests/desktop/test_cef_bootstrap.cmake
+
+      - name: Configure native-independent tests
+        run: cmake -S . -B build
+
+      - name: Build native-independent tests
+        run: cmake --build build --parallel 2
+
+      - name: Run native-independent tests
+        run: ctest --test-dir build --output-on-failure
