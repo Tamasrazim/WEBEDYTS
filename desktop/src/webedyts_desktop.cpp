@@ -8,14 +8,12 @@
 #include "include/cef_path_util.h"
 #include "include/cef_parser.h"
 #include "include/views/cef_browser_view.h"
-#include "include/views/cef_fill_layout.h"
 #include "include/views/cef_window.h"
 
 #include "../../src/security/license_guard.hpp"
 
 #include <filesystem>
 #include <iostream>
-#include <memory>
 #include <string>
 #include <system_error>
 
@@ -24,10 +22,6 @@
 #if defined(CEF_USE_BOOTSTRAP)
 #include "include/cef_sandbox_win.h"
 #endif
-#endif
-
-#if defined(__APPLE__)
-#include "include/wrapper/cef_library_loader.h"
 #endif
 
 namespace {
