@@ -6,7 +6,7 @@ WEBEDYTS is being developed as a real, installable desktop application for Windo
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Project status:** The native CEF application compiles on Windows x64, Linux x64, and macOS arm64 in CI. The latest Linux and macOS test jobs passed, but the Windows native startup smoke test still exits with access violation code `3221225477` (`0xC0000005`) before the editor page reports a successful load. Custom installer packaging is being added, but a Windows installer is withheld until that startup test passes. No signed, notarized, or permanent public release is available yet.
+> **Project status:** The native CEF application compiles on Windows x64, Linux x64, and macOS arm64 in CI. The latest Linux and macOS test jobs passed, but the Windows native startup smoke test still exits with access violation code `3221225477` (`0xC0000005`) before the editor page reports a successful load. Custom installer packaging is now wired into CI, but a Windows installer is withheld until that startup test passes. No signed, notarized, or permanent public release is available yet.
 
 ## Native build verification
 
