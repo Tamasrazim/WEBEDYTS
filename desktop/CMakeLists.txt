@@ -213,6 +213,55 @@ if(Python3_Interpreter_FOUND)
         COMMENT "Checking the bundled Chromium runtime and installed footprint"
         VERBATIM
     )
+
+    if(OS_MAC)
+        set(WEBEDYTS_PACKAGE_NAME
+            "WEBEDYTS-macOS-${CMAKE_SYSTEM_PROCESSOR}-$<CONFIG>.tar.gz")
+        set(WEBEDYTS_PACKAGE_FLAGS "czf")
+        set(WEBEDYTS_PACKAGE_FORMAT "gnutar")
+        set(WEBEDYTS_PACKAGE_CONTENTS "WEBEDYTS.app")
+        set(WEBEDYTS_PACKAGE_WORKING_DIRECTORY "${CEF_TARGET_OUT_DIR}")
+    elseif(OS_WINDOWS)
+        set(WEBEDYTS_PACKAGE_NAME
+            "WEBEDYTS-Windows-${CMAKE_SYSTEM_PROCESSOR}-$<CONFIG>.zip")
+        set(WEBEDYTS_PACKAGE_FLAGS "cf")
+        set(WEBEDYTS_PACKAGE_FORMAT "zip")
+        set(WEBEDYTS_PACKAGE_CONTENTS ".")
+        set(WEBEDYTS_PACKAGE_WORKING_DIRECTORY "${CEF_TARGET_OUT_DIR}")
+    else()
+        set(WEBEDYTS_PACKAGE_NAME
+            "WEBEDYTS-Linux-${CMAKE_SYSTEM_PROCESSOR}-$<CONFIG>.tar.gz")
+        set(WEBEDYTS_PACKAGE_FLAGS "czf")
+        set(WEBEDYTS_PACKAGE_FORMAT "gnutar")
+        set(WEBEDYTS_PACKAGE_CONTENTS ".")
+        set(WEBEDYTS_PACKAGE_WORKING_DIRECTORY "${CEF_TARGET_OUT_DIR}")
+    endif()
+
+    set(WEBEDYTS_PACKAGE_PATH
+        "${CMAKE_BINARY_DIR}/packages/${WEBEDYTS_PACKAGE_NAME}")
+    add_custom_target(webedyts_package
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+            "${CMAKE_BINARY_DIR}/packages"
+        COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/report-bundle-size.py"
+            "${WEBEDYTS_BUNDLE_TO_CHECK}"
+            --minimum-mib 200
+            --fail-below-minimum
+        COMMAND "${CMAKE_COMMAND}" -E tar
+            ${WEBEDYTS_PACKAGE_FLAGS}
+            "${WEBEDYTS_PACKAGE_PATH}"
+            "--format=${WEBEDYTS_PACKAGE_FORMAT}"
+            --
+            "${WEBEDYTS_PACKAGE_CONTENTS}"
+        WORKING_DIRECTORY "${WEBEDYTS_PACKAGE_WORKING_DIRECTORY}"
+        DEPENDS webedyts_desktop
+        COMMENT "Checking and packaging the complete WEBEDYTS runtime"
+        VERBATIM
+    )
+else()
+    message(WARNING
+        "Python 3 was not found. The native app can be built, but size validation "
+        "and the portable package target will not be available.")
 endif()
 
 message(STATUS "WEBEDYTS desktop target uses the full CEF/Chromium runtime.")
