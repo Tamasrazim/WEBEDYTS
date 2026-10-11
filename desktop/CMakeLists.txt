@@ -17,8 +17,6 @@ if(NOT CEF_ROOT AND WEBEDYTS_DOWNLOAD_CEF)
         "${CMAKE_BINARY_DIR}/_deps/cef"
         "${WEBEDYTS_CEF_VERSION}"
     )
-    set(CEF_ROOT "${CEF_ROOT}" CACHE PATH
-        "Path to the extracted CEF binary distribution" FORCE)
 endif()
 
 if(NOT CEF_ROOT OR NOT EXISTS "${CEF_ROOT}/cmake/FindCEF.cmake")
