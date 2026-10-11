@@ -49,11 +49,13 @@ jobs:
 
       - name: Configure the full CEF runtime
         shell: bash
+        env:
+          CEF_VERSION: ${{ inputs.cef_version }}
         run: |
           cmake -S . -B build-desktop \
             -DWEBEDYTS_BUILD_DESKTOP=ON \
             -DWEBEDYTS_DOWNLOAD_CEF=ON \
-            -DWEBEDYTS_CEF_VERSION="${{ inputs.cef_version }}" \
+            -DWEBEDYTS_CEF_VERSION="$CEF_VERSION" \
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build desktop application
