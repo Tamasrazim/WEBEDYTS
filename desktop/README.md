@@ -114,7 +114,9 @@ cmake --build build-desktop --target webedyts_package --config Release
 
 The output is written to `build-desktop/packages/`. Windows uses ZIP; Linux
 and macOS use gzip-compressed tar archives. The archive contains the actual
-staged app and browser runtime—no placeholder files. A focused test suite covers
+staged app and browser runtime—no placeholder files. Each archive also gets a
+streamed SHA-256 sidecar (`.sha256`) so a copied or downloaded package can be
+checked for accidental corruption before installation. A focused test suite covers
 complete Linux/Windows-style output, missing runtime files, macOS framework
 resources, symlink size accounting, the package size requirement, and the CEF
 bootstrap's Linux x64 path selection without downloading the SDK. Run the tests
