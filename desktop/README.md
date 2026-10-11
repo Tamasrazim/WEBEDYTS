@@ -118,8 +118,8 @@ staged app and browser runtime—no placeholder files. Each archive also gets a
 streamed SHA-256 sidecar (`.sha256`) so a copied or downloaded package can be
 checked for accidental corruption before installation. A focused test suite covers
 complete Linux/Windows-style output, missing runtime files, macOS framework
-resources, symlink size accounting, the package size requirement, and the CEF
-bootstrap's Linux x64 path selection without downloading the SDK. Run the tests
+resources, symlink size accounting, the 200 MiB package floor, archive SHA-256
+sidecars, and CEF platform selection without downloading the SDK. Run the tests
 with `ctest --test-dir build-desktop -C Release --output-on-failure` (use the
 matching build directory and configuration for your generator).
 
