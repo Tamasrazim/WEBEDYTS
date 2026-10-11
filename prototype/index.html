@@ -204,6 +204,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .field-row input:disabled { opacity: .45; }
 .field-row input[type="color"] { width: 100%; height: 25px; padding: 2px; border: 1px solid #3c3c3c; background: #171717; }
 .field-help { margin: 2px 10px 10px 99px; color: #777; font-size: 9px; line-height: 1.5; }
+.element-actions { display: flex; gap: 6px; padding: 6px 10px 2px 99px; }
+.element-actions .tool-button { flex: 1; min-width: 0; }
+.tool-button.destructive:hover { border-color: #646464; background: #303030; }
+.element-action-help { margin: 4px 10px 10px 99px; color: #777; font-size: 9px; line-height: 1.5; }
 .property-note { margin: 11px 10px; padding: 9px; border: 1px solid #393939; background: #1a1a1a; color: #898989; font-size: 10px; line-height: 1.5; }
 .content-drawer { min-height: 0; display: flex; flex-direction: column; border-top: 1px solid #111; background: #202020; }
 .drawer-toolbar { height: 33px; min-height: 33px; display: flex; align-items: stretch; border-bottom: 1px solid #373737; background: #272727; }
@@ -275,7 +279,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 @media (max-width: 1000px) {
   .workspace { grid-template-columns: 190px minmax(240px,1fr) 240px; }
   .field-row { grid-template-columns: 70px minmax(0,1fr); }
-  .field-help { margin-left: 87px; }
+  .field-help, .element-actions { margin-left: 0; }
+  .element-actions { padding-left: 87px; }
+  .element-action-help { margin-left: 87px; }
   .site-hero { gap: 15px; padding-top: 30px; }
 }
 @media (max-width: 720px) {
@@ -441,6 +447,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div class="field-row"><label for="detail-name">Name</label><input id="detail-name" type="text" value="Main Heading" readonly></div>
           <div class="field-row"><label for="detail-kind">Type</label><input id="detail-kind" type="text" value="Heading" readonly></div>
           <div class="field-row"><label for="detail-id">Element ID</label><input id="detail-id" type="text" value="hero-title" readonly></div>
+          <div class="element-actions">
+            <button class="tool-button" id="duplicate-element" type="button" title="Duplicate selected element (Ctrl+D)" disabled>Duplicate</button>
+            <button class="tool-button destructive" id="delete-element" type="button" title="Delete selected element (Delete)" disabled>Delete</button>
+          </div>
+          <div class="element-action-help">Available for elements in an imported website. Undo restores deleted content.</div>
         </section>
         <section class="detail-block">
           <div class="detail-title">CONTENT</div>
@@ -684,6 +695,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     document.getElementById('canvas-status').textContent = importedMode ?
       (projectMode ? 'Website project · ' + projectEntryPath + ' · Scripts disabled in preview' : 'Imported HTML · Scripts and external assets are blocked in preview') :
       canvas.offsetWidth + ' × ' + canvas.offsetHeight + ' · Selection enabled';
+    updateElementActionButtons();
   }
 
   function saveHistory() {
@@ -703,7 +715,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 
   function startCanvasDrag(event, node, id, ownerDocument) {
-    if (!node || id === 'page' || !event.isPrimary ||
+    if (previewMode || !node || id === 'page' || !event.isPrimary ||
         (typeof event.button === 'number' && event.button !== 0)) return;
     if (event.target.closest && event.target.closest('input, textarea, select, option, audio, video')) return;
     if (getComputedStyle(node).position === 'fixed') return;
@@ -2885,6 +2897,77 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     showMessage(name + ' added to the page. Edit its text and styles in the Details panel.');
   }
 
+  function canEditSelectedStructure() {
+    if (!importedMode || !importedDoc || previewMode || projectImportBusy) return false;
+    const node = getNode(selectedId);
+    if (!node || node === importedDoc.body || node === importedDoc.documentElement ||
+        node === importedDoc.head || !node.parentNode) return false;
+    return !['SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE', 'BASE', 'TEMPLATE'].includes(node.tagName);
+  }
+
+  function updateElementActionButtons() {
+    const enabled = canEditSelectedStructure();
+    document.getElementById('duplicate-element').disabled = !enabled;
+    document.getElementById('delete-element').disabled = !enabled;
+  }
+
+  function duplicateSelectedElement() {
+    const original = getNode(selectedId);
+    if (!canEditSelectedStructure() || !original || !original.parentNode) {
+      showMessage('Select an element inside an imported website first.');
+      return;
+    }
+
+    const duplicate = original.cloneNode(true);
+    duplicate.removeAttribute('data-webedyts-editor-selected');
+    duplicate.querySelectorAll('[data-webedyts-editor-selected]').forEach(function (node) {
+      node.removeAttribute('data-webedyts-editor-selected');
+    });
+    original.parentNode.insertBefore(duplicate, original.nextSibling);
+
+    const editorNodes = [];
+    if (duplicate.hasAttribute('data-webedyts-editor-node')) editorNodes.push(duplicate);
+    duplicate.querySelectorAll('[data-webedyts-editor-node]').forEach(function (node) {
+      editorNodes.push(node);
+    });
+    editorNodes.forEach(function (node) {
+      node.dataset.webedytsEditorNode = nextComponentNodeId();
+      node.removeAttribute('data-webedyts-editor-selected');
+    });
+
+    const duplicateId = duplicate.dataset.webedytsEditorNode;
+    const label = nodeLabel(duplicate);
+    buildImportedTree();
+    selectNode(duplicateId);
+    saveHistory();
+    markChanged();
+    updateMediaActions();
+    showMessage('Duplicated ' + label + '.');
+  }
+
+  function deleteSelectedElement() {
+    const node = getNode(selectedId);
+    if (!canEditSelectedStructure() || !node || !node.parentNode) {
+      showMessage('Select an element inside an imported website first.');
+      return;
+    }
+
+    const label = nodeLabel(node);
+    const parent = node.parentElement;
+    const parentNode = parent && parent.closest('[data-webedyts-editor-node]');
+    const nextSelection = parentNode ? parentNode.dataset.webedytsEditorNode : 'page';
+    node.remove();
+    buildImportedTree();
+    selectNode(getNode(nextSelection) ? nextSelection : 'page');
+    saveHistory();
+    markChanged();
+    updateMediaActions();
+    showMessage('Deleted ' + label + '. Undo with Ctrl/Cmd+Z.');
+  }
+
+  document.getElementById('duplicate-element').addEventListener('click', duplicateSelectedElement);
+  document.getElementById('delete-element').addEventListener('click', deleteSelectedElement);
+
   function bindPresetCards() {
     drawerContent.querySelectorAll('[data-preset]').forEach(function (card) {
       card.addEventListener('click', function () {
@@ -2910,6 +2993,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     previewMode = !previewMode;
     app.classList.toggle('preview-mode', previewMode);
     document.getElementById('preview-button').innerHTML = previewMode ? '<span class="symbol">×</span>Exit Preview' : '<span class="symbol">▷</span>Preview';
+    updateElementActionButtons();
   });
 
   function handleEditorShortcut(event) {
@@ -2919,12 +3003,22 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       if (previewMode) document.getElementById('preview-button').click();
       return;
     }
-    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
 
     const key = event.key.toLowerCase();
     const target = event.target;
     const typing = target && target.nodeType === 1 &&
       (target.matches('input, textarea, select') || target.isContentEditable);
+
+    if (!typing && !event.ctrlKey && !event.metaKey && !event.altKey &&
+        (key === 'delete' || key === 'backspace')) {
+      const deleteButton = document.getElementById('delete-element');
+      if (!deleteButton.disabled) {
+        event.preventDefault();
+        deleteButton.click();
+      }
+      return;
+    }
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
 
     if (key === 's' && !event.shiftKey) {
       event.preventDefault();
@@ -2937,7 +3031,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       return;
     }
     if (typing) return;
-    if (key === 'z') {
+    if (key === 'd' && !event.shiftKey) {
+      event.preventDefault();
+      const duplicateButton = document.getElementById('duplicate-element');
+      if (!duplicateButton.disabled) duplicateButton.click();
+    } else if (key === 'z') {
       event.preventDefault();
       document.getElementById(event.shiftKey ? 'redo' : 'undo').click();
     } else if (key === 'y' && !event.shiftKey) {
@@ -2961,7 +3059,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     ],
     Edit: [
       { label: 'Undo', shortcut: 'Ctrl/Cmd+Z', action: 'undo' },
-      { label: 'Redo', shortcut: 'Ctrl/Cmd+Shift+Z', action: 'redo' }
+      { label: 'Redo', shortcut: 'Ctrl/Cmd+Shift+Z', action: 'redo' },
+      { separator: true },
+      { label: 'Duplicate selected element', shortcut: 'Ctrl/Cmd+D', action: 'duplicate-element' },
+      { label: 'Delete selected element', shortcut: 'Delete', action: 'delete-element' }
     ],
     View: [
       { label: 'Preview / Exit preview', shortcut: 'Esc', action: 'preview-button' },
