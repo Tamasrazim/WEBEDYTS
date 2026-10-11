@@ -114,11 +114,13 @@ matching build directory and configuration for your generator).
 
 The repository also has a manual [Native desktop build workflow](https://github.com/Tamasrazim/WEBEDYTS/actions/workflows/native-desktop-build.yml).
 Open it in GitHub Actions, select **Run workflow**, and keep the pinned CEF
-version unless you deliberately need another supported release. It builds on
-Windows, Linux, and macOS, runs the available tests, enforces the 200 MiB
-runtime check, and uploads one package artifact per operating system for 14
-days. These artifacts are for testing; the workflow does not publish a
-production release or sign/notarize the app.
+version unless you deliberately need another supported release. Choose Windows
+x64, x86, or ARM64; macOS can use the runner-native architecture or an explicit
+Intel x64/Apple Silicon ARM64 target. Linux currently builds for the hosted
+runner's native architecture. Each job runs the available tests, enforces the
+200 MiB runtime check, and uploads a package artifact for 14 days. The archive's
+filename identifies the architecture. These artifacts are for testing; the
+workflow does not publish a production release or sign/notarize the app.
 
 ## Security boundary
 
