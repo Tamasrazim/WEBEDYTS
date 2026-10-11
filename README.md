@@ -6,7 +6,21 @@ WEBEDYTS is planned as a real, installable desktop application for Windows, Linu
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Project status:** WEBEDYTS has a working browser-based editor prototype and an initial native CEF desktop-shell/build scaffold. The first full CEF build exposed compiler issues on the target platforms; fixes have been committed and a follow-up three-platform build is underway. No native package has yet been verified, and there is no installer or release download. This README distinguishes available prototype features, source-level scaffolding, and unverified release goals.
+> **Project status:** The native CEF application now builds and packages successfully on Windows x64, Linux x64, and macOS arm64 in CI. All four native CTest checks passed on each platform, and the packaging checks confirmed the full Chromium runtime and generated a SHA-256 sidecar. This verifies compilation, tests, and packaging—not a hands-on GUI launch or an installable signed release. There is no permanent release download yet.
+
+## Native build verification
+
+The [three-platform native build](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38127854487) completed successfully on 11 October 2026.
+
+| Target | Staged installed footprint | Package SHA-256 |
+| --- | ---: | --- |
+| Windows x64 | 404.3 MiB (423,887,033 bytes) | `008826503f3e5331c9eaf6fba9eaaaebef0a54a85d4b127a790649aa3687f63b` |
+| Linux x64 | 1,487.3 MiB (1,559,498,291 bytes) | `f509aef24a9c16ada7b1598f19d9a7caa74b5a236fd2c93f24b4de6fa612ae66` |
+| macOS arm64 | 323.8 MiB (339,511,325 bytes) | `4b03d34e18401a79be16e1d7aaf622e26c1ec833ed7d66f7a15c09ab792dec19` |
+
+These are installed-footprint measurements of the staged application tree, not the compressed GitHub Actions artifact sizes. The hashes are for the generated platform package files; each package also has a `.sha256` sidecar. The CI artifacts are temporary and retained for 14 days. They are not installers, signed releases, or permanent downloads.
+
+The build and four automated checks pass on all three targets. The native application has not yet had a manual launch and editor-workflow smoke test on each operating system, so startup and interactive behavior should still be verified before calling it release-ready.
 
 ## The idea
 
