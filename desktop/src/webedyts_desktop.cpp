@@ -22,6 +22,10 @@
 #include <string>
 #include <system_error>
 
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
+
 #if defined(_WIN32)
 #include <windows.h>
 #if defined(CEF_USE_BOOTSTRAP)
@@ -34,6 +38,23 @@ namespace {
 CefRefPtr<CefWindow> g_main_window;
 
 std::filesystem::path PathFromCefString(const CefString& value);
+
+void TraceStartup(const std::string& message) {
+  const char* trace_path = std::getenv("WEBEDYTS_STARTUP_TRACE_PATH");
+  if (!trace_path || !*trace_path) {
+    return;
+  }
+  std::ofstream trace(trace_path, std::ios::app);
+  if (!trace) {
+    return;
+  }
+#if defined(_WIN32)
+  const auto process_id = GetCurrentProcessId();
+#else
+  const auto process_id = getpid();
+#endif
+  trace << "[" << process_id << "] " << message << "\n";
+}
 
 class EditorClient final : public CefClient,
                           public CefDownloadHandler,
@@ -58,6 +79,7 @@ class EditorClient final : public CefClient,
       return;
     }
 
+    TraceStartup("main-frame load completed");
     const std::string loaded_url = frame->GetURL().ToString();
     const std::string expected_url = expected_url_.ToString();
     FinishSmokeTest(
@@ -74,6 +96,7 @@ class EditorClient final : public CefClient,
       return;
     }
 
+    TraceStartup("main-frame load error");
     std::cerr << "WEBEDYTS startup test could not load the editor page ("
               << error_code << "): " << error_text.ToString() << "\n";
     FinishSmokeTest("load_error", failed_url.ToString());
@@ -137,6 +160,7 @@ class EditorClient final : public CefClient,
   }
 
   void FinishSmokeTest(const std::string& status, const std::string& url) {
+    TraceStartup("finishing smoke test with status=" + status);
     const auto marker_path = PathFromCefString(smoke_marker_path_);
     if (!marker_path.empty()) {
       std::ofstream marker(marker_path, std::ios::binary | std::ios::trunc);
@@ -183,21 +207,29 @@ class EditorWindowDelegate final : public CefWindowDelegate {
   }
 
   void OnWindowCreated(CefRefPtr<CefWindow> window) override {
+    TraceStartup("window delegate entered");
     client_->SetWindow(window.get());
     CefBrowserSettings browser_settings;
+    TraceStartup("before CreateBrowserView");
     browser_view_ = CefBrowserView::CreateBrowserView(
         client_, start_url_, browser_settings, nullptr, nullptr,
         new EditorBrowserViewDelegate());
+    TraceStartup(browser_view_ ? "CreateBrowserView succeeded"
+                               : "CreateBrowserView returned null");
     if (!browser_view_) {
       window->Close();
       return;
     }
 
+    TraceStartup("before adding browser view to window");
     window->SetTitle("WEBEDYTS");
     window->SetToFillLayout();
     window->AddChildView(browser_view_);
+    TraceStartup("before showing window");
     window->Show();
+    TraceStartup("before requesting browser focus");
     browser_view_->RequestFocus();
+    TraceStartup("window shown and browser focus requested");
   }
 
   bool CanClose(CefRefPtr<CefWindow> /*window*/) override {
@@ -255,10 +287,14 @@ class WebedytsApp final : public CefApp,
   }
 
   void OnContextInitialized() override {
+    TraceStartup("CEF context initialized");
+    TraceStartup("before CreateTopLevelWindow");
     g_main_window = CefWindow::CreateTopLevelWindow(
         new EditorWindowDelegate(
             new EditorClient(smoke_test_, smoke_marker_path_, start_url_),
             start_url_));
+    TraceStartup(g_main_window ? "CreateTopLevelWindow succeeded"
+                               : "CreateTopLevelWindow returned null");
     if (!g_main_window) {
       std::cerr << "WEBEDYTS could not create its desktop window.\n";
       CefQuitMessageLoop();
@@ -404,17 +440,22 @@ bool GetRuntimePaths(std::filesystem::path& executable_dir,
 }
 
 int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
+  TraceStartup("RunWebedyts entered");
   if (!webedyts::security::verify_embedded_license_notice()) {
     std::cerr << "WEBEDYTS license integrity check failed.\n";
     return 2;
   }
 
+  TraceStartup("license integrity check passed");
+
   // CEF expects the same application object to be supplied to both
   // CefExecuteProcess and CefInitialize. The URL is filled in only after the
   // browser process is identified, so child processes can exit cleanly first.
   CefRefPtr<WebedytsApp> app = new WebedytsApp("");
+  TraceStartup("before CefExecuteProcess");
   const int process_exit_code =
       CefExecuteProcess(main_args, app, sandbox_info);
+  TraceStartup("CefExecuteProcess returned " + std::to_string(process_exit_code));
   if (process_exit_code >= 0) {
     return process_exit_code;
   }
@@ -422,12 +463,19 @@ int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
   std::filesystem::path executable_dir;
   std::filesystem::path editor_html;
   std::filesystem::path user_data;
+  TraceStartup("before GetRuntimePaths");
   if (!GetRuntimePaths(executable_dir, editor_html, user_data)) {
+    TraceStartup("GetRuntimePaths failed");
     return 3;
   }
+  TraceStartup("GetRuntimePaths succeeded");
 
   CefSettings settings;
   settings.log_severity = LOGSEVERITY_WARNING;
+#if defined(_WIN32) && defined(CEF_USE_BOOTSTRAP)
+  // The bootstrap executable owns the application icon resource.
+  settings.chrome_app_icon_id = 32512;  // IDI_APPLICATION
+#endif
   CefString(&settings.log_file) = PathUtf8(user_data / "Logs" / "webedyts.log");
   CefString(&settings.cache_path) = PathUtf8(user_data / "Cache");
 
@@ -440,13 +488,19 @@ int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
 
 
   app->SetStartUrl(FileUrl(editor_html));
+  TraceStartup("before CefInitialize");
   if (!CefInitialize(main_args, settings, app, sandbox_info)) {
+    TraceStartup("CefInitialize returned false");
     std::cerr << "WEBEDYTS could not initialize the Chromium runtime.\n";
     return 4;
   }
 
+  TraceStartup("CefInitialize returned true");
+  TraceStartup("before CefRunMessageLoop");
   CefRunMessageLoop();
+  TraceStartup("CefRunMessageLoop returned");
   CefShutdown();
+  TraceStartup("CefShutdown returned");
   return 0;
 }
 

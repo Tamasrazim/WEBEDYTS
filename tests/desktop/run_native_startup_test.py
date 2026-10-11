@@ -38,9 +38,19 @@ def stop_process_tree(process: subprocess.Popen[str]) -> None:
         pass
 
 
-def startup_diagnostics(marker: Path) -> str:
-    """Collect the startup marker and CEF log when a native launch fails."""
+def startup_diagnostics(marker: Path, trace: Path) -> str:
+    """Collect the startup marker, native trace, and CEF log on launch failure."""
     sections: list[str] = []
+
+    if trace.is_file():
+        try:
+            sections.append(
+                "Native startup trace:\n" + trace.read_text(
+                    encoding="utf-8", errors="replace"
+                )
+            )
+        except OSError as error:
+            sections.append(f"Could not read native startup trace: {error}")
 
     if marker.is_file():
         try:
@@ -90,6 +100,7 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="webedyts-startup-") as temp:
         marker = Path(temp) / "startup-result.txt"
+        trace = Path(temp) / "startup-trace.txt"
         command = [
             str(executable),
             "--webedyts-smoke-test",
@@ -104,6 +115,7 @@ def main() -> int:
             text=True,
             errors="replace",
             start_new_session=(os.name != "nt"),
+            env={**os.environ, "WEBEDYTS_STARTUP_TRACE_PATH": str(trace)},
         )
         try:
             output, _ = process.communicate(timeout=args.timeout_seconds)
@@ -111,6 +123,7 @@ def main() -> int:
             stop_process_tree(process)
             output, _ = process.communicate()
             print(output[-12000:], file=sys.stderr)
+            print(startup_diagnostics(marker, trace), file=sys.stderr)
             print(
                 f"WEBEDYTS did not close after loading the editor within "
                 f"{args.timeout_seconds} seconds.",
@@ -125,14 +138,14 @@ def main() -> int:
                 f"WEBEDYTS exited with code {process.returncode}.",
                 file=sys.stderr,
             )
-            print(startup_diagnostics(marker), file=sys.stderr)
+            print(startup_diagnostics(marker, trace), file=sys.stderr)
             return 1
         if not marker.is_file():
             print(
                 "WEBEDYTS exited without reporting that the editor page loaded.",
                 file=sys.stderr,
             )
-            print(startup_diagnostics(marker), file=sys.stderr)
+            print(startup_diagnostics(marker, trace), file=sys.stderr)
             return 1
 
         result = {}
