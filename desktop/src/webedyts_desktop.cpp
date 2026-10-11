@@ -1,6 +1,7 @@
 #include "include/cef_app.h"
 #include "include/cef_browser_process_handler.h"
 #include "include/cef_client.h"
+#include "include/cef_command_line.h"
 #include "include/cef_path_util.h"
 #include "include/cef_parser.h"
 #include "include/views/cef_browser_view.h"
@@ -11,6 +12,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <system_error>
 
@@ -51,9 +53,15 @@ class EditorWindowDelegate final : public CefWindowDelegate {
     }
 
     window->SetTitle("WEBEDYTS");
+    window->SetToFillLayout();
     window->AddChildView(browser_view_);
-    window->SetLayout(std::make_unique<CefFillLayout>());
     window->Show();
+    browser_view_->RequestFocus();
+  }
+
+  bool CanClose(CefRefPtr<CefWindow> /*window*/) override {
+    const auto browser = browser_view_ ? browser_view_->GetBrowser() : nullptr;
+    return !browser || browser->GetHost()->TryCloseBrowser();
   }
 
   void OnWindowDestroyed(CefRefPtr<CefWindow> /*window*/) override {
@@ -76,6 +84,13 @@ class WebedytsApp final : public CefApp,
 
   CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override {
     return this;
+  }
+
+  void OnBeforeCommandLineProcessing(
+      const CefString& /*process_type*/,
+      CefRefPtr<CefCommandLine> command_line) override {
+    // The Views API is needed by the native window and browser-view classes.
+    command_line->AppendSwitch("use-views");
   }
 
   void OnContextInitialized() override {
