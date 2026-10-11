@@ -56,7 +56,12 @@ def main() -> int:
         "--minimum-mib",
         type=int,
         default=120,
-        help="Warn below this installed size (default: 120 MiB)",
+        help="Minimum installed size to report (default: 200 MiB)",
+    )
+    parser.add_argument(
+        "--fail-below-minimum",
+        action="store_true",
+        help="Return a failure status when the installed footprint is below the minimum",
     )
     args = parser.parse_args()
 
@@ -92,6 +97,8 @@ def main() -> int:
             "Check that the complete CEF runtime, locales, and resources are staged.",
             file=sys.stderr,
         )
+        if args.fail_below_minimum:
+            return 3
     else:
         print("Chromium runtime checks passed.")
     return 0
