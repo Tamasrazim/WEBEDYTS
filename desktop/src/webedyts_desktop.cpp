@@ -3,6 +3,7 @@
 #include "include/cef_client.h"
 #include "include/cef_download_handler.h"
 #include "include/cef_download_item.h"
+#include "include/cef_display_handler.h"
 #include "include/cef_command_line.h"
 #include "include/cef_path_util.h"
 #include "include/cef_parser.h"
@@ -31,10 +32,27 @@
 
 namespace {
 
-class EditorClient final : public CefClient, public CefDownloadHandler {
+class EditorClient final : public CefClient,
+                          public CefDownloadHandler,
+                          public CefDisplayHandler {
  public:
   CefRefPtr<CefDownloadHandler> GetDownloadHandler() override {
     return this;
+  }
+
+  CefRefPtr<CefDisplayHandler> GetDisplayHandler() override {
+    return this;
+  }
+
+  void SetWindow(CefWindow* window) {
+    window_ = window;
+  }
+
+  void OnTitleChange(CefRefPtr<CefBrowser> /*browser*/,
+                     const CefString& title) override {
+    if (window_) {
+      window_->SetTitle(title.empty() ? CefString("WEBEDYTS") : title);
+    }
   }
 
   bool OnBeforeDownload(
@@ -72,6 +90,8 @@ class EditorClient final : public CefClient, public CefDownloadHandler {
   }
 
  private:
+  CefWindow* window_ = nullptr;  // Owned by CEF; cleared before window teardown.
+
   IMPLEMENT_REFCOUNTING(EditorClient);
 };
 
@@ -87,7 +107,7 @@ class EditorBrowserViewDelegate final : public CefBrowserViewDelegate {
 
 class EditorWindowDelegate final : public CefWindowDelegate {
  public:
-  EditorWindowDelegate(CefRefPtr<CefClient> client, CefString start_url)
+  EditorWindowDelegate(CefRefPtr<EditorClient> client, CefString start_url)
       : client_(client), start_url_(start_url) {}
 
   CefRect GetInitialBounds(CefRefPtr<CefWindow> /*window*/) override {
@@ -95,6 +115,7 @@ class EditorWindowDelegate final : public CefWindowDelegate {
   }
 
   void OnWindowCreated(CefRefPtr<CefWindow> window) override {
+    client_->SetWindow(window.get());
     CefBrowserSettings browser_settings;
     browser_view_ = CefBrowserView::CreateBrowserView(
         client_, start_url_, browser_settings, nullptr, nullptr,
@@ -124,12 +145,13 @@ class EditorWindowDelegate final : public CefWindowDelegate {
   }
 
   void OnWindowDestroyed(CefRefPtr<CefWindow> /*window*/) override {
+    client_->SetWindow(nullptr);
     browser_view_ = nullptr;
     CefQuitMessageLoop();
   }
 
  private:
-  CefRefPtr<CefClient> client_;
+  CefRefPtr<EditorClient> client_;
   CefString start_url_;
   CefRefPtr<CefBrowserView> browser_view_;
 
