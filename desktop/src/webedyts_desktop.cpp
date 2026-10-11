@@ -115,7 +115,7 @@ class EditorWindowDelegate final : public CefWindowDelegate {
         client_, start_url_, browser_settings, nullptr, nullptr,
         new EditorBrowserViewDelegate());
     if (!browser_view_) {
-      CefQuitMessageLoop();
+      window->Close();
       return;
     }
 
@@ -162,15 +162,21 @@ class WebedytsApp final : public CefApp,
   }
 
   void OnBeforeCommandLineProcessing(
-      const CefString& /*process_type*/,
+      const CefString& process_type,
       CefRefPtr<CefCommandLine> command_line) override {
     // The Views API is needed by the native window and browser-view classes.
-    command_line->AppendSwitch("use-views");
+    if (process_type.empty()) {
+      command_line->AppendSwitch("use-views");
+    }
   }
 
   void OnContextInitialized() override {
-    CefWindow::CreateTopLevelWindow(
+    const auto window = CefWindow::CreateTopLevelWindow(
         new EditorWindowDelegate(new EditorClient(), start_url_));
+    if (!window) {
+      std::cerr << "WEBEDYTS could not create its desktop window.\\n";
+      CefQuitMessageLoop();
+    }
   }
 
  private:
