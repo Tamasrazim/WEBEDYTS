@@ -279,12 +279,30 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 @keyframes wiPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
 @keyframes wiWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }
 @keyframes wiBlur { from { opacity: .35; filter: blur(7px); } to { opacity: 1; filter: blur(0); } }
+@keyframes wiRise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes wiDrift { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes wiRotate { from { opacity: .3; transform: rotate(-7deg) scale(.96); } to { opacity: 1; transform: rotate(0) scale(1); } }
+@keyframes wiSpring { 0% { opacity: 0; transform: scale(.78); } 68% { opacity: 1; transform: scale(1.055); } 86% { transform: scale(.98); } 100% { transform: scale(1); } }
+@keyframes wiWipe { from { clip-path: inset(0 100% 0 0); opacity: .65; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
+@keyframes wiFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes wiGlow { 0%,100% { filter: drop-shadow(0 0 0 rgba(235,235,235,0)); } 50% { filter: drop-shadow(0 0 10px rgba(235,235,235,.52)); } }
+@keyframes wiFlip { from { opacity: 0; transform: perspective(550px) rotateX(-68deg); transform-origin: top center; } to { opacity: 1; transform: perspective(550px) rotateX(0); transform-origin: top center; } }
+@keyframes wiZoom { from { opacity: .1; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
 .anim-fade { animation: wiFade .7s ease both; }
 .anim-slide { animation: wiSlide .65s ease both; }
 .anim-pop { animation: wiPop .55s cubic-bezier(.2,.8,.2,1) both; }
 .anim-pulse { animation: wiPulse 1.2s ease-in-out 2; }
 .anim-wiggle { animation: wiWiggle .45s ease-in-out 3; }
 .anim-blur { animation: wiBlur .8s ease both; }
+.anim-rise { animation: wiRise .72s cubic-bezier(.2,.7,.2,1) both; }
+.anim-drift { animation: wiDrift .68s cubic-bezier(.2,.7,.2,1) both; }
+.anim-rotate { animation: wiRotate .62s cubic-bezier(.2,.8,.2,1) both; }
+.anim-spring { animation: wiSpring .72s cubic-bezier(.2,.8,.2,1) both; }
+.anim-wipe { animation: wiWipe .82s cubic-bezier(.3,.7,.2,1) both; }
+.anim-float { animation: wiFloat 1.7s ease-in-out 2; }
+.anim-glow { animation: wiGlow 1.25s ease-in-out 2; }
+.anim-flip { animation: wiFlip .7s cubic-bezier(.2,.8,.2,1) both; }
+.anim-zoom { animation: wiZoom .62s cubic-bezier(.2,.8,.2,1) both; }
 @media (max-width: 1000px) {
   .workspace { grid-template-columns: 190px minmax(240px,1fr) 240px; }
   .field-row { grid-template-columns: 70px minmax(0,1fr); }
@@ -493,7 +511,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </section>
         <section class="detail-block">
           <div class="detail-title">ANIMATION</div>
-          <div class="field-row"><label for="prop-animation">Preset</label><select id="prop-animation"><option value="">None</option><option value="fade">Fade up</option><option value="slide">Slide in</option><option value="pop">Soft pop</option><option value="pulse">Pulse</option><option value="wiggle">Wiggle</option><option value="blur">Blur reveal</option></select></div>
+          <div class="field-row"><label for="prop-animation">Preset</label><select id="prop-animation"><option value="">None</option><option value="fade">Fade up</option><option value="slide">Slide in</option><option value="pop">Soft pop</option><option value="pulse">Pulse</option><option value="wiggle">Wiggle</option><option value="blur">Blur reveal</option><option value="rise">Rise</option><option value="drift">Drift in</option><option value="rotate">Soft rotate</option><option value="spring">Spring</option><option value="wipe">Wipe reveal</option><option value="float">Float</option><option value="glow">Soft glow</option><option value="flip">Flip in</option><option value="zoom">Zoom reveal</option></select></div>
           <div style="padding:6px 10px 10px"><button class="tool-button primary" id="apply-animation" style="width:100%">Apply animation</button></div>
         </section>
         <div class="property-note">Changes stay in this session until exported. Imported website previews run without scripts or external network access. Test exported files in the target browser before deployment.</div>
@@ -530,6 +548,33 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </button>
       <button class="asset-card" data-preset="blur" data-keywords="blur focus reveal cinematic soft entrance">
         <span class="asset-thumb anim-preview">◍</span><span class="asset-label">Blur Reveal</span><span class="asset-meta">Entrance · Focus</span>
+      </button>
+      <button class="asset-card" data-preset="rise" data-keywords="rise upward lift reveal entrance scroll">
+        <span class="asset-thumb anim-preview">↑</span><span class="asset-label">Rise</span><span class="asset-meta">Entrance · Vertical</span>
+      </button>
+      <button class="asset-card" data-preset="drift" data-keywords="drift right slide gentle reveal entrance">
+        <span class="asset-thumb anim-preview">⇢</span><span class="asset-label">Drift In</span><span class="asset-meta">Entrance · Gentle</span>
+      </button>
+      <button class="asset-card" data-preset="rotate" data-keywords="rotate tilt turn entrance card badge">
+        <span class="asset-thumb anim-preview">↻</span><span class="asset-label">Soft Rotate</span><span class="asset-meta">Entrance · Angular</span>
+      </button>
+      <button class="asset-card" data-preset="spring" data-keywords="spring bounce scale elastic button card">
+        <span class="asset-thumb anim-preview">◇</span><span class="asset-label">Spring</span><span class="asset-meta">Entrance · Rebound</span>
+      </button>
+      <button class="asset-card" data-preset="wipe" data-keywords="wipe mask clip reveal image panel title">
+        <span class="asset-thumb anim-preview">▱</span><span class="asset-label">Wipe Reveal</span><span class="asset-meta">Reveal · Mask</span>
+      </button>
+      <button class="asset-card" data-preset="float" data-keywords="float hover bob idle image icon card">
+        <span class="asset-thumb anim-preview">↕</span><span class="asset-label">Float</span><span class="asset-meta">Motion · Hover feel</span>
+      </button>
+      <button class="asset-card" data-preset="glow" data-keywords="glow light highlight focus soft shadow">
+        <span class="asset-thumb anim-preview">✧</span><span class="asset-label">Soft Glow</span><span class="asset-meta">Emphasis · Light</span>
+      </button>
+      <button class="asset-card" data-preset="flip" data-keywords="flip 3d rotation perspective reveal panel card">
+        <span class="asset-thumb anim-preview">⤾</span><span class="asset-label">Flip In</span><span class="asset-meta">Entrance · Perspective</span>
+      </button>
+      <button class="asset-card" data-preset="zoom" data-keywords="zoom scale focus reveal image card">
+        <span class="asset-thumb anim-preview">⌕</span><span class="asset-label">Zoom Reveal</span><span class="asset-meta">Entrance · Scale</span>
       </button>
       <div class="empty-state hidden" id="drawer-empty">No matching items.<br>Try another keyword.</div>
     </div>
@@ -916,7 +961,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 
   function setAnimation(node, animation, record) {
-    const names = ['fade', 'slide', 'pop', 'pulse', 'wiggle', 'blur'];
+    const names = ['fade', 'slide', 'pop', 'pulse', 'wiggle', 'blur', 'rise', 'drift', 'rotate', 'spring', 'wipe', 'float', 'glow', 'flip', 'zoom'];
     names.forEach(function (name) {
       node.classList.remove((importedMode ? 'wi-anim-' : 'anim-') + name);
     });
@@ -1602,9 +1647,23 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       '@keyframes wiPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }' +
       '@keyframes wiWiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }' +
       '@keyframes wiBlur { from { opacity: .35; filter: blur(7px); } to { opacity: 1; filter: blur(0); } }' +
+      '@keyframes wiRise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }' +
+      '@keyframes wiDrift { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }' +
+      '@keyframes wiRotate { from { opacity: .3; transform: rotate(-7deg) scale(.96); } to { opacity: 1; transform: rotate(0) scale(1); } }' +
+      '@keyframes wiSpring { 0% { opacity: 0; transform: scale(.78); } 68% { opacity: 1; transform: scale(1.055); } 86% { transform: scale(.98); } 100% { transform: scale(1); } }' +
+      '@keyframes wiWipe { from { clip-path: inset(0 100% 0 0); opacity: .65; } to { clip-path: inset(0 0 0 0); opacity: 1; } }' +
+      '@keyframes wiFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }' +
+      '@keyframes wiGlow { 0%,100% { filter: drop-shadow(0 0 0 rgba(235,235,235,0)); } 50% { filter: drop-shadow(0 0 10px rgba(235,235,235,.52)); } }' +
+      '@keyframes wiFlip { from { opacity: 0; transform: perspective(550px) rotateX(-68deg); transform-origin: top center; } to { opacity: 1; transform: perspective(550px) rotateX(0); transform-origin: top center; } }' +
+      '@keyframes wiZoom { from { opacity: .1; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }' +
       '.wi-anim-fade { animation: wiFade .7s ease both; } .wi-anim-slide { animation: wiSlide .65s ease both; }' +
       '.wi-anim-pop { animation: wiPop .55s cubic-bezier(.2,.8,.2,1) both; } .wi-anim-pulse { animation: wiPulse 1.2s ease-in-out 2; }' +
-      '.wi-anim-wiggle { animation: wiWiggle .45s ease-in-out 3; } .wi-anim-blur { animation: wiBlur .8s ease both; }';
+      '.wi-anim-wiggle { animation: wiWiggle .45s ease-in-out 3; } .wi-anim-blur { animation: wiBlur .8s ease both; }' +
+      '.wi-anim-rise { animation: wiRise .72s cubic-bezier(.2,.7,.2,1) both; } .wi-anim-drift { animation: wiDrift .68s cubic-bezier(.2,.7,.2,1) both; }' +
+      '.wi-anim-rotate { animation: wiRotate .62s cubic-bezier(.2,.8,.2,1) both; } .wi-anim-spring { animation: wiSpring .72s cubic-bezier(.2,.8,.2,1) both; }' +
+      '.wi-anim-wipe { animation: wiWipe .82s cubic-bezier(.3,.7,.2,1) both; } .wi-anim-float { animation: wiFloat 1.7s ease-in-out 2; }' +
+      '.wi-anim-glow { animation: wiGlow 1.25s ease-in-out 2; } .wi-anim-flip { animation: wiFlip .7s cubic-bezier(.2,.8,.2,1) both; } .wi-anim-zoom { animation: wiZoom .62s cubic-bezier(.2,.8,.2,1) both; }' +
+      '@media (prefers-reduced-motion: reduce) { [class*="wi-anim-"] { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }';
     parsed.head.appendChild(animationStyle);
     const body = parsed.body;
     body.dataset.webedytsEditorNode = 'page';
