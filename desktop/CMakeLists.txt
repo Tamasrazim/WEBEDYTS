@@ -30,6 +30,15 @@ set(CMAKE_MODULE_PATH "${CEF_ROOT}/cmake" ${CMAKE_MODULE_PATH})
 find_package(CEF REQUIRED)
 
 if(OS_MAC)
+    # Xcode 16 emits an SDK-specific -target that can conflict with CEF's
+    # minimum macOS flag. Keep that diagnostic visible, but don't treat this
+    # harmless flag override as a fatal compilation error.
+    add_compile_options(
+        "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang>:-Wno-error=overriding-option>"
+    )
+endif()
+
+if(OS_MAC)
     enable_language(OBJC OBJCXX)
 endif()
 
