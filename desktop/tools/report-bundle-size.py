@@ -14,37 +14,33 @@ def installed_size(root: Path) -> int:
     total = 0
     for path in root.rglob("*"):
         try:
-            if path.is_file():
+            if path.is_file() and not path.is_symlink():
                 total += path.stat().st_size
         except OSError:
             continue
     return total
 
 
-def runtime_files(root: Path) -> list[Path]:
-    checks = [
+def runtime_files(root: Path) -> tuple[list[Path], list[tuple[Path, ...]]]:
+    required = [
         root / "resources" / "app" / "index.html",
         root / "resources.pak",
         root / "icudtl.dat",
         root / "locales",
     ]
+    alternatives: list[tuple[Path, ...]] = []
 
     if root.name.endswith(".app"):
-        checks = [
+        required = [
             root / "Contents" / "Resources" / "app" / "index.html",
             root / "Contents" / "Frameworks" /
             "Chromium Embedded Framework.framework" / "Versions" / "A" /
             "Chromium Embedded Framework",
         ]
     else:
-        checks.extend(
-            [
-                root / "libcef.dll",
-                root / "libcef.so",
-            ]
-        )
+        alternatives.append((root / "libcef.dll", root / "libcef.so"))
 
-    return checks
+    return required, alternatives
 
 
 def main() -> int:
@@ -63,11 +59,18 @@ def main() -> int:
         print(f"Bundle directory not found: {root}", file=sys.stderr)
         return 2
 
-    missing = [path for path in runtime_files(root) if not path.exists()]
-    if missing:
+    required, alternatives = runtime_files(root)
+    missing = [path for path in required if not path.exists()]
+    missing_groups = [
+        group for group in alternatives
+        if not any(path.is_file() for path in group)
+    ]
+    if missing or missing_groups:
         print("Required app or Chromium files are missing:", file=sys.stderr)
         for path in missing:
             print(f"  - {path}", file=sys.stderr)
+        for group in missing_groups:
+            print("  - one of: " + ", ".join(str(path) for path in group), file=sys.stderr)
         return 2
 
     total = installed_size(root)
