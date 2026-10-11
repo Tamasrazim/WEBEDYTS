@@ -8,6 +8,24 @@ on:
         required: true
         default: "154.0.34+g14c5a08+chromium-154.0.8037.98"
         type: string
+      windows_arch:
+        description: "Windows target architecture"
+        required: true
+        default: "x64"
+        type: choice
+        options:
+          - x64
+          - x86
+          - arm64
+      macos_arch:
+        description: "macOS target architecture"
+        required: true
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - arm64
+          - x86_64
 
 permissions:
   contents: read
@@ -51,12 +69,29 @@ jobs:
         shell: bash
         env:
           CEF_VERSION: ${{ inputs.cef_version }}
+          WINDOWS_ARCH: ${{ inputs.windows_arch }}
+          MACOS_ARCH: ${{ inputs.macos_arch }}
         run: |
-          cmake -S . -B build-desktop \
-            -DWEBEDYTS_BUILD_DESKTOP=ON \
-            -DWEBEDYTS_DOWNLOAD_CEF=ON \
-            -DWEBEDYTS_CEF_VERSION="$CEF_VERSION" \
+          cmake_args=(-S . -B build-desktop)
+
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            case "$WINDOWS_ARCH" in
+              x64) cmake_args+=(-A x64) ;;
+              x86) cmake_args+=(-A Win32) ;;
+              arm64) cmake_args+=(-A ARM64) ;;
+              *) echo "Unsupported Windows architecture: $WINDOWS_ARCH" >&2; exit 2 ;;
+            esac
+          elif [[ "$RUNNER_OS" == "macOS" && "$MACOS_ARCH" != "auto" ]]; then
+            cmake_args+=("-DPROJECT_ARCH=$MACOS_ARCH")
+          fi
+
+          cmake_args+=(
+            -DWEBEDYTS_BUILD_DESKTOP=ON
+            -DWEBEDYTS_DOWNLOAD_CEF=ON
+            "-DWEBEDYTS_CEF_VERSION=$CEF_VERSION"
             -DCMAKE_BUILD_TYPE=Release
+          )
+          cmake "${cmake_args[@]}"
 
       - name: Build desktop application
         run: cmake --build build-desktop --config Release --parallel 2
