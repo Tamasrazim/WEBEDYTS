@@ -231,6 +231,11 @@ if(Python3_Interpreter_FOUND)
             "${CMAKE_SOURCE_DIR}/tests/desktop/test_bundle_size.py"
     )
     add_test(
+        NAME webedyts_package_checksum_test
+        COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/tests/desktop/test_package_checksum.py"
+    )
+    add_test(
         NAME webedyts_cef_bootstrap_test
         COMMAND "${CMAKE_COMMAND}"
             "-DCEF_TEST_DOWNLOAD_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}/cef-bootstrap-test"
