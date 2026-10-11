@@ -6,11 +6,11 @@ WEBEDYTS is being developed as a real, installable desktop application for Windo
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Release track:** The planned first public preview is version `0.1.0`, maintained in the root VERSION file. It is not released yet. Recent Linux and macOS CI jobs passed, but the Windows native startup smoke test failed with access violation code `3221225477` (`0xC0000005`). A release tag can create a draft early-access release only after the complete Windows, Linux, and macOS test-and-installer matrix passes. Installers are not signed or notarized yet.
+> **Release track:** The planned first public preview is version `0.1.0`, maintained in the root VERSION file. It is not released yet. The latest [native desktop workflow](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38144332365) passed its Windows x64, Linux x64, and macOS ARM64 CI jobs, including the configured test and package steps. This confirms the build pipeline, not full manual validation of website editing. Installers are not signed or notarized yet.
 
 ## Native build verification
 
-The [three-platform native build](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38127854487) completed successfully on 11 October 2026.
+The [latest three-platform native build](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38144332365) completed successfully on 11 October 2026.
 
 | Target | Staged installed footprint | Package SHA-256 |
 | --- | ---: | --- |

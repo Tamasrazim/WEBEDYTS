@@ -75,6 +75,34 @@ class EditorSourceTests(unittest.TestCase):
             f"JavaScript syntax check failed:\n{result.stdout}\n{result.stderr}",
         )
 
+
+    def test_imported_preview_neutralizes_active_content_and_preserves_export(self) -> None:
+        for expected in (
+            "setAttribute('sandbox', 'allow-same-origin')",
+            "script-src 'none'",
+            "suspendUnsafePreviewMarkup(parsed, Boolean(preserveEditorMetadata))",
+            "restorePreviewSafetyEdits(clone)",
+            "data-webedyts-preview-original-attrs",
+            "data-webedyts-preview-original-node",
+            "meta-refresh",
+            "isEventHandler",
+            "isScriptUrl",
+        ):
+            self.assertIn(expected, self.source)
+
+    def test_motion_settings_and_panel_controls_are_accessible(self) -> None:
+        for expected in (
+            "@media (prefers-reduced-motion: reduce)",
+            "toast.setAttribute('aria-live', 'polite')",
+            'id="toggle-outliner-panel"',
+            'id="toggle-details-panel"',
+            "Show / hide page outliner",
+            "Show / hide details panel",
+        ):
+            self.assertIn(expected, self.source)
+        self.assertNotIn("Minimize concept window", self.source)
+        self.assertNotIn("Maximize concept window", self.source)
+
     def test_imported_element_actions_are_wired(self) -> None:
         for expected in (
             'id="duplicate-element"',

@@ -4,6 +4,8 @@ All notable, user-facing changes to WEBEDYTS are recorded here. Release entries 
 
 ## Unreleased
 
-- Prepare a versioned, cross-platform installer and release workflow.
-- Gate release assembly on passing native startup tests and package checks for Windows, Linux, and macOS.
-- Continue resolving the Windows native startup crash before the first downloadable release.
+- Make panel controls usable from the interface and remove decorative window buttons that did not control the native window.
+- Respect the operating system's reduced-motion preference and announce editor messages to assistive technology.
+- Neutralize imported inline event handlers, script URLs, base elements, and refresh redirects inside the isolated preview while preserving original markup for export.
+- Extend SHA-256 tests with multi-block and million-byte input vectors.
+- Keep the first public release gated on manual editor-workflow validation and platform signing requirements.

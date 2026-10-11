@@ -60,7 +60,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .menu-separator { height: 1px; margin: 5px 4px; background: #414141; }
 .menu-button { padding: 4px 9px; border: 0; border-radius: 2px; background: transparent; color: #c8c8c8; }
 .menu-button:hover, .menu-button.active { background: #383838; }
-.toolbar { gap: 5px; padding: 0 9px; background: #252525; }
+.toolbar { gap: 5px; padding: 0 9px; background: #252525; overflow-x: auto; overflow-y: hidden; }
+.toolbar > :not(.toolbar-spacer) { flex-shrink: 0; }
 .tool-button {
   height: 27px; padding: 0 10px; border: 1px solid transparent;
   border-radius: 3px; background: transparent; color: #c7c7c7;
@@ -259,6 +260,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .export-progress-fill { width: 0; height: 100%; background: #bbb; transition: width .12s linear; }
 .export-progress-numbers { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; color: #999; font-size: 10px; font-variant-numeric: tabular-nums; }
 @keyframes projectLoading { from { transform: translateX(-100%); } to { transform: translateX(270%); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
 .toast {
   position: fixed; left: 50%; bottom: 42px; transform: translateX(-50%);
   padding: 9px 14px; background: #353535; border: 1px solid #555; color: #eee;
@@ -307,13 +316,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   <header class="titlebar">
     <div class="brand-mark">WI</div>
     <span class="brand-name">WEBEDYTS</span>
-    <span class="version">EDITOR CONCEPT</span>
+    <span class="version">DESKTOP EDITOR</span>
     <span class="title-spacer"></span>
     <span class="project-name">Studio Demo / Home Page</span>
     <span class="title-spacer"></span>
-    <button class="window-button" title="Minimize concept window">—</button>
-    <button class="window-button" title="Maximize concept window">□</button>
-    <button class="window-button" title="Close concept window">×</button>
   </header>
   <nav class="menubar" aria-label="Application menu">
     <button class="menu-button" data-menu="File">File</button>
@@ -347,7 +353,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   </div>
   <main class="workspace">
     <aside class="panel outliner" id="outliner">
-      <div class="panel-heading"><span>PAGE OUTLINER</span><span class="panel-spacer"></span><button class="tiny-button" title="Collapse outline">−</button><button class="tiny-button" title="Panel options">⋯</button></div>
+      <div class="panel-heading"><span>PAGE OUTLINER</span><span class="panel-spacer"></span><button class="tiny-button" id="toggle-outliner-panel" type="button" title="Hide page outliner" aria-label="Hide page outliner">−</button></div>
       <div class="outliner-search"><div class="search-field"><span>⌕</span><input id="tree-search" type="text" placeholder="Search page elements"></div></div>
       <div class="tree" id="tree">
         <button class="tree-label tree-root" data-select="page"><span class="chevron">⌄</span><span class="node-icon">▣</span><span class="node-name">Home Page</span><span class="node-type">PAGE</span></button>
@@ -440,7 +446,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </div>
     </section>
     <aside class="panel details" id="details">
-      <div class="panel-heading"><span>DETAILS</span><span class="panel-spacer"></span><button class="tiny-button" title="Panel options">⋯</button></div>
+      <div class="panel-heading"><span>DETAILS</span><span class="panel-spacer"></span><button class="tiny-button" id="toggle-details-panel" type="button" title="Hide details panel" aria-label="Hide details panel">−</button></div>
       <div class="details-content">
         <section class="detail-block">
           <div class="detail-title">SELECTED ELEMENT <span class="panel-spacer"></span><span style="color:#777">⌖</span></div>
@@ -622,6 +628,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     if (existing) existing.remove();
     const toast = document.createElement('div');
     toast.className = 'toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    toast.setAttribute('aria-atomic', 'true');
     toast.textContent = message;
     document.body.appendChild(toast);
     window.setTimeout(function () { toast.remove(); }, 2500);
@@ -1262,6 +1271,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   function serializeProjectPage() {
     if (!importedDoc || !projectMode) return '';
     const clone = importedDoc.documentElement.cloneNode(true);
+    restorePreviewSafetyEdits(clone);
 
     clone.querySelectorAll('[data-webedyts-project-original-attrs]').forEach(function (node) {
       let originalAttrs = {};
@@ -1469,6 +1479,88 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     reader.readAsText(file);
   }
 
+  function suspendUnsafePreviewMarkup(parsed, preserveEditorMetadata) {
+    // Session files may already contain our own preservation markers. For a fresh
+    // import, discard marker-shaped source attributes before adding trusted ones.
+    if (!preserveEditorMetadata) {
+      parsed.querySelectorAll('[data-webedyts-preview-original-attrs]').forEach(function (node) {
+        node.removeAttribute('data-webedyts-preview-original-attrs');
+      });
+      parsed.querySelectorAll('template[data-webedyts-preview-original-node]').forEach(function (node) {
+        node.removeAttribute('data-webedyts-preview-original-node');
+      });
+    }
+
+    // A BASE element can redirect relative links and form targets. Keep it inert
+    // in the preview, then restore it when the user exports the original project.
+    parsed.querySelectorAll('base, meta[http-equiv="refresh"]').forEach(function (node) {
+      const placeholder = parsed.createElement('template');
+      placeholder.setAttribute(
+        'data-webedyts-preview-original-node',
+        node.tagName === 'BASE' ? 'base' : 'meta-refresh'
+      );
+      placeholder.textContent = node.outerHTML;
+      node.replaceWith(placeholder);
+    });
+
+    // Do not rely on CSP alone to neutralize inline event handlers or script URLs.
+    // Their original values are retained as editor metadata for a later export.
+    parsed.querySelectorAll('*').forEach(function (node) {
+      const originalAttrs = {};
+      if (preserveEditorMetadata) {
+        try {
+          Object.assign(originalAttrs, JSON.parse(
+            node.getAttribute('data-webedyts-preview-original-attrs') || '{}'
+          ));
+        } catch (error) {
+          // Ignore damaged session metadata; live attributes are still inspected.
+        }
+      }
+      Array.from(node.attributes).forEach(function (attribute) {
+        const name = attribute.name.toLowerCase();
+        const value = String(attribute.value || '').trim();
+        const isEventHandler = /^on[a-z]/i.test(name);
+        const isScriptUrl = [
+          'href', 'src', 'xlink:href', 'action', 'formaction', 'data', 'poster', 'srcset'
+        ].includes(name) && /^(?:javascript|vbscript)\s*:/i.test(value);
+        if (!isEventHandler && !isScriptUrl) return;
+        originalAttrs[attribute.name] = attribute.value;
+        node.removeAttribute(attribute.name);
+      });
+      if (Object.keys(originalAttrs).length) {
+        node.setAttribute('data-webedyts-preview-original-attrs', JSON.stringify(originalAttrs));
+      }
+    });
+  }
+
+  function restorePreviewSafetyEdits(clone) {
+    clone.querySelectorAll('[data-webedyts-preview-original-attrs]').forEach(function (node) {
+      let originalAttrs = {};
+      try {
+        originalAttrs = JSON.parse(node.getAttribute('data-webedyts-preview-original-attrs') || '{}');
+      } catch (error) {
+        // Damaged metadata should never stop a user's export.
+      }
+      Object.keys(originalAttrs).forEach(function (name) {
+        node.setAttribute(name, String(originalAttrs[name]));
+      });
+      node.removeAttribute('data-webedyts-preview-original-attrs');
+    });
+
+    clone.querySelectorAll('template[data-webedyts-preview-original-node]').forEach(function (node) {
+      const kind = node.getAttribute('data-webedyts-preview-original-node');
+      const holder = document.createElement('template');
+      holder.innerHTML = node.textContent || '';
+      const restored = holder.content.firstElementChild;
+      const isExpectedBase = kind === 'base' && restored && restored.tagName === 'BASE';
+      const isExpectedRefresh = kind === 'meta-refresh' && restored &&
+        restored.tagName === 'META' &&
+        String(restored.getAttribute('http-equiv') || '').toLowerCase() === 'refresh';
+      if (isExpectedBase || isExpectedRefresh) node.replaceWith(restored);
+      else node.removeAttribute('data-webedyts-preview-original-node');
+    });
+  }
+
   function loadImportedMarkup(markup, fileName, selectId, recordHistory, viewportMode, preserveEditorMetadata) {
     if (viewportMode && ['desktop', 'tablet', 'mobile'].includes(viewportMode)) {
       canvas.dataset.mode = viewportMode;
@@ -1478,6 +1570,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     parsed.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style], [data-webedyts-animation-style]').forEach(function (node) {
       node.remove();
     });
+    suspendUnsafePreviewMarkup(parsed, Boolean(preserveEditorMetadata));
 
     const policy = parsed.createElement('meta');
     policy.setAttribute('http-equiv', 'Content-Security-Policy');
@@ -1503,11 +1596,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       '.wi-anim-pop { animation: wiPop .55s cubic-bezier(.2,.8,.2,1) both; } .wi-anim-pulse { animation: wiPulse 1.2s ease-in-out 2; }' +
       '.wi-anim-wiggle { animation: wiWiggle .45s ease-in-out 3; } .wi-anim-blur { animation: wiBlur .8s ease both; }';
     parsed.head.appendChild(animationStyle);
-    parsed.querySelectorAll('base, meta[http-equiv="refresh"]').forEach(function (node) {
-      if (projectMode && node.tagName === 'BASE') return;
-      node.remove();
-    });
-
     const body = parsed.body;
     body.dataset.webedytsEditorNode = 'page';
     body.dataset.webedytsEditorLabel = 'Imported Page';
@@ -2325,6 +2413,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     clone.querySelectorAll('[data-webedyts-animation-style]').forEach(function (node) {
       node.removeAttribute('data-webedyts-animation-style');
     });
+    restorePreviewSafetyEdits(clone);
     clone.querySelectorAll('*').forEach(function (node) {
       Array.from(node.attributes).forEach(function (attribute) {
         if (attribute.name.startsWith('data-webedyts-editor-')) node.removeAttribute(attribute.name);
@@ -3179,6 +3268,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     ],
     View: [
       { label: 'Preview / Exit preview', shortcut: 'Esc', action: 'preview-button' },
+      { label: 'Show / hide page outliner', shortcut: '', action: 'toggle-outliner' },
+      { label: 'Show / hide details panel', shortcut: '', action: 'toggle-details' },
       { label: 'Show / hide content drawer', shortcut: '', action: 'toggle-drawer' },
       { separator: true },
       { label: 'Desktop viewport', shortcut: '', action: 'viewport-desktop' },
@@ -3214,6 +3305,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     workspace.classList.toggle('hide-outliner', outlinerHidden);
     workspace.classList.toggle('hide-details', detailsHidden);
   }
+
+  document.getElementById('toggle-outliner-panel').addEventListener('click', function () {
+    document.getElementById('outliner').classList.add('hidden');
+    updateWorkspacePanelLayout();
+  });
+
+  document.getElementById('toggle-details-panel').addEventListener('click', function () {
+    document.getElementById('details').classList.add('hidden');
+    updateWorkspacePanelLayout();
+  });
 
   function runMenuAction(action) {
     const button = document.getElementById(action);

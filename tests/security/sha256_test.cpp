@@ -2,6 +2,7 @@
 #include "../../src/security/license_guard.hpp"
 
 #include <iostream>
+#include <string>
 
 int main() {
     using webedyts::security::sha256_hex;
@@ -14,6 +15,19 @@ int main() {
         std::cerr << "SHA-256 abc test failed\n";
         return 1;
     }
+
+    if (sha256_hex("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq") !=
+        "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1") {
+        std::cerr << "SHA-256 multi-block test failed\n";
+        return 1;
+    }
+    const std::string million_a(1000000, 'a');
+    if (sha256_hex(million_a) !=
+        "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0") {
+        std::cerr << "SHA-256 million-byte test failed\n";
+        return 1;
+    }
+
     if (!webedyts::security::verify_embedded_license_notice()) {
         std::cerr << "Embedded license SHA-256 mismatch\n";
         return 1;
