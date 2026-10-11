@@ -122,6 +122,11 @@ class EditorSourceTests(unittest.TestCase):
         ):
             self.assertIn(keyframe, self.source)
 
+        self.assertIn(
+            ".asset-card:focus-visible { outline: 2px solid #eee;",
+            self.source,
+        )
+
         # The library should demonstrate the selected motion before it is applied.
         for preset in presets:
             self.assertIn(
