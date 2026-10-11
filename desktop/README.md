@@ -57,8 +57,10 @@ not silently disable the sandbox to get around a packaging problem.
 ### macOS
 
 Build on macOS with Xcode and a matching CEF distribution for Intel x64 or
-Apple Silicon arm64. The bundle includes the Chromium framework and a separate
-helper application for Chromium child processes.
+Apple Silicon arm64. The app has its own Cocoa entry point, implements CEF's
+event-dispatch protocol, and packages the helper-app variants requested by the
+selected CEF runtime. The main app bundle includes the Chromium framework and
+its resources as well as the standalone WEBEDYTS editor.
 
 ```sh
 cmake -S . -B build-desktop -G Xcode \
@@ -100,11 +102,12 @@ matching build directory and configuration for your generator).
 
 The browser shell starts the existing monochrome editor inside CEF. Exported
 HTML, ZIP, and media downloads are routed through the operating system's Save
-As dialog, instead of being silently canceled by Alloy-style CEF. The editor
-continues to disable scripts and external network access in its imported-page
-preview. That preview policy is separate from CEF's OS-level sandbox: release
-packaging must preserve the browser sandbox configuration provided by the
-selected CEF distribution.
+As dialog, instead of being silently canceled by Alloy-style CEF. CEF warnings
+are written to the user's WEBEDYTS log directory rather than the install folder.
+The editor continues to disable scripts and external network access in its
+imported-page preview. That preview policy is separate from CEF's OS-level
+sandbox: release packaging must preserve the browser sandbox configuration
+provided by the selected CEF distribution.
 
 ## Current status
 
