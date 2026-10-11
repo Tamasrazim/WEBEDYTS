@@ -110,6 +110,16 @@ bootstrap's Linux x64 path selection without downloading the SDK. Run the tests
 with `ctest --test-dir build-desktop -C Release --output-on-failure` (use the
 matching build directory and configuration for your generator).
 
+## Build packages on GitHub
+
+The repository also has a manual [Native desktop build workflow](https://github.com/Tamasrazim/WEBEDYTS/actions/workflows/native-desktop-build.yml).
+Open it in GitHub Actions, select **Run workflow**, and keep the pinned CEF
+version unless you deliberately need another supported release. It builds on
+Windows, Linux, and macOS, runs the available tests, enforces the 200 MiB
+runtime check, and uploads one package artifact per operating system for 14
+days. These artifacts are for testing; the workflow does not publish a
+production release or sign/notarize the app.
+
 ## Security boundary
 
 The browser shell starts the existing monochrome editor inside CEF. Exported
