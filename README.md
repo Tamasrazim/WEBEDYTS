@@ -6,17 +6,17 @@ WEBEDYTS is being developed as a real, installable desktop application for Windo
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Release track:** The planned first public preview is version `0.1.0`, maintained in the root VERSION file. It is not released yet. The latest [native desktop workflow](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38147873044) passed its Windows x64, Linux x64, and macOS ARM64 CI jobs, including the configured test and package steps. This confirms the build pipeline, not full manual validation of website editing. Installers are not signed or notarized yet.
+> **Release track:** The planned first public preview is version `0.1.0`, maintained in the root VERSION file. It is not released yet. The latest [native desktop workflow](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38149511431) passed its Windows x64, Linux x64, and macOS ARM64 CI jobs, including the configured test and package steps. This confirms the build pipeline, not full manual validation of website editing. Installers are not signed or notarized yet.
 
 ## Native build verification
 
-The [latest three-platform native build](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38144332365) completed successfully on 11 October 2026.
+The [latest three-platform native build](https://github.com/Tamasrazim/WEBEDYTS/actions/runs/38149511431) completed successfully on 11 October 2026.
 
-| Target | Staged installed footprint | Package SHA-256 |
+| Target | Staged installed footprint | Portable package SHA-256 |
 | --- | ---: | --- |
-| Windows x64 | 404.3 MiB (423,887,033 bytes) | `008826503f3e5331c9eaf6fba9eaaaebef0a54a85d4b127a790649aa3687f63b` |
-| Linux x64 | 1,487.3 MiB (1,559,498,291 bytes) | `f509aef24a9c16ada7b1598f19d9a7caa74b5a236fd2c93f24b4de6fa612ae66` |
-| macOS arm64 | 323.8 MiB (339,511,325 bytes) | `4b03d34e18401a79be16e1d7aaf622e26c1ec833ed7d66f7a15c09ab792dec19` |
+| Windows x64 | 404.2 MiB (423,800,607 bytes) | `377f32d8d1c8b3ed0ef25fb60bc4b383911d9168410224a59860eb3fc840fa82` |
+| Linux x64 | 533.8 MiB (559,733,575 bytes) | `3d63a0f2c02ec54d36aec6a0dccfbcd5490529a50f768d954c9370fba342f28b` |
+| macOS arm64 | 323.8 MiB (339,550,543 bytes) | `a7e2c540ca9b1e82f06c73af89acf7a7d2fccd173670520ed3d8213fc131da86` |
 
 These are installed-footprint measurements of the staged application tree, not the compressed GitHub Actions artifact sizes. The hashes are for the generated platform package files; each package also has a `.sha256` sidecar. The CI artifacts are temporary and retained for 14 days. They are not installers, signed releases, or permanent downloads.
 
