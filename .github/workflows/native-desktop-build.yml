@@ -149,9 +149,47 @@ jobs:
             sudo chmod 0755 "$sandbox"
           fi
 
+      - name: Configure Windows crash diagnostics
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dumpDir = Join-Path $env:RUNNER_TEMP "WEBEDYTS-crash-dumps"
+          New-Item -ItemType Directory -Force -Path $dumpDir | Out-Null
+          $key = "HKCU:\Software\Microsoft\Windows\Windows Error Reporting\LocalDumps\WEBEDYTS.exe"
+          New-Item -Path $key -Force | Out-Null
+          New-ItemProperty -Path $key -Name DumpFolder -Value $dumpDir -PropertyType ExpandString -Force | Out-Null
+          New-ItemProperty -Path $key -Name DumpType -Value 1 -PropertyType DWord -Force | Out-Null
+          New-ItemProperty -Path $key -Name DumpCount -Value 5 -PropertyType DWord -Force | Out-Null
+          "WEBEDYTS_CRASH_DUMP_DIR=$dumpDir" >> $env:GITHUB_ENV
+
       - name: Run tests
         if: runner.os != 'Linux'
         run: ctest --test-dir build-desktop -C Release --output-on-failure
+
+      - name: Collect Windows startup failure details
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $since = (Get-Date).AddMinutes(-20)
+          $events = @(Get-WinEvent -FilterHashtable @{ LogName = "Application"; StartTime = $since } -ErrorAction SilentlyContinue |
+            Where-Object { $_.Id -in 1000, 1001 -and $_.Message -match "WEBEDYTS" } |
+            Select-Object -First 10)
+          if ($events.Count -eq 0) {
+            Write-Host "No matching Windows Application Error / Windows Error Reporting events were found."
+          } else {
+            foreach ($event in $events) {
+              Write-Host "----- Windows event $($event.Id) at $($event.TimeCreated) -----"
+              Write-Host $event.Message
+            }
+          }
+          if ($env:WEBEDYTS_CRASH_DUMP_DIR -and (Test-Path $env:WEBEDYTS_CRASH_DUMP_DIR)) {
+            $dumps = @(Get-ChildItem -Path $env:WEBEDYTS_CRASH_DUMP_DIR -File -ErrorAction SilentlyContinue)
+            if ($dumps.Count -eq 0) {
+              Write-Host "Windows Error Reporting did not produce a local dump."
+            } else {
+              $dumps | Select-Object FullName, Length, LastWriteTime | Format-Table -AutoSize
+            }
+          }
 
       - name: Package the complete runtime
         run: cmake --build build-desktop --config Release --target webedyts_package
