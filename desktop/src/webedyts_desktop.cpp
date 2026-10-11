@@ -34,6 +34,16 @@ class EditorClient final : public CefClient {
   IMPLEMENT_REFCOUNTING(EditorClient);
 };
 
+class EditorBrowserViewDelegate final : public CefBrowserViewDelegate {
+ public:
+  cef_runtime_style_t GetBrowserRuntimeStyle() override {
+    return CEF_RUNTIME_STYLE_ALLOY;
+  }
+
+ private:
+  IMPLEMENT_REFCOUNTING(EditorBrowserViewDelegate);
+};
+
 class EditorWindowDelegate final : public CefWindowDelegate {
  public:
   EditorWindowDelegate(CefRefPtr<CefClient> client, CefString start_url)
@@ -46,7 +56,8 @@ class EditorWindowDelegate final : public CefWindowDelegate {
   void OnWindowCreated(CefRefPtr<CefWindow> window) override {
     CefBrowserSettings browser_settings;
     browser_view_ = CefBrowserView::CreateBrowserView(
-        client_, start_url_, browser_settings, nullptr, nullptr, nullptr);
+        client_, start_url_, browser_settings, nullptr, nullptr,
+        new EditorBrowserViewDelegate());
     if (!browser_view_) {
       CefQuitMessageLoop();
       return;
@@ -60,8 +71,15 @@ class EditorWindowDelegate final : public CefWindowDelegate {
   }
 
   bool CanClose(CefRefPtr<CefWindow> /*window*/) override {
-    const auto browser = browser_view_ ? browser_view_->GetBrowser() : nullptr;
+    if (!browser_view_) {
+      return true;
+    }
+    const auto browser = browser_view_->GetBrowser();
     return !browser || browser->GetHost()->TryCloseBrowser();
+  }
+
+  cef_runtime_style_t GetWindowRuntimeStyle() override {
+    return CEF_RUNTIME_STYLE_ALLOY;
   }
 
   void OnWindowDestroyed(CefRefPtr<CefWindow> /*window*/) override {
@@ -131,6 +149,8 @@ std::string FileUrl(const std::filesystem::path& file_path) {
   std::string escaped = CefURIEncode(PathUtf8(file_path), false).ToString();
   ReplaceAll(escaped, "%2F", "/");
   ReplaceAll(escaped, "%2f", "/");
+  ReplaceAll(escaped, "%3A", ":");
+  ReplaceAll(escaped, "%3a", ":");
 
 #if defined(_WIN32)
   return "file:///" + escaped;
