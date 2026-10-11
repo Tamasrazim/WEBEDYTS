@@ -5,6 +5,7 @@
 #include "include/wrapper/cef_library_loader.h"
 
 extern "C" int webedyts_run_main(int argc, char* argv[]);
+extern "C" void webedyts_request_terminate();
 
 @interface WebedytsApplication : NSApplication <CefAppProtocol> {
  @private
@@ -25,6 +26,11 @@ extern "C" int webedyts_run_main(int argc, char* argv[]);
 - (void)sendEvent:(NSEvent*)event {
   CefScopedSendingEvent sendingEventScoper;
   [super sendEvent:event];
+}
+
+// Route Cocoa quit through CEF so Chromium can close the browser cleanly.
+- (void)terminate:(id)sender {
+  webedyts_request_terminate();
 }
 
 @end
