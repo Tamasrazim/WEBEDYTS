@@ -4,6 +4,9 @@ All notable, user-facing changes to WEBEDYTS are recorded here. Release entries 
 
 ## Unreleased
 
+- Route single-page ZIP exports through the same safe serializer as plain HTML exports, restoring original suspended markup and stripping editor/media metadata before packaging.
+- Add a regression check to keep ZIP and plain HTML export cleanup aligned.
+
 - Expand the animation drawer from six to fifteen searchable presets, including rise, drift, spring, wipe, float, glow, flip, and zoom; wire the same effects into the imported-page preview and the bundled demo, with reduced-motion handling.
 - Animate each preset thumbnail only while its card is hovered or keyboard-focused, so motion can be previewed without keeping the entire library in constant motion.
 - Make panel controls usable from the interface and remove decorative window buttons that did not control the native window.
