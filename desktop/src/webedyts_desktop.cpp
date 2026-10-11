@@ -328,6 +328,12 @@ int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
 
 }  // namespace
 
+#if defined(__APPLE__)
+extern "C" int webedyts_run_main(int argc, char* argv[]) {
+  return RunWebedyts(CefMainArgs(argc, argv), nullptr);
+}
+#endif
+
 #if defined(_WIN32) && defined(CEF_USE_BOOTSTRAP)
 CEF_BOOTSTRAP_EXPORT int RunWinMain(HINSTANCE instance,
                                     LPTSTR /*command_line*/,
@@ -343,7 +349,7 @@ int APIENTRY wWinMain(HINSTANCE instance,
                       int /*show_command*/) {
   return RunWebedyts(CefMainArgs(instance), nullptr);
 }
-#else
+#elif !defined(__APPLE__)
 int main(int argc, char* argv[]) {
   return RunWebedyts(CefMainArgs(argc, argv), nullptr);
 }
