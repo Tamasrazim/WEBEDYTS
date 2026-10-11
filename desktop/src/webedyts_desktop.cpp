@@ -225,14 +225,15 @@ bool GetRuntimePaths(std::filesystem::path& executable_dir,
     user_data = PathFromCefString(data_dir) / "WEBEDYTS";
   }
 
-  if (!std::filesystem::is_regular_file(editor_html)) {
+  std::error_code error;
+  if (!std::filesystem::is_regular_file(editor_html, error) || error) {
     std::cerr << "WEBEDYTS could not find its bundled editor at:\n"
               << PathUtf8(editor_html) << "\n"
               << "The application package is incomplete.\n";
     return false;
   }
 
-  std::error_code error;
+  error.clear();
   std::filesystem::create_directories(user_data / "Cache", error);
   if (error) {
     std::cerr << "WEBEDYTS could not create its browser cache directory: "
