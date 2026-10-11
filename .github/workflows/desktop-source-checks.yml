@@ -10,6 +10,7 @@ on:
       - ".github/workflows/desktop-source-checks.yml"
       - ".github/workflows/native-desktop-build.yml"
       - "prototype/**"
+      - "packaging/**"
   pull_request:
   workflow_dispatch:
 
@@ -36,6 +37,9 @@ jobs:
 
       - name: Check Python bundle tests
         run: python -m unittest discover -s tests/desktop -p "test_*.py" -v
+
+      - name: Check installer script syntax
+        run: bash -n packaging/linux/build-deb.sh packaging/macos/build-dmg.sh
 
       - name: Check CEF platform selection without downloading the SDK
         run: >

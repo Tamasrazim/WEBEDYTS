@@ -11,6 +11,7 @@ on:
       - "src/**"
       - "tests/desktop/**"
       - "tests/security/**"
+      - "packaging/**"
       - ".github/workflows/native-desktop-build.yml"
   workflow_dispatch:
     inputs:
@@ -141,7 +142,48 @@ jobs:
       - name: Package the complete runtime
         run: cmake --build build-desktop --config Release --target webedyts_package
 
-      - name: Upload portable package for inspection
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          WINDOWS_ARCH: ${{ inputs.windows_arch || 'x64' }}
+        run: |
+          choco install innosetup --yes --no-progress
+          $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
+          $compiler = Join-Path $programFilesX86 "Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $compiler)) {
+            throw "Inno Setup 6 was not found after installation."
+          }
+          $stageDir = Join-Path $env:GITHUB_WORKSPACE "build-desktop\desktop\Release"
+          $outputDir = Join-Path $env:GITHUB_WORKSPACE "build-desktop\packages"
+          New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
+          & $compiler "packaging\windows\WEBEDYTS.iss" "/DAppVersion=0.1.0" "/DAppArch=$env:WINDOWS_ARCH" "/DStageDir=$stageDir" "/DOutputDir=$outputDir"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Inno Setup failed with exit code $LASTEXITCODE."
+          }
+          $installer = Join-Path $outputDir "WEBEDYTS-Setup-$env:WINDOWS_ARCH-v0.1.0.exe"
+          if (-not (Test-Path $installer)) {
+            throw "The expected Windows installer was not created: $installer"
+          }
+          python desktop/tools/write-package-checksum.py $installer
+          Get-FileHash -Algorithm SHA256 $installer
+
+      - name: Build Debian / Ubuntu installer
+        if: runner.os == 'Linux'
+        run: |
+          bash packaging/linux/build-deb.sh build-desktop/desktop/Release build-desktop/packages 0.1.0 "$(dpkg --print-architecture)"
+
+      - name: Build macOS drag-install disk image
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          MACOS_ARCH: ${{ inputs.macos_arch || 'auto' }}
+        run: |
+          architecture="$MACOS_ARCH"
+          if [ "$architecture" = "auto" ]; then architecture="$(uname -m)"; fi
+          bash packaging/macos/build-dmg.sh "build-desktop/desktop/Release/WEBEDYTS.app" build-desktop/packages 0.1.0 "$architecture"
+
+      - name: Upload installer and runtime package for inspection
         uses: actions/upload-artifact@v7
         with:
           name: WEBEDYTS-${{ matrix.artifact }}-${{ inputs.cef_version || '154.0.34+g14c5a08+chromium-154.0.8037.98' }}

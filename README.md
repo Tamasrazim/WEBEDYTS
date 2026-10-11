@@ -6,7 +6,7 @@ WEBEDYTS is being developed as a real, installable desktop application for Windo
 
 The goal is to make website redesign accessible to people who think visually rather than in code, while keeping the exported project usable and inspectable by developers.
 
-> **Project status:** The native CEF application now builds and packages successfully on Windows x64, Linux x64, and macOS arm64 in CI. All four native CTest checks passed on each platform, and the packaging checks confirmed the full Chromium runtime and generated a SHA-256 sidecar. This verifies compilation, tests, and packaging—not a hands-on GUI launch or an installable signed release. There is no permanent release download yet.
+> **Project status:** The native CEF application compiles on Windows x64, Linux x64, and macOS arm64 in CI. The latest Linux and macOS test jobs passed, but the Windows native startup smoke test still exits with access violation code `3221225477` (`0xC0000005`) before the editor page reports a successful load. Custom installer packaging is being added, but a Windows installer is withheld until that startup test passes. No signed, notarized, or permanent public release is available yet.
 
 ## Native build verification
 
@@ -20,7 +20,7 @@ The [three-platform native build](https://github.com/Tamasrazim/WEBEDYTS/actions
 
 These are installed-footprint measurements of the staged application tree, not the compressed GitHub Actions artifact sizes. The hashes are for the generated platform package files; each package also has a `.sha256` sidecar. The CI artifacts are temporary and retained for 14 days. They are not installers, signed releases, or permanent downloads.
 
-The build and four automated checks pass on all three targets. The native application has not yet had a manual launch and editor-workflow smoke test on each operating system, so startup and interactive behavior should still be verified before calling it release-ready.
+The earlier runtime-packaging measurements above are retained for reference. In the latest CI run, Linux and macOS native tests passed while the Windows startup smoke test failed with an access violation. CI only creates an installable package for a platform after that platform's native tests pass. Even then, automated startup checks are not a substitute for manual testing of import, element editing, media insertion, preview, export, and uninstall on each OS.
 
 ## The idea
 
