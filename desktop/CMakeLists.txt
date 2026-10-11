@@ -1,13 +1,31 @@
 cmake_minimum_required(VERSION 3.21)
 
+option(WEBEDYTS_DOWNLOAD_CEF
+    "Download the full official CEF distribution when CEF_ROOT is not set" OFF)
+set(WEBEDYTS_CEF_VERSION
+    "154.0.34+g14c5a08+chromium-154.0.8037.98"
+    CACHE STRING "Version of the official CEF standard binary distribution")
+
 if(NOT CEF_ROOT AND DEFINED ENV{CEF_ROOT})
     file(TO_CMAKE_PATH "$ENV{CEF_ROOT}" CEF_ROOT)
 endif()
 
+if(NOT CEF_ROOT AND WEBEDYTS_DOWNLOAD_CEF)
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/DownloadCEF.cmake")
+    webedyts_download_cef(
+        CEF_ROOT
+        "${CMAKE_BINARY_DIR}/_deps/cef"
+        "${WEBEDYTS_CEF_VERSION}"
+    )
+    set(CEF_ROOT "${CEF_ROOT}" CACHE PATH
+        "Path to the extracted CEF binary distribution" FORCE)
+endif()
+
 if(NOT CEF_ROOT OR NOT EXISTS "${CEF_ROOT}/cmake/FindCEF.cmake")
     message(FATAL_ERROR
-        "Set CEF_ROOT to an extracted CEF binary distribution. "
-        "WEBEDYTS does not replace the Chromium runtime with a system web view.")
+        "Set CEF_ROOT to an extracted CEF distribution, or enable "
+        "WEBEDYTS_DOWNLOAD_CEF=ON to fetch the full official runtime. "
+        "WEBEDYTS does not replace Chromium with a system web view.")
 endif()
 
 set(CMAKE_MODULE_PATH "${CEF_ROOT}/cmake" ${CMAKE_MODULE_PATH})
