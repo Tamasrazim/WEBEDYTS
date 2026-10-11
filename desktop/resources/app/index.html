@@ -227,6 +227,21 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .asset-thumb { height: 80px; display: grid; place-items: center; background: #1a1a1a; border-bottom: 1px solid #353535; font-size: 24px; color: #888; }
 .asset-thumb.anim-preview { position: relative; overflow: hidden; }
 .asset-thumb.anim-preview::before { content: ""; width: 28px; height: 28px; border: 1px solid #ccc; border-radius: 3px; transform: rotate(28deg); }
+.asset-card[data-preset="fade"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiFade .7s ease both; }
+.asset-card[data-preset="slide"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiSlide .65s ease both; }
+.asset-card[data-preset="pop"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiPop .55s cubic-bezier(.2,.8,.2,1) both; }
+.asset-card[data-preset="pulse"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiPulse 1.2s ease-in-out 2; }
+.asset-card[data-preset="wiggle"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiWiggle .45s ease-in-out 3; }
+.asset-card[data-preset="blur"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiBlur .8s ease both; }
+.asset-card[data-preset="rise"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiRise .72s cubic-bezier(.2,.7,.2,1) both; }
+.asset-card[data-preset="drift"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiDrift .68s cubic-bezier(.2,.7,.2,1) both; }
+.asset-card[data-preset="rotate"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiRotate .62s cubic-bezier(.2,.8,.2,1) both; }
+.asset-card[data-preset="spring"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiSpring .72s cubic-bezier(.2,.8,.2,1) both; }
+.asset-card[data-preset="wipe"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiWipe .82s cubic-bezier(.3,.7,.2,1) both; }
+.asset-card[data-preset="float"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiFloat 1.7s ease-in-out 2; }
+.asset-card[data-preset="glow"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiGlow 1.25s ease-in-out 2; }
+.asset-card[data-preset="flip"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiFlip .7s cubic-bezier(.2,.8,.2,1) both; }
+.asset-card[data-preset="zoom"]:is(:hover,:focus-visible) .anim-preview::before { animation: wiZoom .62s cubic-bezier(.2,.8,.2,1) both; }
 .asset-label { display: block; padding: 5px 6px 0; font-size: 10px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .asset-meta { display: block; padding: 1px 6px; color: #777; font-size: 9px; }
 .asset-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
