@@ -6,7 +6,8 @@
 function(webedyts_download_cef output_variable download_directory cef_version)
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
         if(CMAKE_GENERATOR_PLATFORM MATCHES "ARM64" OR
-           CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "ARM64")
+           CMAKE_CXX_COMPILER_ARCHITECTURE_ID STREQUAL "ARM64" OR
+           CMAKE_SYSTEM_PROCESSOR MATCHES "^(ARM64|arm64|aarch64)$")
             set(_cef_platform "windowsarm64")
         elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
             set(_cef_platform "windows64")
@@ -60,7 +61,7 @@ function(webedyts_download_cef output_variable download_directory cef_version)
     set(_cef_archive_url
         "https://cef-builds.spotifycdn.com/${_cef_distribution}.tar.bz2")
 
-    if(NOT IS_DIRECTORY "${_cef_root}/cmake")
+    if(NOT EXISTS "${_cef_root}/cmake/FindCEF.cmake")
         file(MAKE_DIRECTORY "${download_directory}")
 
         # CEF versions contain plus signs, which must be escaped in the URL.
