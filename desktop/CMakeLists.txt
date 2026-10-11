@@ -115,11 +115,8 @@ if(OS_MAC)
         )
     endforeach()
 
-    # CEF ships its pak files, ICU data, and locales outside the framework.
+    # macOS CEF resources are bundled inside the framework.
     add_custom_command(TARGET webedyts_desktop POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CEF_RESOURCE_DIR}"
-            "${WEBEDYTS_APP}/Contents/Resources"
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${WEBEDYTS_APP}/Contents/Resources/app"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
