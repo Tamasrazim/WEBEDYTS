@@ -314,6 +314,9 @@ if(Python3_Interpreter_FOUND)
             "--format=${WEBEDYTS_PACKAGE_FORMAT}"
             --
             "${WEBEDYTS_PACKAGE_CONTENTS}"
+        COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/write-package-checksum.py"
+            "${WEBEDYTS_PACKAGE_PATH}"
         WORKING_DIRECTORY "${WEBEDYTS_PACKAGE_WORKING_DIRECTORY}"
         DEPENDS webedyts_desktop
         COMMENT "Checking and packaging the complete WEBEDYTS runtime"
