@@ -214,6 +214,8 @@ This is a build foundation, **not a compiled or tested release**. The CEF binari
 
 Build the native target with `-DWEBEDYTS_BUILD_DESKTOP=ON`. You can provide an extracted `CEF_ROOT`, or opt in to downloading the full official CEF SDK with `-DWEBEDYTS_DOWNLOAD_CEF=ON`. The default version and override are documented in [the desktop build guide](desktop/README.md). This source has not yet been compiled against an installed CEF distribution or tested on each target operating system. Keep that distinction clear until packaged builds are exercised.
 
+To attempt a complete build on all three operating systems, open the [Native desktop build workflow](https://github.com/Tamasrazim/WEBEDYTS/actions/workflows/native-desktop-build.yml) in GitHub Actions and select **Run workflow**. It downloads the full CEF distribution, builds the native shell, runs checks, and uploads the resulting runtime packages as temporary artifacts. This workflow has been added but has **not yet been executed**, so those packages are not verified downloads or a release.
+
 ## Important technical boundaries
 
 A visual editor must be transparent about what it can and cannot safely edit.
