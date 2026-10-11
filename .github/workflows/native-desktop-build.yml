@@ -127,6 +127,10 @@ jobs:
       - name: Build desktop application
         run: cmake --build build-desktop --config Release --parallel 2
 
+      - name: Remove non-distributable ELF debug sections
+        if: runner.os == 'Linux'
+        run: python desktop/tools/strip-elf-debug-symbols.py build-desktop/desktop/Release
+
       # Includes a real launch of the bundled Chromium-based editor.
       - name: Prepare Linux Chromium sandbox for startup test
         if: runner.os == 'Linux'

@@ -117,6 +117,10 @@ class EditorSourceTests(unittest.TestCase):
             "document.getElementById('duplicate-element').addEventListener",
             "document.getElementById('delete-element').addEventListener",
             "node === importedDoc.body",
+            "function elementsIncludingRoot(root, selector)",
+            "function serializeImportedPage()",
+            "runPreviewSafetyRegressionTests()",
+            "WEBEDYTS_PREVIEW_TEST_RESULT:",
         ):
             self.assertIn(expected, self.source)
 

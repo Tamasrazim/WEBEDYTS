@@ -1273,7 +1273,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const clone = importedDoc.documentElement.cloneNode(true);
     restorePreviewSafetyEdits(clone);
 
-    clone.querySelectorAll('[data-webedyts-project-original-attrs]').forEach(function (node) {
+    elementsIncludingRoot(clone, '[data-webedyts-project-original-attrs]').forEach(function (node) {
       let originalAttrs = {};
       try { originalAttrs = JSON.parse(node.getAttribute('data-webedyts-project-original-attrs') || '{}'); } catch (error) { /* Ignore malformed editor metadata. */ }
       Object.keys(originalAttrs).forEach(function (name) {
@@ -1281,11 +1281,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       });
       node.removeAttribute('data-webedyts-project-original-attrs');
     });
-    clone.querySelectorAll('[data-webedyts-project-original-style]').forEach(function (node) {
+    elementsIncludingRoot(clone, '[data-webedyts-project-original-style]').forEach(function (node) {
       node.textContent = node.getAttribute('data-webedyts-project-original-style') || '';
       node.removeAttribute('data-webedyts-project-original-style');
     });
-    clone.querySelectorAll('template[data-webedyts-project-original-node="meta-refresh"]').forEach(function (node) {
+    elementsIncludingRoot(clone, 'template[data-webedyts-project-original-node="meta-refresh"]').forEach(function (node) {
       const holder = document.createElement('template');
       holder.innerHTML = node.textContent || '';
       const restored = holder.content.firstElementChild;
@@ -1293,13 +1293,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         node.replaceWith(restored);
       }
     });
-    clone.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
+    elementsIncludingRoot(clone, '[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
       node.remove();
     });
-    clone.querySelectorAll('[data-webedyts-animation-style]').forEach(function (node) {
+    elementsIncludingRoot(clone, '[data-webedyts-animation-style]').forEach(function (node) {
       node.removeAttribute('data-webedyts-animation-style');
     });
-    clone.querySelectorAll('*').forEach(function (node) {
+    elementsIncludingRoot(clone, '*').forEach(function (node) {
       Array.from(node.attributes).forEach(function (attribute) {
         if (attribute.name.startsWith('data-webedyts-editor-') ||
             attribute.name.startsWith('data-webedyts-project-') ||
@@ -1479,14 +1479,24 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     reader.readAsText(file);
   }
 
+  function elementsIncludingRoot(root, selector) {
+    if (!root) return [];
+    const matches = [];
+    if (root.nodeType === 1 && root.matches(selector)) matches.push(root);
+    if (typeof root.querySelectorAll === 'function') {
+      matches.push.apply(matches, Array.from(root.querySelectorAll(selector)));
+    }
+    return matches;
+  }
+
   function suspendUnsafePreviewMarkup(parsed, preserveEditorMetadata) {
     // Session files may already contain our own preservation markers. For a fresh
     // import, discard marker-shaped source attributes before adding trusted ones.
     if (!preserveEditorMetadata) {
-      parsed.querySelectorAll('[data-webedyts-preview-original-attrs]').forEach(function (node) {
+      elementsIncludingRoot(parsed.documentElement, '[data-webedyts-preview-original-attrs]').forEach(function (node) {
         node.removeAttribute('data-webedyts-preview-original-attrs');
       });
-      parsed.querySelectorAll('template[data-webedyts-preview-original-node]').forEach(function (node) {
+      elementsIncludingRoot(parsed.documentElement, 'template[data-webedyts-preview-original-node]').forEach(function (node) {
         node.removeAttribute('data-webedyts-preview-original-node');
       });
     }
@@ -1505,7 +1515,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     // Do not rely on CSP alone to neutralize inline event handlers or script URLs.
     // Their original values are retained as editor metadata for a later export.
-    parsed.querySelectorAll('*').forEach(function (node) {
+    elementsIncludingRoot(parsed.documentElement, '*').forEach(function (node) {
       const originalAttrs = {};
       if (preserveEditorMetadata) {
         try {
@@ -1534,7 +1544,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 
   function restorePreviewSafetyEdits(clone) {
-    clone.querySelectorAll('[data-webedyts-preview-original-attrs]').forEach(function (node) {
+    elementsIncludingRoot(clone, '[data-webedyts-preview-original-attrs]').forEach(function (node) {
       let originalAttrs = {};
       try {
         originalAttrs = JSON.parse(node.getAttribute('data-webedyts-preview-original-attrs') || '{}');
@@ -1547,7 +1557,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       node.removeAttribute('data-webedyts-preview-original-attrs');
     });
 
-    clone.querySelectorAll('template[data-webedyts-preview-original-node]').forEach(function (node) {
+    elementsIncludingRoot(clone, 'template[data-webedyts-preview-original-node]').forEach(function (node) {
       const kind = node.getAttribute('data-webedyts-preview-original-node');
       const holder = document.createElement('template');
       holder.innerHTML = node.textContent || '';
@@ -2400,27 +2410,32 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   });
   document.getElementById('insert-media').addEventListener('click', insertSelectedMedia);
 
+  function serializeImportedPage() {
+    if (!importedDoc) return '';
+    const clone = importedDoc.documentElement.cloneNode(true);
+    elementsIncludingRoot(clone, '[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
+      node.remove();
+    });
+    elementsIncludingRoot(clone, '[data-webedyts-animation-style]').forEach(function (node) {
+      node.removeAttribute('data-webedyts-animation-style');
+    });
+    restorePreviewSafetyEdits(clone);
+    elementsIncludingRoot(clone, '*').forEach(function (node) {
+      Array.from(node.attributes).forEach(function (attribute) {
+        if (attribute.name.startsWith('data-webedyts-editor-')) node.removeAttribute(attribute.name);
+      });
+    });
+    const doctype = importedDoc.doctype ? '<!DOCTYPE ' + importedDoc.doctype.name + '>' : '<!DOCTYPE html>';
+    return doctype + '\n' + clone.outerHTML;
+  }
+
   function exportImportedPage() {
     if (!importedDoc) return;
     if (projectMode || hasInsertedMediaAssets()) {
       exportImportedProject();
       return;
     }
-    const clone = importedDoc.documentElement.cloneNode(true);
-    clone.querySelectorAll('[data-webedyts-preview-policy], [data-webedyts-editor-style]').forEach(function (node) {
-      node.remove();
-    });
-    clone.querySelectorAll('[data-webedyts-animation-style]').forEach(function (node) {
-      node.removeAttribute('data-webedyts-animation-style');
-    });
-    restorePreviewSafetyEdits(clone);
-    clone.querySelectorAll('*').forEach(function (node) {
-      Array.from(node.attributes).forEach(function (attribute) {
-        if (attribute.name.startsWith('data-webedyts-editor-')) node.removeAttribute(attribute.name);
-      });
-    });
-    const doctype = importedDoc.doctype ? '<!DOCTYPE ' + importedDoc.doctype.name + '>' : '<!DOCTYPE html>';
-    const output = doctype + '\n' + clone.outerHTML;
+    const output = serializeImportedPage();
     const blob = new Blob([output], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -2428,7 +2443,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const baseName = importedFileName.replace(/\.(html?|HTML?)$/, '');
     link.download = baseName + '.webedyts.html';
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     savedSnapshot = makeSnapshot();
     saveState.textContent = 'All changes saved';
     saveState.style.color = '';
@@ -3396,10 +3411,83 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     if (!event.target.closest('.menubar')) closeMenuPopover();
   });
 
+  async function runPreviewSafetyRegressionTests() {
+    const failures = [];
+    const check = function (condition, message) {
+      if (!condition) failures.push(message);
+    };
+    try {
+      const fixture = '<!doctype html><html onload="window.__webedytsUnsafeRoot = true">' +
+        '<head><title>Stage A regression</title><base href="https://example.invalid/">' +
+        '<meta http-equiv="refresh" content="0;url=https://example.invalid/redirect"></head>' +
+        '<body><main><h1 id="workflow-heading" onclick="window.__webedytsUnsafeClick = true">Original heading</h1>' +
+        '<a id="unsafe-link" href="javascript:window.__webedytsUnsafeLink = true">Unsafe link</a>' +
+        '<script>window.__webedytsInjectedScript = true</script></main></body></html>';
+      loadImportedMarkup(fixture, 'stage-a-validation.html', 'page', true);
+      const deadline = Date.now() + 10000;
+      while ((!importedDoc || !importedDoc.getElementById('workflow-heading')) && Date.now() < deadline) {
+        await new Promise(function (resolve) { window.setTimeout(resolve, 25); });
+      }
+      check(Boolean(importedDoc && importedDoc.documentElement), 'Imported document did not load in the editor.');
+      if (!importedDoc || !importedDoc.documentElement) {
+        throw new Error('Cannot continue editor workflow checks because the imported preview did not load.');
+      }
+      check(!importedDoc.documentElement.hasAttribute('onload'), 'The imported HTML root kept its inline event handler.');
+      check(!importedDoc.getElementById('workflow-heading').hasAttribute('onclick'), 'An imported element kept an inline event handler.');
+      check(!importedDoc.getElementById('unsafe-link').hasAttribute('href'), 'A javascript: link remained active in the preview.');
+      check(!importedDoc.querySelector('base'), 'A BASE element remained active in the preview.');
+      check(!importedDoc.querySelector('meta[http-equiv="refresh"]'), 'A refresh redirect remained active in the preview.');
+      check(typeof importedDoc.defaultView.__webedytsInjectedScript === 'undefined', 'An imported script ran in the preview.');
+
+      const heading = importedDoc.getElementById('workflow-heading');
+      selectNode(heading.dataset.webedytsEditorNode);
+      propertyText.value = 'Edited heading';
+      propertyText.dispatchEvent(new Event('input', { bubbles: true }));
+      propertyText.dispatchEvent(new Event('change', { bubbles: true }));
+      check(heading.textContent === 'Edited heading', 'The text property failed to update the selected element.');
+      const widthField = document.getElementById('prop-width');
+      widthField.value = '240';
+      widthField.dispatchEvent(new Event('change', { bubbles: true }));
+      check(heading.style.width === '240px', 'The width property failed to update the selected element.');
+
+      document.getElementById('duplicate-element').click();
+      check(importedDoc.querySelectorAll('h1').length === 2, 'Duplicate did not create a second heading.');
+      check(Boolean(importedDoc.getElementById('workflow-heading-copy')), 'Duplicate did not make the element ID unique.');
+      document.getElementById('delete-element').click();
+      check(importedDoc.querySelectorAll('h1').length === 1, 'Delete did not remove the selected duplicate.');
+
+      document.getElementById('undo').click();
+      const undoDeadline = Date.now() + 10000;
+      while ((!importedDoc || importedDoc.querySelectorAll('h1').length !== 2) && Date.now() < undoDeadline) {
+        await new Promise(function (resolve) { window.setTimeout(resolve, 25); });
+      }
+      check(Boolean(importedDoc && importedDoc.querySelectorAll('h1').length === 2), 'Undo did not restore the deleted duplicate.');
+
+      const output = serializeImportedPage();
+      const exported = new DOMParser().parseFromString(output, 'text/html');
+      check(exported.documentElement.getAttribute('onload') === 'window.__webedytsUnsafeRoot = true', 'Export failed to restore the original HTML-root attribute.');
+      check(exported.getElementById('workflow-heading').getAttribute('onclick') === 'window.__webedytsUnsafeClick = true', 'Export failed to restore an original inline event handler.');
+      check(exported.getElementById('unsafe-link').getAttribute('href') === 'javascript:window.__webedytsUnsafeLink = true', 'Export failed to restore the original link URL.');
+      check(Boolean(exported.querySelector('base[href="https://example.invalid/"]')), 'Export failed to restore the original BASE element.');
+      check(Boolean(exported.querySelector('meta[http-equiv="refresh"]')), 'Export failed to restore the original refresh metadata.');
+      check(elementsIncludingRoot(exported.documentElement, '[data-webedyts-preview-original-attrs]').length === 0, 'Export leaked internal preview attribute metadata.');
+      check(elementsIncludingRoot(exported.documentElement, '[data-webedyts-preview-original-node]').length === 0, 'Export leaked internal preview node placeholders.');
+      check(elementsIncludingRoot(exported.documentElement, '[data-webedyts-editor-node], [data-webedyts-editor-label], [data-webedyts-editor-kind], [data-webedyts-editor-text-editable]').length === 0, 'Export leaked internal editor node metadata.');
+      check(!exported.querySelector('[data-webedyts-preview-policy]'), 'Export leaked the preview-only Content Security Policy.');
+    } catch (error) {
+      failures.push(error && error.stack ? error.stack : String(error));
+    }
+    document.title = 'WEBEDYTS_PREVIEW_TEST_RESULT:' + (failures.length ? 'FAIL:' + failures.join(' | ') : 'PASS');
+  }
+
   selectNode(selectedId);
   saveHistory();
   updateMediaActions();
   savedSnapshot = makeSnapshot();
+
+  if (new URLSearchParams(window.location.search).get('webedyts_preview_safety_test') === '1') {
+    runPreviewSafetyRegressionTests();
+  }
 }());
 </script>
 </body>

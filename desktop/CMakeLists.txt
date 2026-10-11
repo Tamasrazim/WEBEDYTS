@@ -278,6 +278,17 @@ if(Python3_Interpreter_FOUND)
     )
     set_tests_properties(webedyts_native_startup_test PROPERTIES TIMEOUT 60)
 
+    add_test(
+        NAME webedyts_editor_workflow_test
+        COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/tests/desktop/run_native_startup_test.py"
+            --executable "${WEBEDYTS_SMOKE_EXECUTABLE}"
+            --working-directory "${CEF_TARGET_OUT_DIR}"
+            --timeout-seconds 45
+            --preview-safety-test
+    )
+    set_tests_properties(webedyts_editor_workflow_test PROPERTIES TIMEOUT 60)
+
     if(OS_MAC)
         set(WEBEDYTS_BUNDLE_TO_CHECK "${WEBEDYTS_APP}")
     else()

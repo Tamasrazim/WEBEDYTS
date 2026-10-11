@@ -84,6 +84,11 @@ def main() -> int:
     parser.add_argument("--executable", type=Path, required=True)
     parser.add_argument("--working-directory", type=Path, required=True)
     parser.add_argument("--timeout-seconds", type=int, default=45)
+    parser.add_argument(
+        "--preview-safety-test",
+        action="store_true",
+        help="Run the bundled editor's browser-level import/edit/export regression suite.",
+    )
     args = parser.parse_args()
 
     executable = args.executable.resolve()
@@ -107,6 +112,8 @@ def main() -> int:
             f"--webedyts-smoke-test-marker={marker}",
             "--disable-gpu",
         ]
+        if args.preview_safety_test:
+            command.append("--webedyts-preview-safety-test")
         process = subprocess.Popen(
             command,
             cwd=working_directory,
@@ -155,10 +162,12 @@ def main() -> int:
                 result[key] = value
 
         if result.get("status") != "loaded":
-            print(
-                f"WEBEDYTS did not load the expected bundled editor page: {result}",
-                file=sys.stderr,
+            description = (
+                "The bundled editor preview-safety regression suite failed."
+                if args.preview_safety_test and result.get("status") == "test_failed"
+                else "WEBEDYTS did not load the expected bundled editor page."
             )
+            print(f"{description} Result: {result}", file=sys.stderr)
             return 1
         if not result.get("url", "").startswith("file://"):
             print(

@@ -124,6 +124,10 @@ class EditorClient final : public CefClient,
     }
 
     TraceStartup("main-frame load completed");
+    if (IsPreviewSafetyTest()) {
+      TraceStartup("waiting for in-browser preview safety regression result");
+      return;
+    }
     const std::string loaded_url = frame->GetURL().ToString();
     const std::string expected_url = expected_url_.ToString();
     FinishSmokeTest(
@@ -170,6 +174,14 @@ class EditorClient final : public CefClient,
       window_->SetTitle(safe_title);
     }
 #endif
+    const std::string changed_title = safe_title.ToString();
+    const std::string test_prefix = "WEBEDYTS_PREVIEW_TEST_RESULT:";
+    if (IsPreviewSafetyTest() && changed_title.rfind(test_prefix, 0) == 0) {
+      const bool passed = changed_title == "WEBEDYTS_PREVIEW_TEST_RESULT:PASS";
+      TraceStartup(passed ? "in-browser preview regression test passed"
+                          : "in-browser preview regression test failed");
+      FinishSmokeTest(passed ? "loaded" : "test_failed", expected_url_.ToString());
+    }
   }
 
   bool OnBeforeDownload(
@@ -207,6 +219,11 @@ class EditorClient final : public CefClient,
   }
 
  private:
+  bool IsPreviewSafetyTest() const {
+    return smoke_test_ &&
+        expected_url_.ToString().find("webedyts_preview_safety_test=1") != std::string::npos;
+  }
+
   bool IsSmokeTestMainFrame(CefRefPtr<CefFrame> frame) const {
     return smoke_test_ && frame && frame->IsMain();
   }
@@ -441,7 +458,12 @@ class WebedytsApp final : public CefApp,
   explicit WebedytsApp(CefString start_url) : start_url_(start_url) {}
 
   void SetStartUrl(const CefString& start_url) {
-    start_url_ = start_url;
+    std::string url = start_url.ToString();
+    if (preview_safety_test_) {
+      url += (url.find('?') == std::string::npos ? "?" : "&");
+      url += "webedyts_preview_safety_test=1";
+    }
+    start_url_ = url;
   }
 
   CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override {
@@ -458,6 +480,7 @@ class WebedytsApp final : public CefApp,
       command_line->AppendSwitch("use-views");
 #endif
       smoke_test_ = command_line->HasSwitch("webedyts-smoke-test");
+      preview_safety_test_ = command_line->HasSwitch("webedyts-preview-safety-test");
       if (smoke_test_) {
         smoke_marker_path_ =
             command_line->GetSwitchValue("webedyts-smoke-test-marker");
@@ -493,6 +516,7 @@ class WebedytsApp final : public CefApp,
  private:
   CefString start_url_;
   bool smoke_test_ = false;
+  bool preview_safety_test_ = false;
   CefString smoke_marker_path_;
 
   IMPLEMENT_REFCOUNTING(WebedytsApp);
