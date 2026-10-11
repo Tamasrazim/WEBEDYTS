@@ -20,11 +20,12 @@ wrapper library, native Chromium runtime, resource packs, locale data, and its
 licence notice. Keep it outside the WEBEDYTS source repository.
 
 The simplest path is to let CMake download the official **standard**
-distribution. The current default is pinned to CEF
+distribution from the [CEF downloads page](https://cef-builds.spotifycdn.com/index.html).
+The current default is pinned to CEF
 `154.0.34+g14c5a08+chromium-154.0.8037.98`; the version can be overridden
-with `WEBEDYTS_CEF_VERSION`. Configure with
-`-DWEBEDYTS_DOWNLOAD_CEF=ON`. The bootstrap retrieves the official `.sha1`
-file, checks the downloaded archive, and extracts it under
+with `WEBEDYTS_CEF_VERSION`, and each version uses a separate download folder.
+Configure with `-DWEBEDYTS_DOWNLOAD_CEF=ON`. The bootstrap retrieves the
+official `.sha1` file, checks the downloaded archive, and extracts it under
 `build-desktop/_deps/cef`. This is a substantial download and requires extra
 disk space for both the archive and extracted build SDK.
 
