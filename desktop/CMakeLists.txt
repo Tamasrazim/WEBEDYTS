@@ -255,6 +255,26 @@ if(Python3_Interpreter_FOUND)
     )
 
     if(OS_MAC)
+        set(WEBEDYTS_SMOKE_EXECUTABLE
+            "${WEBEDYTS_APP}/Contents/MacOS/WEBEDYTS")
+    elseif(OS_WINDOWS AND USE_SANDBOX)
+        set(WEBEDYTS_SMOKE_EXECUTABLE
+            "${CEF_TARGET_OUT_DIR}/WEBEDYTS.exe")
+    else()
+        set(WEBEDYTS_SMOKE_EXECUTABLE "$<TARGET_FILE:webedyts_desktop>")
+    endif()
+
+    add_test(
+        NAME webedyts_native_startup_test
+        COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_SOURCE_DIR}/tests/desktop/run_native_startup_test.py"
+            --executable "${WEBEDYTS_SMOKE_EXECUTABLE}"
+            --working-directory "${CEF_TARGET_OUT_DIR}"
+            --timeout-seconds 45
+    )
+    set_tests_properties(webedyts_native_startup_test PROPERTIES TIMEOUT 60)
+
+    if(OS_MAC)
         set(WEBEDYTS_BUNDLE_TO_CHECK "${WEBEDYTS_APP}")
     else()
         set(WEBEDYTS_BUNDLE_TO_CHECK "${CEF_TARGET_OUT_DIR}")
