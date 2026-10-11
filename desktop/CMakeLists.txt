@@ -61,38 +61,65 @@ if(OS_MAC)
         ${CEF_STANDARD_LIBS}
     )
 
-    set(HELPER_EXECUTABLE_NAME "WEBEDYTS Helper")
-    set(HELPER_PRODUCT_NAME "WEBEDYTS Helper")
-    set(HELPER_BUNDLE_IDENTIFIER "com.tamasrazim.webedyts.helper")
-    configure_file(
-        resources/mac/helper-Info.plist.in
-        "${CMAKE_CURRENT_BINARY_DIR}/helper-Info.plist"
-        @ONLY
-    )
-
-    add_executable(webedyts_helper MACOSX_BUNDLE src/helper_mac.mm)
-    SET_EXECUTABLE_TARGET_PROPERTIES(webedyts_helper)
-    set_target_properties(webedyts_helper PROPERTIES
-        OUTPUT_NAME "WEBEDYTS Helper"
-        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_BINARY_DIR}/helper-Info.plist"
-        MACOSX_BUNDLE_BUNDLE_NAME "WEBEDYTS Helper"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "${HELPER_BUNDLE_IDENTIFIER}"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "${WEBEDYTS_VERSION}"
-        MACOSX_BUNDLE_BUNDLE_VERSION "${WEBEDYTS_VERSION}"
-    )
-    target_link_libraries(webedyts_helper PRIVATE
-        libcef_dll_wrapper
-        ${CEF_STANDARD_LIBS}
-    )
-
     set(WEBEDYTS_APP "${CEF_TARGET_OUT_DIR}/WEBEDYTS.app")
     COPY_MAC_FRAMEWORK(webedyts_desktop "${CEF_BINARY_DIR}" "${WEBEDYTS_APP}")
-    add_dependencies(webedyts_desktop webedyts_helper)
 
+    # Build the helper bundles expected by this CEF distribution.
+    foreach(_suffix_list ${CEF_HELPER_APP_SUFFIXES})
+        string(REPLACE ":" ";" _helper_suffixes "${_suffix_list}")
+        list(GET _helper_suffixes 0 _helper_name_suffix)
+        list(GET _helper_suffixes 1 _helper_target_suffix)
+        list(GET _helper_suffixes 2 _helper_plist_suffix)
+
+        set(_helper_target "webedyts_helper${_helper_target_suffix}")
+        set(_helper_output_name "WEBEDYTS Helper${_helper_name_suffix}")
+        set(_helper_bundle_identifier
+            "${BUNDLE_IDENTIFIER}.helper${_helper_plist_suffix}")
+        set(_helper_plist
+            "${CMAKE_CURRENT_BINARY_DIR}/helper-Info${_helper_target_suffix}.plist")
+
+        file(READ
+            "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/helper-Info.plist.in"
+            _helper_plist_contents)
+        string(REPLACE "@HELPER_EXECUTABLE_NAME@" "${_helper_output_name}"
+            _helper_plist_contents "${_helper_plist_contents}")
+        string(REPLACE "@HELPER_PRODUCT_NAME@" "${_helper_output_name}"
+            _helper_plist_contents "${_helper_plist_contents}")
+        string(REPLACE "@HELPER_BUNDLE_IDENTIFIER@" "${_helper_bundle_identifier}"
+            _helper_plist_contents "${_helper_plist_contents}")
+        string(REPLACE "@WEBEDYTS_VERSION@" "${WEBEDYTS_VERSION}"
+            _helper_plist_contents "${_helper_plist_contents}")
+        file(WRITE "${_helper_plist}" "${_helper_plist_contents}")
+
+        add_executable(${_helper_target} MACOSX_BUNDLE src/helper_mac.mm)
+        SET_EXECUTABLE_TARGET_PROPERTIES(${_helper_target})
+        set_target_properties(${_helper_target} PROPERTIES
+            OUTPUT_NAME "${_helper_output_name}"
+            MACOSX_BUNDLE_INFO_PLIST "${_helper_plist}"
+            MACOSX_BUNDLE_BUNDLE_NAME "${_helper_output_name}"
+            MACOSX_BUNDLE_GUI_IDENTIFIER "${_helper_bundle_identifier}"
+            MACOSX_BUNDLE_SHORT_VERSION_STRING "${WEBEDYTS_VERSION}"
+            MACOSX_BUNDLE_BUNDLE_VERSION "${WEBEDYTS_VERSION}"
+        )
+        target_link_libraries(${_helper_target} PRIVATE
+            libcef_dll_wrapper
+            ${CEF_STANDARD_LIBS}
+        )
+        add_dependencies(webedyts_desktop "${_helper_target}")
+
+        add_custom_command(TARGET webedyts_desktop POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CEF_TARGET_OUT_DIR}/${_helper_output_name}.app"
+                "${WEBEDYTS_APP}/Contents/Frameworks/${_helper_output_name}.app"
+            VERBATIM
+        )
+    endforeach()
+
+    # CEF ships its pak files, ICU data, and locales outside the framework.
     add_custom_command(TARGET webedyts_desktop POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CEF_TARGET_OUT_DIR}/WEBEDYTS Helper.app"
-            "${WEBEDYTS_APP}/Contents/Frameworks/WEBEDYTS Helper.app"
+            "${CEF_RESOURCE_DIR}"
+            "${WEBEDYTS_APP}/Contents/Resources"
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${WEBEDYTS_APP}/Contents/Resources/app"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
