@@ -105,7 +105,8 @@ The output is written to `build-desktop/packages/`. Windows uses ZIP; Linux
 and macOS use gzip-compressed tar archives. The archive contains the actual
 staged app and browser runtime—no placeholder files. A focused test suite covers
 complete Linux/Windows-style output, missing runtime files, macOS framework
-resources, symlink size accounting, and the package size requirement. Run it
+resources, symlink size accounting, the package size requirement, and the CEF
+bootstrap's Linux x64 path selection without downloading the SDK. Run the tests
 with `ctest --test-dir build-desktop -C Release --output-on-failure` (use the
 matching build directory and configuration for your generator).
 
