@@ -60,9 +60,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes \
-            libasound2t64 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 \
-            libcairo2 libdrm2 libgbm1 libgtk-3-0 libnss3 libpango-1.0-0 \
-            libx11-xcb1 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 \
+            build-essential libasound2-dev libasound2t64 \
+            libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 \
+            libcairo2 libdrm2 libgbm1 libgtk-3-0 libgtk-3-dev \
+            libnss3 libnss3-dev libpango-1.0-0 libx11-dev libx11-xcb1 \
+            libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 \
             libxrandr2 libxshmfence1
 
       - name: Configure the full CEF runtime
