@@ -15,7 +15,7 @@ function(assert_cef_platform system_name processor pointer_size project_arch exp
     set(CMAKE_SIZEOF_VOID_P "${pointer_size}")
     set(PROJECT_ARCH "${project_arch}")
 
-    set(_test_version "webedyts-test-version")
+    set(_test_version "1.2.3+gabc123+chromium-4.5.6.7")
     set(_expected_root
         "${CEF_TEST_DOWNLOAD_DIRECTORY}/cef_binary_${_test_version}_${expected_platform}")
     file(REMOVE_RECURSE "${_expected_root}")
