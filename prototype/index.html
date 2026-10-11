@@ -2911,6 +2911,61 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     document.getElementById('delete-element').disabled = !enabled;
   }
 
+  function makeDuplicateElementIdsUnique(root) {
+    const nodes = [root].concat(Array.from(root.querySelectorAll('*')));
+    const existingIds = new Set(
+      Array.from(importedDoc.querySelectorAll('[id]'))
+        .filter(function (node) { return !root.contains(node); })
+        .map(function (node) { return node.id; })
+    );
+    const idMap = new Map();
+
+    nodes.forEach(function (node) {
+      if (!node.id) return;
+      const originalId = node.id;
+      const base = originalId + '-copy';
+      let candidate = base;
+      let suffix = 2;
+      while (existingIds.has(candidate)) {
+        candidate = base + '-' + suffix;
+        suffix += 1;
+      }
+      existingIds.add(candidate);
+      if (!idMap.has(originalId)) idMap.set(originalId, candidate);
+      node.id = candidate;
+    });
+
+    const idReferenceAttributes = [
+      'for', 'form', 'list', 'headers', 'aria-labelledby', 'aria-describedby',
+      'aria-controls', 'aria-owns', 'aria-flowto', 'aria-details', 'aria-errormessage'
+    ];
+    nodes.forEach(function (node) {
+      idReferenceAttributes.forEach(function (name) {
+        const value = node.getAttribute(name);
+        if (!value) return;
+        const updated = value.split(/\\s+/).map(function (part) {
+          return idMap.get(part) || part;
+        }).join(' ');
+        if (updated !== value) node.setAttribute(name, updated);
+      });
+
+      ['href', 'xlink:href'].forEach(function (name) {
+        const value = node.getAttribute(name);
+        if (!value || value.charAt(0) !== '#') return;
+        const replacement = idMap.get(value.slice(1));
+        if (replacement) node.setAttribute(name, '#' + replacement);
+      });
+
+      const inlineStyle = node.getAttribute('style');
+      if (inlineStyle) {
+        const updatedStyle = inlineStyle.replace(/url\\(#([^)]+)\\)/g, function (match, id) {
+          return idMap.has(id) ? 'url(#' + idMap.get(id) + ')' : match;
+        });
+        if (updatedStyle !== inlineStyle) node.setAttribute('style', updatedStyle);
+      }
+    });
+  }
+
   function duplicateSelectedElement() {
     const original = getNode(selectedId);
     if (!canEditSelectedStructure() || !original || !original.parentNode) {
@@ -2924,6 +2979,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       node.removeAttribute('data-webedyts-editor-selected');
     });
     original.parentNode.insertBefore(duplicate, original.nextSibling);
+    makeDuplicateElementIdsUnique(duplicate);
 
     const editorNodes = [];
     if (duplicate.hasAttribute('data-webedyts-editor-node')) editorNodes.push(duplicate);
@@ -3122,7 +3178,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       return;
     }
     if (action === 'show-shortcuts') {
-      showMessage('Ctrl/Cmd+S save · Ctrl/Cmd+O open HTML · Ctrl/Cmd+Z undo · Ctrl/Cmd+Shift+Z redo · Esc exits preview');
+      showMessage('Ctrl/Cmd+D duplicate · Delete remove · Ctrl/Cmd+Z undo · Ctrl/Cmd+Shift+Z redo · Ctrl/Cmd+S save · Esc exits preview');
     } else if (action === 'show-limits') {
       showMessage('Open a local HTML file or website folder to edit it. Scripts and external network resources stay disabled in the isolated preview. Framework builds and backend routes are not emulated.');
     }
