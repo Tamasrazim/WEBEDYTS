@@ -15,13 +15,23 @@ just to make the package appear smaller.
 
 ## Build requirements
 
-A matching CEF binary distribution is required. It contains the headers,
-wrapper library, native runtime, resource packs, locale data, and its licence
-notice. Keep it outside the WEBEDYTS source repository.
+A full CEF binary distribution is required. It contains the headers,
+wrapper library, native Chromium runtime, resource packs, locale data, and its
+licence notice. Keep it outside the WEBEDYTS source repository.
 
-Download a CEF binary distribution for the target operating system and
-architecture from the [official CEF project](https://github.com/chromiumembedded/cef).
-Extract it and pass the extracted directory as `CEF_ROOT`.
+The simplest path is to let CMake download the official **standard**
+distribution. The current default is pinned to CEF
+`154.0.34+g14c5a08+chromium-154.0.8037.98`; the version can be overridden
+with `WEBEDYTS_CEF_VERSION`. Configure with
+`-DWEBEDYTS_DOWNLOAD_CEF=ON`. The bootstrap retrieves the official `.sha1`
+file, checks the downloaded archive, and extracts it under
+`build-desktop/_deps/cef`. This is a substantial download and requires extra
+disk space for both the archive and extracted build SDK.
+
+To supply a distribution you have already downloaded, omit
+`WEBEDYTS_DOWNLOAD_CEF` and pass its extracted directory through `CEF_ROOT`.
+Both paths bundle the real Chromium runtime; WEBEDYTS never substitutes the
+system browser or inflates the app with dummy data.
 
 ### Windows
 
@@ -29,7 +39,7 @@ Use a supported Visual Studio C++ toolchain and a CEF distribution that matches
 the selected target architecture.
 
 ```powershell
-cmake -S . -B build-desktop -DWEBEDYTS_BUILD_DESKTOP=ON -DCEF_ROOT="C:/SDKs/cef_binary"
+cmake -S . -B build-desktop -DWEBEDYTS_BUILD_DESKTOP=ON -DWEBEDYTS_DOWNLOAD_CEF=ON
 cmake --build build-desktop --config Release
 ```
 
@@ -44,7 +54,7 @@ the runtime libraries required by the selected CEF distribution.
 ```sh
 cmake -S . -B build-desktop \
   -DWEBEDYTS_BUILD_DESKTOP=ON \
-  -DCEF_ROOT="$HOME/SDKs/cef_binary" \
+  -DWEBEDYTS_DOWNLOAD_CEF=ON \
   -DCMAKE_BUILD_TYPE=Release
 cmake --build build-desktop --parallel
 cmake --build build-desktop --target webedyts_report_bundle_size
@@ -65,7 +75,7 @@ its resources as well as the standalone WEBEDYTS editor.
 ```sh
 cmake -S . -B build-desktop -G Xcode \
   -DWEBEDYTS_BUILD_DESKTOP=ON \
-  -DCEF_ROOT="$HOME/SDKs/cef_binary" \
+  -DWEBEDYTS_DOWNLOAD_CEF=ON \
   -DPROJECT_ARCH=arm64
 cmake --build build-desktop --config Release
 ```
