@@ -26,6 +26,8 @@
 
 namespace {
 
+CefRefPtr<CefWindow> g_main_window;
+
 class EditorClient final : public CefClient,
                           public CefDownloadHandler,
                           public CefDisplayHandler {
@@ -141,6 +143,7 @@ class EditorWindowDelegate final : public CefWindowDelegate {
   void OnWindowDestroyed(CefRefPtr<CefWindow> /*window*/) override {
     client_->SetWindow(nullptr);
     browser_view_ = nullptr;
+    g_main_window = nullptr;
     CefQuitMessageLoop();
   }
 
@@ -171,9 +174,9 @@ class WebedytsApp final : public CefApp,
   }
 
   void OnContextInitialized() override {
-    const auto window = CefWindow::CreateTopLevelWindow(
+    g_main_window = CefWindow::CreateTopLevelWindow(
         new EditorWindowDelegate(new EditorClient(), start_url_));
-    if (!window) {
+    if (!g_main_window) {
       std::cerr << "WEBEDYTS could not create its desktop window.\\n";
       CefQuitMessageLoop();
     }
@@ -321,6 +324,14 @@ int RunWebedyts(const CefMainArgs& main_args, void* sandbox_info) {
 }  // namespace
 
 #if defined(__APPLE__)
+extern "C" void webedyts_request_terminate() {
+  if (g_main_window) {
+    g_main_window->Close();
+  } else {
+    CefQuitMessageLoop();
+  }
+}
+
 extern "C" int webedyts_run_main(int argc, char* argv[]) {
   return RunWebedyts(CefMainArgs(argc, argv), nullptr);
 }
