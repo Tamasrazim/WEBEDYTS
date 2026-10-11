@@ -77,17 +77,23 @@ WEBEDYTS editor, and CEF's licence file. It does not download the runtime at
 application startup. A shipped app should run locally with its bundled runtime.
 
 Use `desktop/tools/report-bundle-size.py` to inspect the staged package. The
-check verifies key Chromium files and reports the installed footprint; a
-small output folder is a sign that required runtime files may be missing. It
-does not generate extra data to hit a target size.
+check verifies key Chromium files, resource packs, ICU data, locale data, and
+reports the installed footprint; a small output folder is a sign that required
+runtime files may be missing. It does not generate extra data to hit a target
+size. A focused test suite covers complete Linux/Windows-style output, missing
+runtime files, macOS framework resources, and symlink size accounting. Run it
+with `ctest --test-dir build-desktop -C Release --output-on-failure` (use the
+matching build directory and configuration for your generator).
 
 ## Security boundary
 
-The browser shell starts the existing monochrome editor inside CEF. The
-editor continues to disable scripts and external network access in its
-imported-page preview. That preview policy is separate from CEF's OS-level
-sandbox: release packaging must preserve the browser sandbox configuration
-provided by the selected CEF distribution.
+The browser shell starts the existing monochrome editor inside CEF. Exported
+HTML, ZIP, and media downloads are routed through the operating system's Save
+As dialog, instead of being silently canceled by Alloy-style CEF. The editor
+continues to disable scripts and external network access in its imported-page
+preview. That preview policy is separate from CEF's OS-level sandbox: release
+packaging must preserve the browser sandbox configuration provided by the
+selected CEF distribution.
 
 ## Current status
 
