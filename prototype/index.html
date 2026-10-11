@@ -2943,7 +2943,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       idReferenceAttributes.forEach(function (name) {
         const value = node.getAttribute(name);
         if (!value) return;
-        const updated = value.split(/\\s+/).map(function (part) {
+        const updated = value.split(/\s+/).map(function (part) {
           return idMap.get(part) || part;
         }).join(' ');
         if (updated !== value) node.setAttribute(name, updated);
@@ -2958,7 +2958,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
       const inlineStyle = node.getAttribute('style');
       if (inlineStyle) {
-        const updatedStyle = inlineStyle.replace(/url\\(#([^)]+)\\)/g, function (match, id) {
+        const updatedStyle = inlineStyle.replace(/url\(#([^)]+)\)/g, function (match, id) {
           return idMap.has(id) ? 'url(#' + idMap.get(id) + ')' : match;
         });
         if (updatedStyle !== inlineStyle) node.setAttribute('style', updatedStyle);
