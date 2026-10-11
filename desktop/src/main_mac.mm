@@ -2,6 +2,7 @@
 
 #include "include/cef_application_mac.h"
 #include "include/wrapper/cef_helpers.h"
+#include "include/wrapper/cef_library_loader.h"
 
 extern "C" int webedyts_run_main(int argc, char* argv[]);
 
@@ -29,6 +30,11 @@ extern "C" int webedyts_run_main(int argc, char* argv[]);
 @end
 
 int main(int argc, char* argv[]) {
+  CefScopedLibraryLoader library_loader;
+  if (!library_loader.LoadInMain()) {
+    return 1;
+  }
+
   @autoreleasepool {
     [WebedytsApplication sharedApplication];
     return webedyts_run_main(argc, argv);
