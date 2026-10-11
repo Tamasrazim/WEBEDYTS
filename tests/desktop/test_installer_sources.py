@@ -53,7 +53,7 @@ class InstallerSourceTests(unittest.TestCase):
             "hdiutil create",
             "hdiutil verify",
             "write-package-checksum.py",
-            "not notarized yet",
+            "not Developer ID signed or notarized yet",
         ):
             self.assertIn(expected, source)
 
