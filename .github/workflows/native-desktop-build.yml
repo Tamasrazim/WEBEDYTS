@@ -1,6 +1,11 @@
 name: Native desktop build
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/native-desktop-build.yml"
   workflow_dispatch:
     inputs:
       cef_version:
@@ -32,6 +37,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Run WEBEDYTS native build' }}
     name: Build ${{ matrix.os }} with bundled Chromium
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -70,9 +76,9 @@ jobs:
       - name: Configure the full CEF runtime
         shell: bash
         env:
-          CEF_VERSION: ${{ inputs.cef_version }}
-          WINDOWS_ARCH: ${{ inputs.windows_arch }}
-          MACOS_ARCH: ${{ inputs.macos_arch }}
+          CEF_VERSION: ${{ inputs.cef_version || '154.0.34+g14c5a08+chromium-154.0.8037.98' }}
+          WINDOWS_ARCH: ${{ inputs.windows_arch || 'x64' }}
+          MACOS_ARCH: ${{ inputs.macos_arch || 'auto' }}
         run: |
           cmake_args=(-S . -B build-desktop)
 
@@ -110,7 +116,7 @@ jobs:
       - name: Upload portable package for inspection
         uses: actions/upload-artifact@v4
         with:
-          name: WEBEDYTS-${{ matrix.artifact }}-${{ inputs.cef_version }}
+          name: WEBEDYTS-${{ matrix.artifact }}-${{ inputs.cef_version || '154.0.34+g14c5a08+chromium-154.0.8037.98' }}
           path: build-desktop/packages/*
           if-no-files-found: error
           retention-days: 14
