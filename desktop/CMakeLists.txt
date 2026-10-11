@@ -187,7 +187,7 @@ if(EXISTS "${CEF_ROOT}/LICENSE.txt")
         VERBATIM
     )
 else()
-    message(WARNING
+    message(FATAL_ERROR
         "CEF LICENSE.txt was not found at the CEF root. Check the selected "
         "binary distribution and include its notices before redistribution.")
 endif()
@@ -237,6 +237,29 @@ if(Python3_Interpreter_FOUND)
         set(WEBEDYTS_PACKAGE_WORKING_DIRECTORY "${CEF_TARGET_OUT_DIR}")
     endif()
 
+    if(OS_WINDOWS)
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            set(WEBEDYTS_PACKAGE_ARCH "x64")
+        else()
+            set(WEBEDYTS_PACKAGE_ARCH "x86")
+        endif()
+        if(CMAKE_GENERATOR_PLATFORM MATCHES "ARM64")
+            set(WEBEDYTS_PACKAGE_ARCH "arm64")
+        endif()
+    elseif(OS_MAC)
+        if(PROJECT_ARCH)
+            set(WEBEDYTS_PACKAGE_ARCH "${PROJECT_ARCH}")
+        elseif(CMAKE_OSX_ARCHITECTURES)
+            set(WEBEDYTS_PACKAGE_ARCH "${CMAKE_OSX_ARCHITECTURES}")
+        else()
+            set(WEBEDYTS_PACKAGE_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
+        endif()
+    else()
+        set(WEBEDYTS_PACKAGE_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+
+    string(REPLACE "${CMAKE_SYSTEM_PROCESSOR}" "${WEBEDYTS_PACKAGE_ARCH}"
+        WEBEDYTS_PACKAGE_NAME "${WEBEDYTS_PACKAGE_NAME}")
     set(WEBEDYTS_PACKAGE_PATH
         "${CMAKE_BINARY_DIR}/packages/${WEBEDYTS_PACKAGE_NAME}")
     add_custom_target(webedyts_package
