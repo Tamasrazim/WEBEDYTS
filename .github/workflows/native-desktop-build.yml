@@ -39,11 +39,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             artifact: linux
-          - os: windows-latest
+          - os: windows-2022
             artifact: windows
-          - os: macos-latest
+          - os: macos-15
             artifact: macos
 
     steps:
@@ -81,8 +81,11 @@ jobs:
               arm64) cmake_args+=(-A ARM64) ;;
               *) echo "Unsupported Windows architecture: $WINDOWS_ARCH" >&2; exit 2 ;;
             esac
-          elif [[ "$RUNNER_OS" == "macOS" && "$MACOS_ARCH" != "auto" ]]; then
-            cmake_args+=("-DPROJECT_ARCH=$MACOS_ARCH")
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            cmake_args+=(-G Xcode)
+            if [[ "$MACOS_ARCH" != "auto" ]]; then
+              cmake_args+=("-DPROJECT_ARCH=$MACOS_ARCH")
+            fi
           fi
 
           cmake_args+=(
