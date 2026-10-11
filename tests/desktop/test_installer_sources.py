@@ -70,7 +70,7 @@ class InstallerSourceTests(unittest.TestCase):
     def test_windows_shell_uses_native_window_path(self) -> None:
         source = (ROOT / "desktop" / "src" / "webedyts_desktop.cpp").read_text(encoding="utf-8")
         self.assertIn("CefBrowserHost::CreateBrowser", source)
-        self.assertIn("window_info.SetAsChild(window, client_rect)", source)
+        self.assertIn("window_info.SetAsChild(window, browser_rect)", source)
         self.assertIn("case WM_SIZE:", source)
         self.assertIn("case WM_CLOSE:", source)
         self.assertIn("#if !defined(_WIN32)\n      // CEF Views powers the Linux/macOS shell.", source)
