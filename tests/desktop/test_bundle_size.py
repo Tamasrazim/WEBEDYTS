@@ -29,7 +29,12 @@ def touch(path: Path, contents: bytes = b"runtime file") -> None:
 
 
 class BundleSizeTests(unittest.TestCase):
-    def run_checker(self, bundle: Path, minimum_mib: int = 0) -> tuple[int, str, str]:
+    def run_checker(
+        self,
+        bundle: Path,
+        minimum_mib: int = 0,
+        fail_below_minimum: bool = False,
+    ) -> tuple[int, str, str]:
         old_argv = sys.argv
         stdout = io.StringIO()
         stderr = io.StringIO()
@@ -39,6 +44,8 @@ class BundleSizeTests(unittest.TestCase):
             "--minimum-mib",
             str(minimum_mib),
         ]
+        if fail_below_minimum:
+            sys.argv.append("--fail-below-minimum")
         try:
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 result = checker.main()
@@ -76,6 +83,23 @@ class BundleSizeTests(unittest.TestCase):
             self.assertIn("Required app or Chromium files are missing:", error)
             self.assertIn("resources.pak", error)
             self.assertEqual(output, "")
+
+    def test_package_can_reject_a_runtime_below_the_minimum(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            touch(root / "resources" / "app" / "index.html", b"<html></html>")
+            touch(root / "resources.pak")
+            touch(root / "icudtl.dat")
+            touch(root / "locales" / "en-US.pak")
+            touch(root / "libcef.so")
+
+            result, output, error = self.run_checker(
+                root, minimum_mib=1, fail_below_minimum=True
+            )
+
+            self.assertEqual(result, 3)
+            self.assertIn("Installed footprint:", output)
+            self.assertIn("below 1 MiB", error)
 
     def test_macos_checks_framework_resources(self) -> None:
         with tempfile.TemporaryDirectory(suffix=".app") as temp:
