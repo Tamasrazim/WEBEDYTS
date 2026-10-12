@@ -3603,6 +3603,23 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       widthField.dispatchEvent(new Event('change', { bubbles: true }));
       check(heading.style.width === '240px', 'The width property failed to update the selected element.');
 
+      // The timing fields must change the real animation and remain in exported HTML.
+      propertyAnimation.value = 'rise';
+      document.getElementById('apply-animation').click();
+      const durationField = document.getElementById('prop-animation-duration');
+      durationField.value = '950';
+      durationField.dispatchEvent(new Event('change', { bubbles: true }));
+      const delayField = document.getElementById('prop-animation-delay');
+      delayField.value = '150';
+      delayField.dispatchEvent(new Event('change', { bubbles: true }));
+      const easingField = document.getElementById('prop-animation-easing');
+      easingField.value = 'ease-in-out';
+      easingField.dispatchEvent(new Event('change', { bubbles: true }));
+      check(heading.classList.contains('wi-anim-rise'), 'The animation preset failed to apply.');
+      check(heading.style.animationDuration === '950ms', 'The custom animation duration was not applied.');
+      check(heading.style.animationDelay === '150ms', 'The custom animation delay was not applied.');
+      check(heading.style.animationTimingFunction === 'ease-in-out', 'The custom animation timing was not applied.');
+
       document.getElementById('duplicate-element').click();
       check(importedDoc.querySelectorAll('h1').length === 2, 'Duplicate did not create a second heading.');
       check(Boolean(importedDoc.getElementById('workflow-heading-copy')), 'Duplicate did not make the element ID unique.');
@@ -3623,6 +3640,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const exported = new DOMParser().parseFromString(output, 'text/html');
       check(exported.documentElement.getAttribute('onload') === 'window.__webedytsUnsafeRoot = true', 'Export failed to restore the original HTML-root attribute.');
       check(exported.getElementById('workflow-heading').getAttribute('onclick') === 'window.__webedytsUnsafeClick = true', 'Export failed to restore an original inline event handler.');
+      check(exported.getElementById('workflow-heading').style.animationDuration === '950ms', 'Export lost the custom animation duration.');
+      check(exported.getElementById('workflow-heading').style.animationDelay === '150ms', 'Export lost the custom animation delay.');
+      check(exported.getElementById('workflow-heading').style.animationTimingFunction === 'ease-in-out', 'Export lost the custom animation timing.');
       check(exported.getElementById('unsafe-link').getAttribute('href') === 'javascript:window.__webedytsUnsafeLink = true', 'Export failed to restore the original link URL.');
       check(Boolean(exported.querySelector('base[href="https://example.invalid/"]')), 'Export failed to restore the original BASE element.');
       check(Boolean(exported.querySelector('meta[http-equiv="refresh"]')), 'Export failed to restore the original refresh metadata.');
