@@ -52,6 +52,13 @@ class EditorSourceTests(unittest.TestCase):
         )
         self.assertEqual(duplicates, [], f"Duplicate HTML IDs: {duplicates}")
 
+    def test_website_folder_import_deduplicates_case_insensitive_paths(self) -> None:
+        # Asset resolution lowercases paths, so folder intake must use that same collision rule.
+        self.assertIn("const pathKey = path.toLowerCase();", self.source)
+        self.assertIn("if (seen.has(pathKey))", self.source)
+        self.assertIn("duplicatePathCount += 1;", self.source)
+        self.assertIn("differed only by letter case.", self.source)
+
     def test_inline_editor_script_passes_node_syntax_check(self) -> None:
         scripts = re.findall(
             r"<script\b[^>]*>([\s\S]*?)</script\s*>",
