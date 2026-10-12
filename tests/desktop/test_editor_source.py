@@ -83,9 +83,7 @@ class EditorSourceTests(unittest.TestCase):
             encoding="utf-8"
         )
         setter_start = native_source.index("void SetStartUrl(const CefString& start_url)")
-        setter_end = native_source.index(
-            "CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler()", setter_start
-        )
+        setter_end = native_source.index("CefString GetLaunchUrl() const", setter_start)
         setter = native_source[setter_start:setter_end]
         self.assertIn("start_url_ = start_url;", setter)
         self.assertNotIn("webedyts_preview_safety_test=1", setter)
