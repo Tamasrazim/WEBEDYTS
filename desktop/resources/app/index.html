@@ -532,6 +532,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <section class="detail-block">
           <div class="detail-title">ANIMATION</div>
           <div class="field-row"><label for="prop-animation">Preset</label><select id="prop-animation"><option value="">None</option><option value="fade">Fade up</option><option value="slide">Slide in</option><option value="pop">Soft pop</option><option value="pulse">Pulse</option><option value="wiggle">Wiggle</option><option value="blur">Blur reveal</option><option value="rise">Rise</option><option value="drift">Drift in</option><option value="rotate">Soft rotate</option><option value="spring">Spring</option><option value="wipe">Wipe reveal</option><option value="float">Float</option><option value="glow">Soft glow</option><option value="flip">Flip in</option><option value="zoom">Zoom reveal</option></select></div>
+          <div class="field-row"><label for="prop-animation-duration">Duration (ms)</label><input id="prop-animation-duration" type="number" min="1" max="10000" step="50" placeholder="Preset"></div>
+          <div class="field-row"><label for="prop-animation-delay">Delay (ms)</label><input id="prop-animation-delay" type="number" min="0" max="30000" step="50" placeholder="None"></div>
+          <div class="field-row"><label for="prop-animation-easing">Timing</label><select id="prop-animation-easing"><option value="">Preset default</option><option value="linear">Linear</option><option value="ease">Ease</option><option value="ease-in">Ease in</option><option value="ease-out">Ease out</option><option value="ease-in-out">Ease in-out</option><option value="cubic-bezier(0.2, 0.8, 0.2, 1)">Smooth</option><option value="steps(5, end)">Steps</option></select></div>
+          <div class="field-help">Fine-tune how long an animation runs, when it starts, and how it moves. Blank values keep the preset's defaults.</div>
           <div style="padding:6px 10px 10px"><button class="tool-button primary" id="apply-animation" style="width:100%">Apply animation</button></div>
         </section>
         <div class="property-note">Changes stay in this session until exported. Imported website previews run without scripts or external network access. Test exported files in the target browser before deployment.</div>
@@ -788,6 +792,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     propertyColor.value = rgbToHex(getComputedStyle(node).color);
     propertyBackground.value = rgbToHex(getComputedStyle(node).backgroundColor);
     propertyAnimation.value = importedMode ? (node.dataset.webedytsEditorAnimation || '') : (node.dataset.animation || '');
+    document.getElementById('prop-animation-duration').value = cssTimeToMilliseconds(node.style.animationDuration);
+    document.getElementById('prop-animation-delay').value = cssTimeToMilliseconds(node.style.animationDelay);
+    document.getElementById('prop-animation-easing').value = node.style.animationTimingFunction || '';
     document.getElementById('selection-status').textContent = 'Selected: ' + nodeLabel(node);
     document.getElementById('canvas-status').textContent = importedMode ?
       (projectMode ? 'Website project · ' + projectEntryPath + ' · Scripts disabled in preview' : 'Imported HTML · Scripts and external assets are blocked in preview') :
@@ -935,7 +942,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         opacity: node.style.opacity || '',
         color: node.style.color || '',
         background: node.style.backgroundColor || '',
-        animation: node.dataset.animation || ''
+        animation: node.dataset.animation || '',
+        animationDuration: node.style.animationDuration || '',
+        animationDelay: node.style.animationDelay || '',
+        animationTimingFunction: node.style.animationTimingFunction || ''
       });
     });
     return JSON.stringify({
@@ -981,6 +991,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       node.style.color = saved.color || '';
       node.style.backgroundColor = saved.background || '';
       setAnimation(node, saved.animation || '', false);
+      // Older session files do not have timing fields, so leave their presets unchanged.
+      node.style.animationDuration = saved.animationDuration || '';
+      node.style.animationDelay = saved.animationDelay || '';
+      node.style.animationTimingFunction = saved.animationTimingFunction || '';
     });
     if (data.viewport) {
       canvas.dataset.mode = data.viewport;
@@ -989,6 +1003,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     selectNode(getNode(data.selected) ? data.selected : 'hero-title');
     if (recordHistory) saveHistory();
     markChanged();
+  }
+
+  // Convert an existing inline CSS time to milliseconds for the numeric controls.
+  function cssTimeToMilliseconds(value) {
+    const time = String(value || '').trim().toLowerCase();
+    if (!time) return '';
+    const number = Number.parseFloat(time);
+    if (!Number.isFinite(number)) return '';
+    if (time.endsWith('ms')) return String(Math.round(number));
+    if (time.endsWith('s')) return String(Math.round(number * 1000));
+    return '';
   }
 
   function setAnimation(node, animation, record) {
@@ -2646,6 +2671,30 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   bindNumericStyle('prop-padding', 'padding', 'px');
   bindNumericStyle('prop-opacity', 'opacity', '');
 
+  // Store timing controls as inline styles so imported-page exports keep them.
+  function bindAnimationMilliseconds(id, property, minimum, maximum) {
+    const field = document.getElementById(id);
+    field.addEventListener('change', function () {
+      const node = getNode(selectedId);
+      if (!node) return;
+      const raw = field.value.trim();
+      if (!raw) {
+        node.style[property] = '';
+      } else {
+        const number = Number(raw);
+        if (!Number.isFinite(number)) return;
+        const milliseconds = Math.max(minimum, Math.min(maximum, Math.round(number)));
+        field.value = String(milliseconds);
+        node.style[property] = milliseconds + 'ms';
+      }
+      saveHistory();
+      markChanged();
+    });
+  }
+
+  bindAnimationMilliseconds('prop-animation-duration', 'animationDuration', 1, 10000);
+  bindAnimationMilliseconds('prop-animation-delay', 'animationDelay', 0, 30000);
+
   function bindSelectStyle(id, property) {
     const field = document.getElementById(id);
     field.addEventListener('change', function () {
@@ -2661,6 +2710,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   bindSelectStyle('prop-position', 'position');
   bindSelectStyle('prop-font-weight', 'fontWeight');
   bindSelectStyle('prop-text-align', 'textAlign');
+  bindSelectStyle('prop-animation-easing', 'animationTimingFunction');
 
   propertyColor.addEventListener('input', function () {
     const node = getNode(selectedId);
