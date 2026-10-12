@@ -113,6 +113,8 @@ class EditorSourceTests(unittest.TestCase):
             "restorePreviewSafetyEdits(clone)",
             "data-webedyts-preview-original-attrs",
             "data-webedyts-preview-original-node",
+            "placeholder.content.textContent = node.outerHTML;",
+            "holder.innerHTML = node.content.textContent || '';",
             "meta-refresh",
             "isEventHandler",
             "isScriptUrl",
