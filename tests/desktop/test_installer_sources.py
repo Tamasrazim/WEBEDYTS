@@ -1,6 +1,7 @@
+#!/usr/bin/env python3
+
 # Checks the installer definitions and the files they are expected to include.
 
-#!/usr/bin/env python3
 """Source-level checks for WEBEDYTS platform installer definitions."""
 
 from __future__ import annotations
