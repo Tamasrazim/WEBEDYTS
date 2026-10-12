@@ -170,6 +170,19 @@ class EditorSourceTests(unittest.TestCase):
                 self.source,
             )
 
+    def test_animation_drawer_gives_clear_selection_feedback(self) -> None:
+        # A clicked preset should remain visibly selected after its animation is applied.
+        start = self.source.index("function bindPresetCards()")
+        end = self.source.index("document.getElementById('toggle-drawer')", start)
+        binding = self.source[start:end]
+        self.assertIn("propertyAnimation.value = animation;", binding)
+        self.assertIn("item.classList.toggle('selected', item === card);", binding)
+
+        card_start = self.source.index("function makePresetCard(item)")
+        card_end = self.source.index("function makeSimpleCard(item)", card_start)
+        card_builder = self.source[card_start:card_end]
+        self.assertIn("button.type = 'button';", card_builder)
+
     def test_zip_export_uses_canonical_serializer(self) -> None:
         start = self.source.index("async function exportImportedProject()")
         end = self.source.index("document.getElementById('import-media')", start)
