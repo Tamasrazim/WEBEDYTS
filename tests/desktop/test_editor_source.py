@@ -87,8 +87,14 @@ class EditorSourceTests(unittest.TestCase):
         setter = native_source[setter_start:setter_end]
         self.assertIn("start_url_ = start_url;", setter)
         self.assertNotIn("webedyts_preview_safety_test=1", setter)
-        self.assertIn("CefString GetLaunchUrl() const", setter)
-        self.assertIn("webedyts_preview_safety_test=1", setter)
+
+        launch_start = native_source.index("CefString GetLaunchUrl() const")
+        launch_end = native_source.index(
+            "CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler()", launch_start
+        )
+        launch_method = native_source[launch_start:launch_end]
+        self.assertIn("preview_safety_test_", launch_method)
+        self.assertIn("webedyts_preview_safety_test=1", launch_method)
 
         context_start = native_source.index("void OnContextInitialized() override")
         context_end = native_source.index("\n private:", context_start)
