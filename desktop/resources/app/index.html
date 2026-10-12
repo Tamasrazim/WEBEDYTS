@@ -793,6 +793,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       (projectMode ? 'Website project · ' + projectEntryPath + ' · Scripts disabled in preview' : 'Imported HTML · Scripts and external assets are blocked in preview') :
       canvas.offsetWidth + ' × ' + canvas.offsetHeight + ' · Selection enabled';
     updateElementActionButtons();
+    syncPresetSelection();
+  }
+
+  // Match the drawer highlight to the animation on the selected element.
+  function syncPresetSelection() {
+    const node = getNode(selectedId);
+    const animation = node ?
+      (importedMode ? node.dataset.webedytsEditorAnimation : node.dataset.animation) : '';
+    drawerContent.querySelectorAll('[data-preset]').forEach(function (card) {
+      card.classList.toggle('selected', Boolean(animation) && card.dataset.preset === animation);
+    });
   }
 
   function saveHistory() {
@@ -2805,6 +2816,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         ];
         cards.forEach(function (item) { drawerContent.appendChild(makePresetCard(item)); });
         bindPresetCards();
+        syncPresetSelection();
       } else if (mode === 'components') {
         presetSearch.placeholder = 'Search components…';
         drawerContent.innerHTML = '';
@@ -3269,13 +3281,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         propertyAnimation.value = animation;
 
         // Keep the selected card visible when users switch drawer tabs.
-        drawerContent.querySelectorAll('[data-preset]').forEach(function (item) {
-          item.classList.toggle('selected', item === card);
-        });
-
         const node = getNode(selectedId);
         if (node) {
           setAnimation(node, animation, true);
+          syncPresetSelection();
           showMessage(card.querySelector('.asset-label').textContent + ' applied.');
         }
       });
