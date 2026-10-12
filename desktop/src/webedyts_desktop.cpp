@@ -16,6 +16,7 @@
 #include "include/cef_command_line.h"
 #include "include/cef_path_util.h"
 #include "include/cef_parser.h"
+#include "include/cef_task.h"
 #include "include/views/cef_browser_view.h"
 #include "include/views/cef_fill_layout.h"
 #include "include/views/cef_window.h"
@@ -71,6 +72,22 @@ void TraceStartup(const std::string& message) {
 #endif
   trace << "[" << process_id << "] " << message << "\n";
 }
+
+// Close the macOS window after the current CEF browser callback has returned.
+class CloseSmokeTestWindowTask final : public CefTask {
+ public:
+  void Execute() override {
+    TraceStartup("closing macOS smoke-test window after browser callback");
+    if (g_main_window) {
+      g_main_window->Close();
+    } else {
+      CefQuitMessageLoop();
+    }
+  }
+
+ private:
+  IMPLEMENT_REFCOUNTING(CloseSmokeTestWindowTask);
+};
 
 class EditorClient final : public CefClient,
                           public CefDownloadHandler,
@@ -255,7 +272,13 @@ class EditorClient final : public CefClient,
     }
 #else
     if (g_main_window) {
+#if defined(__APPLE__)
+      // Closing inside OnTitleChange can re-enter CEF window teardown and leave
+      // CefShutdown waiting forever after the test result has already been written.
+      CefPostTask(TID_UI, new CloseSmokeTestWindowTask());
+#else
       g_main_window->Close();
+#endif
     } else {
       CefQuitMessageLoop();
     }
