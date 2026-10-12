@@ -136,6 +136,13 @@ class EditorSourceTests(unittest.TestCase):
             "meta-refresh",
             "isEventHandler",
             "isScriptUrl",
+            "prop-animation-duration",
+            "prop-animation-delay",
+            "prop-animation-easing",
+            "cssTimeToMilliseconds",
+            "bindAnimationMilliseconds('prop-animation-duration', 'animationDuration', 1, 10000)",
+            "bindAnimationMilliseconds('prop-animation-delay', 'animationDelay', 0, 30000)",
+            "node.style.animationTimingFunction = saved.animationTimingFunction || '';",
         ):
             self.assertIn(expected, self.source)
 
@@ -189,6 +196,25 @@ class EditorSourceTests(unittest.TestCase):
                 f'.asset-card[data-preset="{preset}"]:is(:hover,:focus-visible) .anim-preview::before',
                 self.source,
             )
+
+    def test_animation_timing_controls_are_saved_and_accessible(self) -> None:
+        # Timing changes should persist in the normal session format and remain exportable.
+        for expected in (
+            'id="prop-animation-duration"',
+            'id="prop-animation-delay"',
+            'id="prop-animation-easing"',
+            "animationDuration: node.style.animationDuration || ''",
+            "animationDelay: node.style.animationDelay || ''",
+            "animationTimingFunction: node.style.animationTimingFunction || ''",
+            "node.style.animationDuration = saved.animationDuration || '';",
+            "node.style.animationDelay = saved.animationDelay || '';",
+            "bindSelectStyle('prop-animation-easing', 'animationTimingFunction');",
+            "The timing fields must change the real animation and remain in exported HTML.",
+            "Export lost the custom animation duration.",
+            "Export lost the custom animation delay.",
+            "Export lost the custom animation timing.",
+        ):
+            self.assertIn(expected, self.source)
 
     def test_animation_drawer_gives_clear_selection_feedback(self) -> None:
         # A clicked preset should remain visibly selected after its animation is applied.
