@@ -650,6 +650,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let savedSnapshot = '';
   let saveCheckPending = false;
   const RECOVERY_STORAGE_KEY = 'webedyts.recovery.v1';
+  const RECOVERY_ENABLED_STORAGE_KEY = 'webedyts.recovery.enabled.v1';
   const RECOVERY_MAX_CHARACTERS = 1500000;
   const RECOVERY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   const isPreviewSafetyRegressionTest = new URLSearchParams(window.location.search).get('webedyts_preview_safety_test') === '1';
@@ -744,6 +745,33 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     }
   }
 
+  // Recovery is enabled by default; users can turn off local copies from the File menu.
+  function isAutomaticRecoveryEnabled() {
+    try {
+      return window.localStorage.getItem(RECOVERY_ENABLED_STORAGE_KEY) !== 'false';
+    } catch (error) {
+      // If the preference cannot be read, keep editing available with its default behavior.
+      return true;
+    }
+  }
+
+  function toggleRecoveryPreference() {
+    const enabled = !isAutomaticRecoveryEnabled();
+    try {
+      window.localStorage.setItem(RECOVERY_ENABLED_STORAGE_KEY, enabled ? 'true' : 'false');
+    } catch (error) {
+      showMessage('Could not save the local recovery preference in this environment.');
+      return;
+    }
+
+    if (!enabled) {
+      clearRecoveryCopy();
+      showMessage('Automatic local recovery is off. Its existing recovery copy was removed.');
+    } else {
+      showMessage('Automatic local recovery is on. Backups stay on this computer.');
+    }
+  }
+
   // Ignore the word "blob" in the preview policy; reject only actual temporary asset URLs.
   function hasTemporaryMediaReference(markup) {
     const html = String(markup || '');
@@ -753,6 +781,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   // Store work only when it can be rebuilt without a website folder or temporary files.
   function saveRecoveryCopyNow() {
+    if (!isAutomaticRecoveryEnabled()) {
+      clearRecoveryCopy();
+      return false;
+    }
     if (projectMode) {
       clearRecoveryCopy();
       return false;
@@ -795,6 +827,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   function scheduleRecoverySave() {
     if (isPreviewSafetyRegressionTest) return;
+    if (!isAutomaticRecoveryEnabled()) {
+      clearRecoveryCopy();
+      return;
+    }
     if (projectMode) {
       clearRecoveryCopy();
       return;
@@ -809,6 +845,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   // Ask before bringing back unfinished work from the last app window.
   function offerRecoveryCopy() {
     if (isPreviewSafetyRegressionTest) return;
+    if (!isAutomaticRecoveryEnabled()) {
+      clearRecoveryCopy();
+      return;
+    }
 
     let stored = '';
     try {
@@ -3567,7 +3607,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       { label: 'Open session…', shortcut: 'Ctrl/Cmd+Shift+O', action: 'open-session' },
       { separator: true },
       { label: 'Save current work', shortcut: 'Ctrl/Cmd+S', action: 'save-session' },
-      { label: 'Export draft', shortcut: '', action: 'export-session' }
+      { label: 'Export draft', shortcut: '', action: 'export-session' },
+      { separator: true },
+      { label: 'Automatic local recovery', shortcut: '', action: 'toggle-recovery' }
     ],
     Edit: [
       { label: 'Undo', shortcut: 'Ctrl/Cmd+Z', action: 'undo' },
@@ -3632,6 +3674,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       button.click();
       return;
     }
+    if (action === 'toggle-recovery') {
+      toggleRecoveryPreference();
+      return;
+    }
     if (action.indexOf('viewport-') === 0) {
       const mode = action.slice('viewport-'.length);
       const selector = document.getElementById('viewport-mode');
@@ -3676,7 +3722,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         entry.type = 'button';
         entry.setAttribute('role', 'menuitem');
         const label = document.createElement('span');
-        label.textContent = item.label;
+        label.textContent = item.action === 'toggle-recovery' ?
+          item.label + ': ' + (isAutomaticRecoveryEnabled() ? 'On' : 'Off') : item.label;
+        if (item.action === 'toggle-recovery') {
+          entry.setAttribute('role', 'menuitemcheckbox');
+          entry.setAttribute('aria-checked', String(isAutomaticRecoveryEnabled()));
+        }
         entry.appendChild(label);
         if (item.shortcut) {
           const shortcut = document.createElement('span');
@@ -3795,12 +3846,28 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       check(!exported.querySelector('[data-webedyts-preview-policy]'), 'Export leaked the preview-only Content Security Policy.');
 
       const earlierRecoveryCopy = window.localStorage.getItem(RECOVERY_STORAGE_KEY);
+      const earlierRecoverySetting = window.localStorage.getItem(RECOVERY_ENABLED_STORAGE_KEY);
       const originalConfirm = window.confirm;
       try {
+        // The regression test must not depend on a previous run's preference.
+        window.localStorage.setItem(RECOVERY_ENABLED_STORAGE_KEY, 'true');
+        check(isAutomaticRecoveryEnabled(), 'Automatic recovery was not enabled by its stored preference.');
         check(saveRecoveryCopyNow(), 'The local recovery copy did not store unsaved edits.');
-        const recovery = JSON.parse(window.localStorage.getItem(RECOVERY_STORAGE_KEY) || 'null');
+        let recovery = JSON.parse(window.localStorage.getItem(RECOVERY_STORAGE_KEY) || 'null');
         check(Boolean(recovery && recovery.version === 1 && typeof recovery.snapshot === 'string' &&
           recovery.snapshot.includes('Edited heading')), 'The recovery copy did not contain the latest edit.');
+
+        // Disabling recovery must remove an existing backup instead of leaving private page content behind.
+        toggleRecoveryPreference();
+        check(!isAutomaticRecoveryEnabled(), 'The recovery toggle did not turn automatic recovery off.');
+        check(!window.localStorage.getItem(RECOVERY_STORAGE_KEY), 'Turning recovery off left an old recovery copy.');
+        toggleRecoveryPreference();
+        check(isAutomaticRecoveryEnabled(), 'The recovery toggle did not turn automatic recovery back on.');
+
+        check(saveRecoveryCopyNow(), 'The recovery copy could not be saved after re-enabling recovery.');
+        recovery = JSON.parse(window.localStorage.getItem(RECOVERY_STORAGE_KEY) || 'null');
+        check(Boolean(recovery && recovery.snapshot && recovery.snapshot.includes('Edited heading')),
+          'The re-enabled recovery copy did not contain the latest edit.');
 
         // Simulate more edits after the backup so the restore path has work to recover.
         const headingBeforeRestore = importedDoc.getElementById('workflow-heading');
@@ -3821,6 +3888,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         clearRecoveryCopy();
         if (earlierRecoveryCopy === null) window.localStorage.removeItem(RECOVERY_STORAGE_KEY);
         else window.localStorage.setItem(RECOVERY_STORAGE_KEY, earlierRecoveryCopy);
+        if (earlierRecoverySetting === null) window.localStorage.removeItem(RECOVERY_ENABLED_STORAGE_KEY);
+        else window.localStorage.setItem(RECOVERY_ENABLED_STORAGE_KEY, earlierRecoverySetting);
       }
     } catch (error) {
       failures.push(error && error.stack ? error.stack : String(error));
