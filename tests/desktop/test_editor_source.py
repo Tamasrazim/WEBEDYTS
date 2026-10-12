@@ -176,7 +176,17 @@ class EditorSourceTests(unittest.TestCase):
         end = self.source.index("document.getElementById('toggle-drawer')", start)
         binding = self.source[start:end]
         self.assertIn("propertyAnimation.value = animation;", binding)
-        self.assertIn("item.classList.toggle('selected', item === card);", binding)
+        self.assertIn("syncPresetSelection();", binding)
+
+        selection_start = self.source.index("function syncPresetSelection()")
+        selection_end = self.source.index("function saveHistory()", selection_start)
+        selection = self.source[selection_start:selection_end]
+        self.assertIn("Boolean(animation) && card.dataset.preset === animation", selection)
+
+        select_start = self.source.index("function selectNode(id)")
+        select_end = self.source.index("function syncPresetSelection()", select_start)
+        select_node = self.source[select_start:select_end]
+        self.assertIn("syncPresetSelection();", select_node)
 
         card_start = self.source.index("function makePresetCard(item)")
         card_end = self.source.index("function makeSimpleCard(item)", card_start)
