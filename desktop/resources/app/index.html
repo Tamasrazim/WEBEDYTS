@@ -649,6 +649,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   let historyPosition = -1;
   let savedSnapshot = '';
   let saveCheckPending = false;
+  const RECOVERY_STORAGE_KEY = 'webedyts.recovery.v1';
+  const RECOVERY_MAX_CHARACTERS = 1500000;
+  const RECOVERY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+  const isPreviewSafetyRegressionTest = new URLSearchParams(window.location.search).get('webedyts_preview_safety_test') === '1';
+  let recoverySaveTimer = null;
+  let recoveryWarningShown = false;
   let restoringSession = false;
   let dragState = null;
   let projectMode = false;
@@ -725,12 +731,131 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     saveState.style.color = changed ? '#ddd' : '';
   }
 
+  // Keep a small local backup so a closed window does not wipe self-contained edits.
+  function clearRecoveryCopy() {
+    if (recoverySaveTimer !== null) {
+      window.clearTimeout(recoverySaveTimer);
+      recoverySaveTimer = null;
+    }
+    try {
+      window.localStorage.removeItem(RECOVERY_STORAGE_KEY);
+    } catch (error) {
+      // The app can still work when browser storage is disabled by the computer.
+    }
+  }
+
+  // Store work only when it can be rebuilt without a website folder or temporary files.
+  function saveRecoveryCopyNow() {
+    if (projectMode) {
+      clearRecoveryCopy();
+      return false;
+    }
+
+    try {
+      const snapshot = makeSnapshot();
+      if (!hasUnsavedChanges()) {
+        window.localStorage.removeItem(RECOVERY_STORAGE_KEY);
+        return false;
+      }
+      if (snapshot.length > RECOVERY_MAX_CHARACTERS) {
+        clearRecoveryCopy();
+        if (!recoveryWarningShown) {
+          recoveryWarningShown = true;
+          showMessage('Auto-recovery skipped for this large page. Use Save or Export to keep your work.');
+        }
+        return false;
+      }
+
+      const data = JSON.parse(snapshot);
+      // Browser-only blob URLs stop working after WEBEDYTS closes, so do not restore those links later.
+      if (data.mode === 'imported' && String(data.html || '').toLowerCase().includes('blob:')) {
+        clearRecoveryCopy();
+        return false;
+      }
+
+      window.localStorage.setItem(RECOVERY_STORAGE_KEY, JSON.stringify({
+        version: 1,
+        savedAt: Date.now(),
+        snapshot: snapshot
+      }));
+      saveState.title = 'A recovery copy is stored locally on this computer.';
+      return true;
+    } catch (error) {
+      // A full or unavailable storage area must not interrupt editing.
+      return false;
+    }
+  }
+
+  function scheduleRecoverySave() {
+    if (isPreviewSafetyRegressionTest) return;
+    if (projectMode) {
+      clearRecoveryCopy();
+      return;
+    }
+    if (recoverySaveTimer !== null) window.clearTimeout(recoverySaveTimer);
+    recoverySaveTimer = window.setTimeout(function () {
+      recoverySaveTimer = null;
+      saveRecoveryCopyNow();
+    }, 700);
+  }
+
+  // Ask before bringing back unfinished work from the last app window.
+  function offerRecoveryCopy() {
+    if (isPreviewSafetyRegressionTest) return;
+
+    let stored = '';
+    try {
+      stored = window.localStorage.getItem(RECOVERY_STORAGE_KEY) || '';
+    } catch (error) {
+      return;
+    }
+    if (!stored) return;
+
+    try {
+      const backup = JSON.parse(stored);
+      if (!backup || backup.version !== 1 || typeof backup.snapshot !== 'string' ||
+          !Number.isFinite(backup.savedAt) || Date.now() - backup.savedAt > RECOVERY_MAX_AGE_MS ||
+          backup.savedAt > Date.now() + 60000 || backup.snapshot.length > RECOVERY_MAX_CHARACTERS) {
+        clearRecoveryCopy();
+        return;
+      }
+
+      const data = JSON.parse(backup.snapshot);
+      const isSample = data && data.version === 1 && Array.isArray(data.elements);
+      const isSafeImportedPage = data && data.version === 1 && data.mode === 'imported' &&
+        typeof data.html === 'string' && !data.html.toLowerCase().includes('blob:');
+      if (!isSample && !isSafeImportedPage) {
+        clearRecoveryCopy();
+        return;
+      }
+      if (backup.snapshot === makeSnapshot()) {
+        clearRecoveryCopy();
+        return;
+      }
+
+      const savedTime = new Date(backup.savedAt).toLocaleString();
+      if (!window.confirm('WEBEDYTS found unfinished work saved on this computer (' + savedTime + '). Restore it? Choose Cancel to discard this recovery copy.')) {
+        clearRecoveryCopy();
+        return;
+      }
+
+      applySnapshot(backup.snapshot, true);
+      updateSaveIndicator();
+      showMessage('Recovered your previous edits. Save or export them to keep a separate copy.');
+      scheduleRecoverySave();
+    } catch (error) {
+      clearRecoveryCopy();
+      showMessage('The local recovery copy could not be opened and has been removed.');
+    }
+  }
+
   function markChanged() {
     if (saveCheckPending) return;
     saveCheckPending = true;
     window.requestAnimationFrame(function () {
       saveCheckPending = false;
       updateSaveIndicator();
+      scheduleRecoverySave();
     });
   }
 
@@ -1056,6 +1181,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     link.click();
     window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     savedSnapshot = data;
+    clearRecoveryCopy();
     saveState.textContent = 'All changes saved';
     saveState.style.color = '';
     showMessage('Session saved as JSON.');
@@ -1499,6 +1625,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       return aIndex - bIndex || aDepth - bDepth || a.path.localeCompare(b.path);
     });
 
+    clearRecoveryCopy();
     setProjectImportBusy(true);
     saveState.textContent = 'Loading website folder…';
     clearProjectWorkspace();
@@ -1547,6 +1674,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     if (saveState.textContent === 'Unsaved changes' &&
         !window.confirm('Discard the current changes and create a new website?')) return;
 
+    clearRecoveryCopy();
     const starterMarkup = '<!doctype html>\n' +
       '<html lang="en"><head><meta charset="utf-8">' +
       '<meta name="viewport" content="width=device-width, initial-scale=1">' +
@@ -1570,6 +1698,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     if (!file) return;
     if (saveState.textContent === 'Unsaved changes' &&
         !window.confirm('Discard the current changes and open another HTML file?')) return;
+    clearRecoveryCopy();
     const reader = new FileReader();
     reader.onload = function () {
       clearProjectWorkspace();
@@ -2436,6 +2565,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         showExportProgress(detail, progress.percent, progress.loaded, progress.total);
       });
       downloadBlob(zip, safeAssetName(projectRootName || 'website') + '.webedyts.zip');
+      clearRecoveryCopy();
 
       outputs.forEach(function (markup, path) {
         const entry = findProjectFile(path);
@@ -2558,6 +2688,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     link.click();
     window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     savedSnapshot = makeSnapshot();
+    clearRecoveryCopy();
     saveState.textContent = 'All changes saved';
     saveState.style.color = '';
     showMessage('Exported the edited HTML file.');
@@ -2579,6 +2710,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     };
     applySnapshot(starting, true);
     savedSnapshot = makeSnapshot();
+    clearRecoveryCopy();
     saveState.textContent = 'All changes saved';
     saveState.style.color = '';
     showMessage('Demo session reset.');
@@ -2820,6 +2952,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         const data = JSON.parse(String(reader.result));
         restoringSession = data && data.mode === 'imported';
         applySnapshot(data, true);
+        clearRecoveryCopy();
         if (!restoringSession) {
           savedSnapshot = makeSnapshot();
           updateSaveIndicator();
@@ -3653,6 +3786,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       check(elementsIncludingRoot(exported.documentElement, '[data-webedyts-preview-original-node]').length === 0, 'Export leaked internal preview node placeholders.');
       check(elementsIncludingRoot(exported.documentElement, '[data-webedyts-editor-node], [data-webedyts-editor-label], [data-webedyts-editor-kind], [data-webedyts-editor-text-editable]').length === 0, 'Export leaked internal editor node metadata.');
       check(!exported.querySelector('[data-webedyts-preview-policy]'), 'Export leaked the preview-only Content Security Policy.');
+
+      const earlierRecoveryCopy = window.localStorage.getItem(RECOVERY_STORAGE_KEY);
+      try {
+        check(saveRecoveryCopyNow(), 'The local recovery copy did not store unsaved edits.');
+        const recovery = JSON.parse(window.localStorage.getItem(RECOVERY_STORAGE_KEY) || 'null');
+        check(Boolean(recovery && recovery.version === 1 && typeof recovery.snapshot === 'string' &&
+          recovery.snapshot.includes('Edited heading')), 'The recovery copy did not contain the latest edit.');
+      } finally {
+        clearRecoveryCopy();
+        if (earlierRecoveryCopy === null) window.localStorage.removeItem(RECOVERY_STORAGE_KEY);
+        else window.localStorage.setItem(RECOVERY_STORAGE_KEY, earlierRecoveryCopy);
+      }
     } catch (error) {
       failures.push(error && error.stack ? error.stack : String(error));
     }
@@ -3664,8 +3809,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   updateMediaActions();
   savedSnapshot = makeSnapshot();
 
-  if (new URLSearchParams(window.location.search).get('webedyts_preview_safety_test') === '1') {
+  if (isPreviewSafetyRegressionTest) {
     runPreviewSafetyRegressionTests();
+  } else {
+    offerRecoveryCopy();
   }
 }());
 </script>

@@ -146,7 +146,25 @@ class EditorSourceTests(unittest.TestCase):
         ):
             self.assertIn(expected, self.source)
 
-    def test_motion_settings_and_panel_controls_are_accessible(self) -> None:
+    def test_local_recovery_copy_is_bounded_and_avoids_temporary_project_assets(self) -> None:
+        # Recovery helps only when the restored page can work without missing local files.
+        for expected in (
+            "webedyts.recovery.v1",
+            "RECOVERY_MAX_CHARACTERS = 1500000",
+            "RECOVERY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000",
+            "function saveRecoveryCopyNow()",
+            "if (projectMode)",
+            "String(data.html || '').toLowerCase().includes('blob:')",
+            "function scheduleRecoverySave()",
+            "window.confirm('WEBEDYTS found unfinished work saved on this computer",
+            "function offerRecoveryCopy()",
+            "scheduleRecoverySave();",
+            "saveRecoveryCopyNow(), 'The local recovery copy did not store unsaved edits.'",
+            "clearRecoveryCopy();",
+        ):
+            self.assertIn(expected, self.source)
+
+    def test_motion_settings_and_panel_controls_are_accessible(self) -> None
         for expected in (
             "@media (prefers-reduced-motion: reduce)",
             "toast.setAttribute('aria-live', 'polite')",
