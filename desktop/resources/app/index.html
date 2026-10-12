@@ -1363,8 +1363,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     });
     elementsIncludingRoot(clone, 'template[data-webedyts-project-original-node="meta-refresh"]').forEach(function (node) {
       const holder = document.createElement('template');
-      // Read the saved markup from the template's content fragment before restoring it.
-      holder.innerHTML = node.content.textContent || '';
+      // Read the saved tag from its attribute before restoring the real element.
+      holder.innerHTML = node.getAttribute('data-webedyts-preview-original-html') || '';
       const restored = holder.content.firstElementChild;
       if (restored && restored.tagName === 'META' && String(restored.getAttribute('http-equiv') || '').toLowerCase() === 'refresh') {
         node.replaceWith(restored);
@@ -1576,6 +1576,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       elementsIncludingRoot(parsed.documentElement, 'template[data-webedyts-preview-original-node]').forEach(function (node) {
         node.removeAttribute('data-webedyts-preview-original-node');
       });
+      elementsIncludingRoot(parsed.documentElement, '[data-webedyts-preview-original-html]').forEach(function (node) {
+        node.removeAttribute('data-webedyts-preview-original-html');
+      });
     }
 
     // A BASE element can redirect relative links and form targets. Keep it inert
@@ -1586,8 +1589,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         'data-webedyts-preview-original-node',
         node.tagName === 'BASE' ? 'base' : 'meta-refresh'
       );
-      // A template stores its content in .content, not its normal child nodes.
-      placeholder.content.textContent = node.outerHTML;
+      // Store the original tag in an attribute so session saves preserve it reliably.
+      placeholder.setAttribute('data-webedyts-preview-original-html', node.outerHTML);
       node.replaceWith(placeholder);
     });
 
@@ -1644,8 +1647,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const isExpectedRefresh = kind === 'meta-refresh' && restored &&
         restored.tagName === 'META' &&
         String(restored.getAttribute('http-equiv') || '').toLowerCase() === 'refresh';
-      if (isExpectedBase || isExpectedRefresh) node.replaceWith(restored);
-      else node.removeAttribute('data-webedyts-preview-original-node');
+      if (isExpectedBase || isExpectedRefresh) {
+        node.replaceWith(restored);
+      } else {
+        node.removeAttribute('data-webedyts-preview-original-node');
+        node.removeAttribute('data-webedyts-preview-original-html');
+      }
     });
   }
 
