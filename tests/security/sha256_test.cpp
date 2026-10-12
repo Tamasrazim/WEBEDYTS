@@ -1,3 +1,8 @@
+/*
+ * What this does:
+ * Tests the SHA-256 helper against known results so a change to the hashing code can be caught before it ships.
+ */
+
 #include "../../src/security/sha256.hpp"
 #include "../../src/security/license_guard.hpp"
 
