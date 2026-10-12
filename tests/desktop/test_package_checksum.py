@@ -1,3 +1,5 @@
+# Verifies the package checksum file is written correctly and can be used to detect changes to a built package.
+
 #!/usr/bin/env python3
 """Tests for desktop archive checksum generation."""
 

@@ -1,3 +1,5 @@
+# Checks important parts of the editor interface source without needing to launch the full desktop app.
+
 #!/usr/bin/env python3
 """Fast checks for the editor shipped inside the native application."""
 

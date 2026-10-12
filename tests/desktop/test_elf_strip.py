@@ -1,3 +1,5 @@
+# Tests that Linux debug-symbol cleanup works as intended and does not remove the executable itself.
+
 #!/usr/bin/env python3
 """Unit tests for ELF detection in the Linux runtime-strip helper."""
 from __future__ import annotations

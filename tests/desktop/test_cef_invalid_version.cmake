@@ -1,3 +1,5 @@
+# Verifies that an invalid CEF version is rejected with a useful error instead of being treated as a valid download.
+
 cmake_minimum_required(VERSION 3.21)
 
 if(NOT DEFINED CEF_TEST_DOWNLOAD_DIRECTORY OR

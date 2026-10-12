@@ -1,3 +1,5 @@
+# Checks the CEF startup configuration so packaging changes do not silently break the browser engine bootstrap.
+
 cmake_minimum_required(VERSION 3.21)
 
 if(NOT DEFINED CEF_TEST_DOWNLOAD_DIRECTORY OR
