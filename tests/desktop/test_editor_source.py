@@ -170,6 +170,7 @@ class EditorSourceTests(unittest.TestCase):
             "const originalConfirm = window.confirm",
             "window.confirm = function () { return true; };",
             "offerRecoveryCopy();",
+            "offerRecoveryCopy(true);",
             "Local recovery did not restore the previous editing snapshot.",
             "Turning recovery off left an old recovery copy.",
             "clearRecoveryCopy();",
