@@ -3795,12 +3795,29 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       check(!exported.querySelector('[data-webedyts-preview-policy]'), 'Export leaked the preview-only Content Security Policy.');
 
       const earlierRecoveryCopy = window.localStorage.getItem(RECOVERY_STORAGE_KEY);
+      const originalConfirm = window.confirm;
       try {
         check(saveRecoveryCopyNow(), 'The local recovery copy did not store unsaved edits.');
         const recovery = JSON.parse(window.localStorage.getItem(RECOVERY_STORAGE_KEY) || 'null');
         check(Boolean(recovery && recovery.version === 1 && typeof recovery.snapshot === 'string' &&
           recovery.snapshot.includes('Edited heading')), 'The recovery copy did not contain the latest edit.');
+
+        // Simulate more edits after the backup so the restore path has work to recover.
+        const headingBeforeRestore = importedDoc.getElementById('workflow-heading');
+        if (headingBeforeRestore) headingBeforeRestore.textContent = 'Changed after recovery snapshot';
+        window.confirm = function () { return true; };
+        offerRecoveryCopy();
+        const recoveryDeadline = Date.now() + 10000;
+        while ((!importedDoc || !importedDoc.getElementById('workflow-heading') ||
+            importedDoc.getElementById('workflow-heading').textContent !== 'Edited heading') &&
+            Date.now() < recoveryDeadline) {
+          await new Promise(function (resolve) { window.setTimeout(resolve, 25); });
+        }
+        check(Boolean(importedDoc && importedDoc.getElementById('workflow-heading') &&
+          importedDoc.getElementById('workflow-heading').textContent === 'Edited heading'),
+          'Local recovery did not restore the previous editing snapshot.');
       } finally {
+        window.confirm = originalConfirm;
         clearRecoveryCopy();
         if (earlierRecoveryCopy === null) window.localStorage.removeItem(RECOVERY_STORAGE_KEY);
         else window.localStorage.setItem(RECOVERY_STORAGE_KEY, earlierRecoveryCopy);
