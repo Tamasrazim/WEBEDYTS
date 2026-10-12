@@ -2728,6 +2728,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const node = getNode(selectedId);
     if (!node) return;
     setAnimation(node, propertyAnimation.value, true);
+    // Keep the preset browser in sync when the animation is chosen from the inspector.
+    syncPresetSelection();
     showMessage(propertyAnimation.value ? 'Animation applied to ' + nodeLabel(node) + '.' : 'Animation removed.');
   });
 
