@@ -169,6 +169,7 @@ def main() -> int:
                 else "WEBEDYTS did not load the expected bundled editor page."
             )
             print(f"{description} Result: {result}", file=sys.stderr)
+            print(startup_diagnostics(marker, trace), file=sys.stderr)
             return 1
         if not result.get("url", "").startswith("file://"):
             print(
