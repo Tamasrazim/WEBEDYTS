@@ -1363,7 +1363,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     });
     elementsIncludingRoot(clone, 'template[data-webedyts-project-original-node="meta-refresh"]').forEach(function (node) {
       const holder = document.createElement('template');
-      holder.innerHTML = node.textContent || '';
+      // Read the saved markup from the template's content fragment before restoring it.
+      holder.innerHTML = node.content.textContent || '';
       const restored = holder.content.firstElementChild;
       if (restored && restored.tagName === 'META' && String(restored.getAttribute('http-equiv') || '').toLowerCase() === 'refresh') {
         node.replaceWith(restored);
@@ -1585,7 +1586,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         'data-webedyts-preview-original-node',
         node.tagName === 'BASE' ? 'base' : 'meta-refresh'
       );
-      placeholder.textContent = node.outerHTML;
+      // A template stores its content in .content, not its normal child nodes.
+      placeholder.content.textContent = node.outerHTML;
       node.replaceWith(placeholder);
     });
 
