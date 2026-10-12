@@ -843,8 +843,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 
   // Ask before bringing back unfinished work from the last app window.
-  function offerRecoveryCopy() {
-    if (isPreviewSafetyRegressionTest) return;
+  function offerRecoveryCopy(allowDuringRegressionTest) {
+    // Native tests can exercise the restore path explicitly; normal startup skips recovery during tests.
+    if (isPreviewSafetyRegressionTest && !allowDuringRegressionTest) return;
     if (!isAutomaticRecoveryEnabled()) {
       clearRecoveryCopy();
       return;
@@ -3873,7 +3874,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         const headingBeforeRestore = importedDoc.getElementById('workflow-heading');
         if (headingBeforeRestore) headingBeforeRestore.textContent = 'Changed after recovery snapshot';
         window.confirm = function () { return true; };
-        offerRecoveryCopy();
+        offerRecoveryCopy(true);
         const recoveryDeadline = Date.now() + 10000;
         while ((!importedDoc || !importedDoc.getElementById('workflow-heading') ||
             importedDoc.getElementById('workflow-heading').textContent !== 'Edited heading') &&
