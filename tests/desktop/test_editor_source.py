@@ -1,6 +1,5 @@
-# Checks important parts of the editor interface source without needing to launch the full desktop app.
-
 #!/usr/bin/env python3
+# Checks important parts of the editor interface source without needing to launch the full desktop app.
 """Fast checks for the editor shipped inside the native application."""
 
 from __future__ import annotations
@@ -77,6 +76,27 @@ class EditorSourceTests(unittest.TestCase):
             f"JavaScript syntax check failed:\n{result.stdout}\n{result.stderr}",
         )
 
+
+    def test_preview_test_url_is_built_after_cef_reads_command_line(self) -> None:
+        # CEF processes switches during startup, so build the final URL afterwards.
+        setter_start = self.source.index("void SetStartUrl(const CefString& start_url)")
+        setter_end = self.source.index(
+            "CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler()", setter_start
+        )
+        setter = self.source[setter_start:setter_end]
+        self.assertIn("start_url_ = start_url;", setter)
+        self.assertNotIn("webedyts_preview_safety_test=1", setter)
+        self.assertIn("CefString GetLaunchUrl() const", setter)
+        self.assertIn("webedyts_preview_safety_test=1", setter)
+
+        context_start = self.source.index("void OnContextInitialized() override")
+        context_end = self.source.index("\n private:", context_start)
+        context = self.source[context_start:context_end]
+        self.assertIn("const CefString launch_url = GetLaunchUrl();", context)
+        self.assertIn(
+            "new EditorClient(smoke_test_, smoke_marker_path_, launch_url)", context
+        )
+        self.assertIn("            launch_url));", context)
 
     def test_imported_preview_neutralizes_active_content_and_preserves_export(self) -> None:
         for expected in (
