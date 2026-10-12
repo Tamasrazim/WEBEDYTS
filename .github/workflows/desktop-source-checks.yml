@@ -1,3 +1,5 @@
+# Checks the desktop source and packaging files for mistakes that can be caught without building the full application.
+
 name: Desktop source checks
 
 on:

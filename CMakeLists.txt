@@ -1,3 +1,5 @@
+# Sets up the top-level WEBEDYTS build and connects the desktop app and its checks.
+
 cmake_minimum_required(VERSION 3.16)
 
 project(WEBEDYTS LANGUAGES C CXX)

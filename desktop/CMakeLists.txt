@@ -1,3 +1,5 @@
+# Defines the desktop executable, its native dependencies, and the platform-specific build steps.
+
 cmake_minimum_required(VERSION 3.21)
 
 option(WEBEDYTS_DOWNLOAD_CEF

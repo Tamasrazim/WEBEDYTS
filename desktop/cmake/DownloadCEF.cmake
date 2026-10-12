@@ -1,3 +1,5 @@
+# Finds or downloads the matching Chromium Embedded Framework package used to show the editor interface inside the native app.
+
 # Download the official, full CEF binary distribution when requested.
 #
 # The upstream .sha1 file is used to detect incomplete or corrupted downloads.

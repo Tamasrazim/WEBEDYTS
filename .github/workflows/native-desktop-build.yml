@@ -1,3 +1,5 @@
+# Builds the native desktop app on the configured platforms so compiler or packaging problems show up early.
+
 name: Native desktop build
 
 on:
