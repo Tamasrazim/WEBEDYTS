@@ -183,8 +183,9 @@ class EditorClient final : public CefClient,
     const std::string test_prefix = "WEBEDYTS_PREVIEW_TEST_RESULT:";
     if (IsPreviewSafetyTest() && changed_title.rfind(test_prefix, 0) == 0) {
       const bool passed = changed_title == "WEBEDYTS_PREVIEW_TEST_RESULT:PASS";
+      // Include the browser's assertion messages so CI reports the exact failed check.
       TraceStartup(passed ? "in-browser preview regression test passed"
-                          : "in-browser preview regression test failed");
+                          : "in-browser preview regression test failed: " + changed_title);
       FinishSmokeTest(passed ? "loaded" : "test_failed", expected_url_.ToString());
     }
   }
