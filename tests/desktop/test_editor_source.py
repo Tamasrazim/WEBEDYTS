@@ -118,7 +118,7 @@ class EditorSourceTests(unittest.TestCase):
         close_end = native_source.index("bool smoke_test_ = false;", close_start)
         close_handler = native_source[close_start:close_end]
         self.assertIn("#if defined(__APPLE__)", close_handler)
-        self.assertIn("closing inside OnTitleChange can re-enter CEF window teardown", close_handler)
+        self.assertIn("Closing inside OnTitleChange can re-enter CEF window teardown", close_handler)
 
     def test_imported_preview_neutralizes_active_content_and_preserves_export(self) -> None:
         for expected in (
