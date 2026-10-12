@@ -1643,7 +1643,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     elementsIncludingRoot(clone, '[data-webedyts-preview-original-node]').forEach(function (node) {
       const kind = node.getAttribute('data-webedyts-preview-original-node');
       const holder = document.createElement('template');
-      holder.innerHTML = node.textContent || '';
+      // Recover the original tag from explicit metadata on the inert META placeholder.
+      holder.innerHTML = node.getAttribute('data-webedyts-preview-original-html') || '';
       const restored = holder.content.firstElementChild;
       const isExpectedBase = kind === 'base' && restored && restored.tagName === 'BASE';
       const isExpectedRefresh = kind === 'meta-refresh' && restored &&
