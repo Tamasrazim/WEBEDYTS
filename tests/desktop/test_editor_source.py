@@ -164,7 +164,7 @@ class EditorSourceTests(unittest.TestCase):
         ):
             self.assertIn(expected, self.source)
 
-    def test_motion_settings_and_panel_controls_are_accessible(self) -> None
+    def test_motion_settings_and_panel_controls_are_accessible(self) -> None:
         for expected in (
             "@media (prefers-reduced-motion: reduce)",
             "toast.setAttribute('aria-live', 'polite')",
