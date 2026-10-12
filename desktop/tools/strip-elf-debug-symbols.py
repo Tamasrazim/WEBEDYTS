@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Removes unneeded debug symbols from Linux binaries to reduce the shipped package size.
 """Remove ELF debug sections from staged Linux runtime binaries before packaging.
 
 This preserves dynamic symbols and relocations needed to run the application. It

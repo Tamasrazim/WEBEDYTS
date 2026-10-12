@@ -1,3 +1,8 @@
+/*
+ * What this does:
+ * Implements the small macOS helper process that supports the app's native launch and lifecycle.
+ */
+
 #include "include/cef_app.h"
 
 #if defined(CEF_USE_SANDBOX)

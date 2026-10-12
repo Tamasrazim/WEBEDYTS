@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Writes a SHA-256 checksum for a finished package so the downloaded file can be checked for accidental damage.
 """Write a SHA-256 sidecar for a completed WEBEDYTS desktop archive."""
 
 from __future__ import annotations

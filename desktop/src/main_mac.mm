@@ -1,3 +1,8 @@
+/*
+ * What this does:
+ * Starts WEBEDYTS on macOS and wires up the platform-specific app startup and shutdown path.
+ */
+
 #import <Cocoa/Cocoa.h>
 
 #include "include/cef_application_mac.h"

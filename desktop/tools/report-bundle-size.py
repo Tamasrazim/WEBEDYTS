@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Measures the packaged app and reports how much space its bundled files take.
 """Check that a packaged WEBEDYTS app contains the real Chromium runtime."""
 
 from __future__ import annotations
