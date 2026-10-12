@@ -189,6 +189,18 @@ class EditorSourceTests(unittest.TestCase):
         ):
             self.assertIn(expected, self.source)
 
+    def test_export_draft_keyboard_shortcut_is_wired(self) -> None:
+        # Export should have an explicit shortcut and should not fall through to browser Save Page.
+        for expected in (
+            "{ label: 'Export draft', shortcut: 'Ctrl/Cmd+Shift+S', action: 'export-session' }",
+            "if (key === 's' && event.shiftKey)",
+            "document.getElementById('export-session').click();",
+            "Ctrl/Cmd+Shift+S export",
+            "Ctrl/Cmd+Shift+S did not trigger Export draft.",
+            "const originalExportClick = exportDraftButton.click",
+        ):
+            self.assertIn(expected, self.source)
+
     def test_motion_settings_and_panel_controls_are_accessible(self) -> None:
         for expected in (
             "@media (prefers-reduced-motion: reduce)",

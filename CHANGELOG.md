@@ -4,6 +4,7 @@ All notable, user-facing changes to WEBEDYTS are recorded here. Release entries 
 
 ## Unreleased
 
+- Add Ctrl/Cmd+Shift+S as a direct Export draft shortcut, with a regression check that avoids starting a real download in tests.
 - Nudge the selected page element with arrow keys (1 px) or Shift+Arrow (10 px), with keyboard help and browser regression coverage.
 - Add bounded local recovery for unsaved single-page edits, a File-menu privacy toggle that clears stored drafts when disabled, and a native regression that exercises backup restoration.
 - Route single-page ZIP exports through the same safe serializer as plain HTML exports, restoring original suspended markup and stripping editor/media metadata before packaging.

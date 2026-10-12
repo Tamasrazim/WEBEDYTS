@@ -3626,6 +3626,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     }
     if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
 
+    if (key === 's' && event.shiftKey) {
+      event.preventDefault();
+      document.getElementById('export-session').click();
+      return;
+    }
     if (key === 's' && !event.shiftKey) {
       event.preventDefault();
       document.getElementById('save-session').click();
@@ -3661,7 +3666,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       { label: 'Open session…', shortcut: 'Ctrl/Cmd+Shift+O', action: 'open-session' },
       { separator: true },
       { label: 'Save current work', shortcut: 'Ctrl/Cmd+S', action: 'save-session' },
-      { label: 'Export draft', shortcut: '', action: 'export-session' },
+      { label: 'Export draft', shortcut: 'Ctrl/Cmd+Shift+S', action: 'export-session' },
       { separator: true },
       { label: 'Automatic local recovery', shortcut: '', action: 'toggle-recovery' }
     ],
@@ -3746,7 +3751,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       return;
     }
     if (action === 'show-shortcuts') {
-      showMessage('Arrow keys nudge 1 px · Shift+Arrow nudge 10 px · Ctrl/Cmd+D duplicate · Delete remove · Ctrl/Cmd+Z undo · Ctrl/Cmd+Shift+Z redo · Ctrl/Cmd+S save · Esc exits preview');
+      showMessage('Arrow keys nudge 1 px · Shift+Arrow nudge 10 px · Ctrl/Cmd+D duplicate · Delete remove · Ctrl/Cmd+Z undo · Ctrl/Cmd+Shift+Z redo · Ctrl/Cmd+S save · Ctrl/Cmd+Shift+S export · Esc exits preview');
     } else if (action === 'show-limits') {
       showMessage('Open a local HTML file or website folder to edit it. Scripts and external network resources stay disabled in the isolated preview. Framework builds and backend routes are not emulated.');
     }
@@ -3863,6 +3868,21 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       importedDoc.dispatchEvent(downNudge);
       check((Number.parseFloat(heading.style.top) || 0) === topBeforeNudge + 10,
         'The shifted down-arrow nudge did not move the selected element by ten pixels.');
+
+      const exportDraftButton = document.getElementById('export-session');
+      const originalExportClick = exportDraftButton.click;
+      let exportShortcutTriggered = false;
+      try {
+        exportDraftButton.click = function () { exportShortcutTriggered = true; };
+        const exportShortcutEvent = new KeyboardEvent('keydown', {
+          key: 's', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true
+        });
+        handleEditorShortcut(exportShortcutEvent);
+        check(exportShortcutEvent.defaultPrevented, 'Ctrl/Cmd+Shift+S did not prevent the browser save-page shortcut.');
+        check(exportShortcutTriggered, 'Ctrl/Cmd+Shift+S did not trigger Export draft.');
+      } finally {
+        exportDraftButton.click = originalExportClick;
+      }
 
       // The timing fields must change the real animation and remain in exported HTML.
       propertyAnimation.value = 'rise';
