@@ -105,6 +105,21 @@ class EditorSourceTests(unittest.TestCase):
         )
         self.assertIn("            launch_url));", context)
 
+    def test_macos_smoke_test_closes_the_window_after_the_browser_callback(self) -> None:
+        # Deferring close avoids re-entering CEF window teardown from OnTitleChange.
+        native_source = (PROJECT_ROOT / "desktop" / "src" / "webedyts_desktop.cpp").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('#include "include/cef_task.h"', native_source)
+        self.assertIn("class CloseSmokeTestWindowTask final : public CefTask", native_source)
+        self.assertIn("CefPostTask(TID_UI, new CloseSmokeTestWindowTask());", native_source)
+
+        close_start = native_source.index("void FinishSmokeTest(")
+        close_end = native_source.index("bool smoke_test_ = false;", close_start)
+        close_handler = native_source[close_start:close_end]
+        self.assertIn("#if defined(__APPLE__)", close_handler)
+        self.assertIn("closing inside OnTitleChange can re-enter CEF window teardown", close_handler)
+
     def test_imported_preview_neutralizes_active_content_and_preserves_export(self) -> None:
         for expected in (
             "setAttribute('sandbox', 'allow-same-origin')",
