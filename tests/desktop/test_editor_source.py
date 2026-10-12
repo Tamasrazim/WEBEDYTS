@@ -150,6 +150,11 @@ class EditorSourceTests(unittest.TestCase):
         # Recovery helps only when the restored page can work without missing local files.
         for expected in (
             "webedyts.recovery.v1",
+            "RECOVERY_ENABLED_STORAGE_KEY = 'webedyts.recovery.enabled.v1'",
+            "function isAutomaticRecoveryEnabled()",
+            "function toggleRecoveryPreference()",
+            "Automatic local recovery', shortcut: '', action: 'toggle-recovery'",
+            "action === 'toggle-recovery'",
             "RECOVERY_MAX_CHARACTERS = 1500000",
             "RECOVERY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000",
             "function saveRecoveryCopyNow()",
@@ -166,6 +171,7 @@ class EditorSourceTests(unittest.TestCase):
             "window.confirm = function () { return true; };",
             "offerRecoveryCopy();",
             "Local recovery did not restore the previous editing snapshot.",
+            "Turning recovery off left an old recovery copy.",
             "clearRecoveryCopy();",
         ):
             self.assertIn(expected, self.source)
