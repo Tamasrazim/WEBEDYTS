@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Launches the native app in a test run and checks that startup succeeds instead of failing before the editor appears.
 """Launch WEBEDYTS and verify that its packaged editor page loads."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+; Defines what Inno Setup puts into the Windows installer, including the app files and installation details.
+
 #ifndef AppVersion
   #define AppVersion "0.1.0"
 #endif

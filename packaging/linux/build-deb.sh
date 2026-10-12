@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Builds the Linux .deb installer from the prepared desktop application files.
 set -euo pipefail
 if [ "$#" -ne 4 ]; then
   echo "Usage: $0 <cef-stage-dir> <output-dir> <version> <debian-architecture>" >&2

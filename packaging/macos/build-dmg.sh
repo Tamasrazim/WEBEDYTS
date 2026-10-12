@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Assembles the macOS disk-image installer from the already-built app bundle.
 set -euo pipefail
 
 if [ "$#" -ne 4 ]; then

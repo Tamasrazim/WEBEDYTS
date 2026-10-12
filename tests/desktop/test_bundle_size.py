@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Checks that the packaged app stays within the project's expected size limits.
 """Tests for the native application's staged-runtime checker."""
 
 from __future__ import annotations
