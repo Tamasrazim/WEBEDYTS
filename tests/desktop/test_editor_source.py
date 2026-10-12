@@ -162,6 +162,10 @@ class EditorSourceTests(unittest.TestCase):
             "function offerRecoveryCopy()",
             "scheduleRecoverySave();",
             "saveRecoveryCopyNow(), 'The local recovery copy did not store unsaved edits.'",
+            "const originalConfirm = window.confirm",
+            "window.confirm = function () { return true; };",
+            "offerRecoveryCopy();",
+            "Local recovery did not restore the previous editing snapshot.",
             "clearRecoveryCopy();",
         ):
             self.assertIn(expected, self.source)
