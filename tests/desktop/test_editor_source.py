@@ -143,6 +143,13 @@ class EditorSourceTests(unittest.TestCase):
             self.assertIn(f'value="{preset}"', self.source)
             self.assertIn(f"'{preset}'", self.source)
 
+        # Switching drawer tabs must not hide the other nine supported presets.
+        drawer_start = self.source.index("if (mode === 'animations')")
+        drawer_end = self.source.index("} else if (mode === 'components')", drawer_start)
+        drawer_source = self.source[drawer_start:drawer_end]
+        for preset in presets:
+            self.assertIn(f"['{preset}'", drawer_source)
+
         for keyframe in (
             "@keyframes wiRise", "@keyframes wiDrift", "@keyframes wiRotate",
             "@keyframes wiSpring", "@keyframes wiWipe", "@keyframes wiFloat",
