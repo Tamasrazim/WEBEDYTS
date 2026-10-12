@@ -3280,7 +3280,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         const animation = card.dataset.preset;
         propertyAnimation.value = animation;
 
-        // Keep the selected card visible when users switch drawer tabs.
         const node = getNode(selectedId);
         if (node) {
           setAnimation(node, animation, true);
