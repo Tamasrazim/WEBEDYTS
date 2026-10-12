@@ -79,19 +79,22 @@ class EditorSourceTests(unittest.TestCase):
 
     def test_preview_test_url_is_built_after_cef_reads_command_line(self) -> None:
         # CEF processes switches during startup, so build the final URL afterwards.
-        setter_start = self.source.index("void SetStartUrl(const CefString& start_url)")
-        setter_end = self.source.index(
+        native_source = (PROJECT_ROOT / "desktop" / "src" / "webedyts_desktop.cpp").read_text(
+            encoding="utf-8"
+        )
+        setter_start = native_source.index("void SetStartUrl(const CefString& start_url)")
+        setter_end = native_source.index(
             "CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler()", setter_start
         )
-        setter = self.source[setter_start:setter_end]
+        setter = native_source[setter_start:setter_end]
         self.assertIn("start_url_ = start_url;", setter)
         self.assertNotIn("webedyts_preview_safety_test=1", setter)
         self.assertIn("CefString GetLaunchUrl() const", setter)
         self.assertIn("webedyts_preview_safety_test=1", setter)
 
-        context_start = self.source.index("void OnContextInitialized() override")
-        context_end = self.source.index("\n private:", context_start)
-        context = self.source[context_start:context_end]
+        context_start = native_source.index("void OnContextInitialized() override")
+        context_end = native_source.index("\n private:", context_start)
+        context = native_source[context_start:context_end]
         self.assertIn("const CefString launch_url = GetLaunchUrl();", context)
         self.assertIn(
             "new EditorClient(smoke_test_, smoke_marker_path_, launch_url)", context
