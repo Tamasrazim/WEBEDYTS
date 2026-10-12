@@ -463,12 +463,24 @@ class WebedytsApp final : public CefApp,
   explicit WebedytsApp(CefString start_url) : start_url_(start_url) {}
 
   void SetStartUrl(const CefString& start_url) {
-    std::string url = start_url.ToString();
-    if (preview_safety_test_) {
+    // Keep the base URL here. CEF reads its command-line switches during
+    // initialization, so the preview-test switch is not reliable yet.
+    start_url_ = start_url;
+  }
+
+  CefString GetLaunchUrl() const {
+    std::string url = start_url_.ToString();
+
+    // Build the test URL only after CEF has processed command-line switches.
+    // Doing this in SetStartUrl ran too early and silently skipped the editor
+    // workflow regression test on macOS.
+    if (preview_safety_test_ &&
+        url.find("webedyts_preview_safety_test=1") == std::string::npos) {
       url += (url.find('?') == std::string::npos ? "?" : "&");
       url += "webedyts_preview_safety_test=1";
     }
-    start_url_ = url;
+
+    return url;
   }
 
   CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override {
@@ -495,11 +507,13 @@ class WebedytsApp final : public CefApp,
 
   void OnContextInitialized() override {
     TraceStartup("CEF context initialized");
+    // CEF has now processed the command line, so the optional test URL is safe to build.
+    const CefString launch_url = GetLaunchUrl();
 #if defined(_WIN32)
     TraceStartup("before creating native Windows window");
     if (!CreateNativeMainWindow(
-            new EditorClient(smoke_test_, smoke_marker_path_, start_url_),
-            start_url_)) {
+            new EditorClient(smoke_test_, smoke_marker_path_, launch_url),
+            launch_url)) {
       TraceStartup("native Windows window creation failed");
       CefQuitMessageLoop();
     }
@@ -507,8 +521,8 @@ class WebedytsApp final : public CefApp,
     TraceStartup("before CreateTopLevelWindow");
     g_main_window = CefWindow::CreateTopLevelWindow(
         new EditorWindowDelegate(
-            new EditorClient(smoke_test_, smoke_marker_path_, start_url_),
-            start_url_));
+            new EditorClient(smoke_test_, smoke_marker_path_, launch_url),
+            launch_url));
     TraceStartup(g_main_window ? "CreateTopLevelWindow succeeded"
                                : "CreateTopLevelWindow returned null");
     if (!g_main_window) {
