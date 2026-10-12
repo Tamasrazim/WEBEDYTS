@@ -2785,13 +2785,23 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       if (mode === 'animations') {
         presetSearch.placeholder = 'Search presets by keyword…';
         drawerContent.innerHTML = '';
+        // Keep the drawer list in sync with the fifteen animations supported by the editor.
         const cards = [
           ['fade','Fade Up','Entrance · Soft','fade reveal enter entrance subtle opacity text section'],
-          ['slide','Slide In','Entrance · Directional','slide reveal left enter movement transition'],
+          ['slide','Slide In','Entrance · Directional','slide reveal left right enter movement transition'],
           ['pop','Soft Pop','Scale · Spring-like','scale pop spring elastic card button emphasis'],
           ['pulse','Pulse','Emphasis · Repeat','pulse brightness hover highlight glow emphasis'],
           ['wiggle','Wiggle','Interaction · Playful','wiggle shake rotate playful hover'],
-          ['blur','Blur Reveal','Entrance · Focus','blur focus reveal cinematic soft entrance']
+          ['blur','Blur Reveal','Entrance · Focus','blur focus reveal cinematic soft entrance'],
+          ['rise','Rise','Entrance · Vertical','rise upward lift reveal entrance scroll'],
+          ['drift','Drift In','Entrance · Gentle','drift right slide gentle reveal entrance'],
+          ['rotate','Soft Rotate','Entrance · Angular','rotate tilt turn entrance card badge'],
+          ['spring','Spring','Scale · Rebound','spring bounce scale elastic button card'],
+          ['wipe','Wipe Reveal','Reveal · Mask','wipe mask clip reveal image panel title'],
+          ['float','Float','Motion · Idle','float hover bob idle image icon card'],
+          ['glow','Soft Glow','Emphasis · Light','glow light highlight focus soft shadow'],
+          ['flip','Flip In','Entrance · Perspective','flip 3d rotation perspective reveal panel card'],
+          ['zoom','Zoom Reveal','Entrance · Focus','zoom scale focus reveal image card']
         ];
         cards.forEach(function (item) { drawerContent.appendChild(makePresetCard(item)); });
         bindPresetCards();
