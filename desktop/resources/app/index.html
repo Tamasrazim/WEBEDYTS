@@ -1650,12 +1650,19 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const rootName = roots.values().next().value || 'Website';
     const entries = [];
     const seen = new Set();
+    let duplicatePathCount = 0;
     withPaths.forEach(function (file) {
       const parts = file.webkitRelativePath.split('/');
       const path = normalizeProjectPath(parts.slice(1).join('/'));
       if (!path) return;
-      if (seen.has(path)) return;
-      seen.add(path);
+
+      // Asset lookup is case-insensitive, so prevent colliding paths before building the file map.
+      const pathKey = path.toLowerCase();
+      if (seen.has(pathKey)) {
+        duplicatePathCount += 1;
+        return;
+      }
+      seen.add(pathKey);
       entries.push({ path: path, file: file });
     });
 
@@ -1705,6 +1712,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const preparedMarkup = await prepareProjectMarkup(markup, target.path);
       loadImportedMarkup(preparedMarkup, target.path, 'page', true);
       updateProjectPageSelector();
+      if (duplicatePathCount > 0) {
+        showMessage('Skipped ' + duplicatePathCount + ' website file path(s) that differed only by letter case.');
+      }
     } catch (error) {
       setProjectImportBusy(false);
       leaveImportedPage();
