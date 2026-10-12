@@ -744,6 +744,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     }
   }
 
+  // Ignore the word "blob" in the preview policy; reject only actual temporary asset URLs.
+  function hasTemporaryMediaReference(markup) {
+    const html = String(markup || '');
+    return /(?:src|href|poster)\s*=\s*["']blob:/i.test(html) ||
+      /url\(\s*["']?blob:/i.test(html);
+  }
+
   // Store work only when it can be rebuilt without a website folder or temporary files.
   function saveRecoveryCopyNow() {
     if (projectMode) {
@@ -768,7 +775,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
       const data = JSON.parse(snapshot);
       // Browser-only blob URLs stop working after WEBEDYTS closes, so do not restore those links later.
-      if (data.mode === 'imported' && String(data.html || '').toLowerCase().includes('blob:')) {
+      if (data.mode === 'imported' && hasTemporaryMediaReference(data.html)) {
         clearRecoveryCopy();
         return false;
       }
@@ -823,7 +830,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       const data = JSON.parse(backup.snapshot);
       const isSample = data && data.version === 1 && Array.isArray(data.elements);
       const isSafeImportedPage = data && data.version === 1 && data.mode === 'imported' &&
-        typeof data.html === 'string' && !data.html.toLowerCase().includes('blob:');
+        typeof data.html === 'string' && !hasTemporaryMediaReference(data.html);
       if (!isSample && !isSafeImportedPage) {
         clearRecoveryCopy();
         return;
