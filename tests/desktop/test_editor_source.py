@@ -177,6 +177,18 @@ class EditorSourceTests(unittest.TestCase):
         ):
             self.assertIn(expected, self.source)
 
+    def test_selected_elements_can_be_nudged_with_arrow_keys(self) -> None:
+        # Position adjustments should be possible without dragging a mouse.
+        for expected in (
+            "function nudgeSelectedElement(dx, dy)",
+            "const step = event.shiftKey ? 10 : 1;",
+            "nudgeSelectedElement(direction[0] * step, direction[1] * step)",
+            "The right-arrow nudge did not move the selected element by one pixel.",
+            "The shifted down-arrow nudge did not move the selected element by ten pixels.",
+            "Arrow keys nudge 1 px · Shift+Arrow nudge 10 px",
+        ):
+            self.assertIn(expected, self.source)
+
     def test_motion_settings_and_panel_controls_are_accessible(self) -> None:
         for expected in (
             "@media (prefers-reduced-motion: reduce)",

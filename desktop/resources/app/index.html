@@ -3549,6 +3549,40 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     updateElementActionButtons();
   });
 
+  // Move the selected item precisely without forcing the user to drag with a mouse.
+  // Arrow keys move one CSS pixel; Shift plus an arrow moves ten.
+  function nudgeSelectedElement(dx, dy) {
+    if (previewMode || selectedId === 'page') return false;
+    const node = getNode(selectedId);
+    if (!node) return false;
+
+    const computed = getComputedStyle(node);
+    if (computed.position === 'fixed') return false;
+
+    const readOffset = function (inlineValue, computedValue) {
+      const inlineNumber = Number.parseFloat(inlineValue);
+      if (Number.isFinite(inlineNumber)) return inlineNumber;
+      const computedNumber = Number.parseFloat(computedValue);
+      return computed.position === 'static' || !Number.isFinite(computedNumber) ? 0 : computedNumber;
+    };
+    const nextLeft = Math.round(readOffset(node.style.left, computed.left) + dx);
+    const nextTop = Math.round(readOffset(node.style.top, computed.top) + dy);
+
+    // Static HTML elements need relative positioning before their offsets can be changed.
+    if (computed.position === 'static') node.style.position = 'relative';
+    node.style.left = nextLeft + 'px';
+    node.style.top = nextTop + 'px';
+
+    const xField = document.getElementById('prop-x');
+    const yField = document.getElementById('prop-y');
+    if (xField) xField.value = nextLeft;
+    if (yField) yField.value = nextTop;
+
+    saveHistory();
+    markChanged();
+    return true;
+  }
+
   function handleEditorShortcut(event) {
     if (projectImportBusy && event.key !== 'Escape') return;
     if (event.key === 'Escape') {
@@ -3561,6 +3595,25 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     const target = event.target;
     const typing = target && target.nodeType === 1 &&
       (target.matches('input, textarea, select') || target.isContentEditable);
+    const interactiveTarget = target && target.nodeType === 1 && target.closest &&
+      target.closest('button, a, input, textarea, select, summary, [contenteditable="true"], [role="button"]');
+
+    if (!typing && !interactiveTarget && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const directions = {
+        arrowleft: [-1, 0],
+        arrowright: [1, 0],
+        arrowup: [0, -1],
+        arrowdown: [0, 1]
+      };
+      const direction = directions[key];
+      if (direction) {
+        const step = event.shiftKey ? 10 : 1;
+        if (nudgeSelectedElement(direction[0] * step, direction[1] * step)) {
+          event.preventDefault();
+          return;
+        }
+      }
+    }
 
     if (!typing && !event.ctrlKey && !event.metaKey && !event.altKey &&
         (key === 'delete' || key === 'backspace')) {
@@ -3693,7 +3746,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       return;
     }
     if (action === 'show-shortcuts') {
-      showMessage('Ctrl/Cmd+D duplicate · Delete remove · Ctrl/Cmd+Z undo · Ctrl/Cmd+Shift+Z redo · Ctrl/Cmd+S save · Esc exits preview');
+      showMessage('Arrow keys nudge 1 px · Shift+Arrow nudge 10 px · Ctrl/Cmd+D duplicate · Delete remove · Ctrl/Cmd+Z undo · Ctrl/Cmd+Shift+Z redo · Ctrl/Cmd+S save · Esc exits preview');
     } else if (action === 'show-limits') {
       showMessage('Open a local HTML file or website folder to edit it. Scripts and external network resources stay disabled in the isolated preview. Framework builds and backend routes are not emulated.');
     }
@@ -3796,6 +3849,20 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       widthField.value = '240';
       widthField.dispatchEvent(new Event('change', { bubbles: true }));
       check(heading.style.width === '240px', 'The width property failed to update the selected element.');
+
+      // Arrow nudging is a mouse-free way to position the currently selected element.
+      const leftBeforeNudge = Number.parseFloat(heading.style.left) || 0;
+      const rightNudge = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true });
+      importedDoc.dispatchEvent(rightNudge);
+      check(rightNudge.defaultPrevented, 'The right-arrow nudge did not claim the keyboard event.');
+      check((Number.parseFloat(heading.style.left) || 0) === leftBeforeNudge + 1,
+        'The right-arrow nudge did not move the selected element by one pixel.');
+
+      const topBeforeNudge = Number.parseFloat(heading.style.top) || 0;
+      const downNudge = new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true, cancelable: true });
+      importedDoc.dispatchEvent(downNudge);
+      check((Number.parseFloat(heading.style.top) || 0) === topBeforeNudge + 10,
+        'The shifted down-arrow nudge did not move the selected element by ten pixels.');
 
       // The timing fields must change the real animation and remain in exported HTML.
       propertyAnimation.value = 'rise';
