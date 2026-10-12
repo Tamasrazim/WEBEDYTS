@@ -2827,7 +2827,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   });
 
   function makePresetCard(item) {
+    // These cards are actions, not form submissions.
     const button = document.createElement('button');
+    button.type = 'button';
     button.className = 'asset-card';
     button.dataset.preset = item[0];
     button.dataset.keywords = item[3];
@@ -3265,6 +3267,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       card.addEventListener('click', function () {
         const animation = card.dataset.preset;
         propertyAnimation.value = animation;
+
+        // Keep the selected card visible when users switch drawer tabs.
+        drawerContent.querySelectorAll('[data-preset]').forEach(function (item) {
+          item.classList.toggle('selected', item === card);
+        });
+
         const node = getNode(selectedId);
         if (node) {
           setAnimation(node, animation, true);
