@@ -224,6 +224,11 @@ class EditorSourceTests(unittest.TestCase):
         self.assertIn("propertyAnimation.value = animation;", binding)
         self.assertIn("syncPresetSelection();", binding)
 
+        apply_start = self.source.index("document.getElementById('apply-animation').addEventListener('click'")
+        apply_end = self.source.index("document.querySelectorAll('[data-preset]')", apply_start)
+        apply_handler = self.source[apply_start:apply_end]
+        self.assertIn("syncPresetSelection();", apply_handler)
+
         selection_start = self.source.index("function syncPresetSelection()")
         selection_end = self.source.index("function saveHistory()", selection_start)
         selection = self.source[selection_start:selection_end]
