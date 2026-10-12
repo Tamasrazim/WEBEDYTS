@@ -164,7 +164,7 @@ class EditorSourceTests(unittest.TestCase):
             "data.html",
             "function scheduleRecoverySave()",
             "window.confirm('WEBEDYTS found unfinished work saved on this computer",
-            "function offerRecoveryCopy()",
+            "function offerRecoveryCopy(allowDuringRegressionTest)",
             "scheduleRecoverySave();",
             "saveRecoveryCopyNow(), 'The local recovery copy did not store unsaved edits.'",
             "const originalConfirm = window.confirm",
