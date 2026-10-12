@@ -1573,7 +1573,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       elementsIncludingRoot(parsed.documentElement, '[data-webedyts-preview-original-attrs]').forEach(function (node) {
         node.removeAttribute('data-webedyts-preview-original-attrs');
       });
-      elementsIncludingRoot(parsed.documentElement, 'template[data-webedyts-preview-original-node]').forEach(function (node) {
+      elementsIncludingRoot(parsed.documentElement, '[data-webedyts-preview-original-node]').forEach(function (node) {
         node.removeAttribute('data-webedyts-preview-original-node');
       });
       elementsIncludingRoot(parsed.documentElement, '[data-webedyts-preview-original-html]').forEach(function (node) {
@@ -1584,12 +1584,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     // A BASE element can redirect relative links and form targets. Keep it inert
     // in the preview, then restore it when the user exports the original project.
     parsed.querySelectorAll('base, meta[http-equiv="refresh"]').forEach(function (node) {
-      const placeholder = parsed.createElement('template');
+      // META is valid in the document head; TEMPLATE placeholders can be lost
+      // or normalized when the preview document is cloned and serialized.
+      const placeholder = parsed.createElement('meta');
       placeholder.setAttribute(
         'data-webedyts-preview-original-node',
         node.tagName === 'BASE' ? 'base' : 'meta-refresh'
       );
-      // Store the original tag in an attribute so session saves preserve it reliably.
+      // Store the original tag explicitly so sessions can restore it reliably.
       placeholder.setAttribute('data-webedyts-preview-original-html', node.outerHTML);
       node.replaceWith(placeholder);
     });
@@ -1638,7 +1640,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       node.removeAttribute('data-webedyts-preview-original-attrs');
     });
 
-    elementsIncludingRoot(clone, 'template[data-webedyts-preview-original-node]').forEach(function (node) {
+    elementsIncludingRoot(clone, '[data-webedyts-preview-original-node]').forEach(function (node) {
       const kind = node.getAttribute('data-webedyts-preview-original-node');
       const holder = document.createElement('template');
       holder.innerHTML = node.textContent || '';
